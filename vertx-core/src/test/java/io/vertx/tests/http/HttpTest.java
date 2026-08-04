@@ -45,6 +45,7 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.test.tls.Cert;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -64,6 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.*;
@@ -6442,31 +6444,64 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
-  public void testDnsClientSideLoadBalancingDisabled(Checkpoint checkpoint) throws Exception {
-    testDnsClientSideLoadBalancing(checkpoint, false);
+  public void testDnsClientSideLoadBalancingDisabled() throws Exception {
+    testDnsClientSideLoadBalancing(false);
   }
 
   @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
-  public void testDnsClientSideLoadBalancingEnabled(Checkpoint checkpoint) throws Exception {
-    testDnsClientSideLoadBalancing(checkpoint, true);
+  public void testDnsClientSideLoadBalancingEnabled() throws Exception {
+    testDnsClientSideLoadBalancing(true);
   }
 
-  private void testDnsClientSideLoadBalancing(Checkpoint checkpoint, boolean enabled) throws Exception {
-    AtomicInteger val = new AtomicInteger();
+  private void testDnsClientSideLoadBalancing(boolean enabled) {
+    List<String> hosts = List.of("127.0.0.1", "127.0.0.2");
+    List<String> actualHosts = new ArrayList<>();
+    for (String host : hosts) {
+      try {
+        HttpServer server = config
+          .forServer()
+          .create(vertx)
+          .requestHandler(request -> request.response().end())
+          .listen(DEFAULT_HTTP_PORT, host)
+          .await();
+        actualHosts.add(host);
+      } catch (Exception e) {
+        // Could be a bind error on MacOS or Windows
+        // on MacOS : 'sudo ifconfig lo0 alias 127.0.0.2 up'
+      }
+    }
+    AtomicReference<Set<String>> balancedHosts = new AtomicReference<>();
+    AtomicInteger idx = new AtomicInteger();
     HttpClient client = config
       .forClient()
+      .setVerifyHost(false)
       .setConnectTimeout(Duration.ofMillis(500))
       .builder(vertx)
       .withLoadBalancer(enabled ? endpoints -> () -> {
-        val.set(endpoints.size());
-        return 0;
+        balancedHosts.set(endpoints
+          .stream()
+          .map(se -> se.address().hostAddress())
+          .collect(Collectors.toSet()));
+        return idx.getAndIncrement() % endpoints.size();
       } : null)
       .build();
-    client.request(HttpMethod.GET,"vertx.io", "/").onComplete(TestUtils.onFailure(err -> {
-      assertEquals(enabled ? 2 : 0, val.get());
-      checkpoint.succeed();
-    }));
+    Set<String> ipAdresses = new HashSet<>();
+    for (int i = 0;i < hosts.size();i++) {
+      SocketAddress addr = client
+        .request(GET, DEFAULT_HTTP_PORT, "vertx.io", "/")
+        .compose(r -> {
+          return r.send().compose(resp -> resp.end().map(r.connection().remoteAddress()));
+        })
+        .await();
+      ipAdresses.add(addr.hostAddress());
+    }
+    if (enabled) {
+      Assertions.assertThat(ipAdresses).containsAll(actualHosts);
+      Assertions.assertThat(balancedHosts.get()).containsAll(hosts);
+    } else {
+      assertEquals(Set.of("127.0.0.1"), ipAdresses);
+    }
   }
 
   @Test

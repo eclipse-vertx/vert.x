@@ -94,14 +94,14 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     HostAndPort peer = HostAndPort.create(host, port);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
     ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), connectOptions, defaultSslOptions);
-    EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), HttpVersion.HTTP_1_1, sslOptions, proxyOptions, addr, peer);
+    EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), HttpVersion.HTTP_1_1, sslOptions, proxyOptions, peer);
     // todo: cache
     Function<EndpointKey, WebSocketGroup> provider = (key_) -> {
       int maxPoolSize = options.getMaxConnections();
-      ClientMetrics clientMetrics = WebSocketClientImpl.this.httpMetrics != null ? WebSocketClientImpl.this.httpMetrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
-      PoolMetrics queueMetrics = WebSocketClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
-      HttpConnectParams params = new HttpConnectParams(List.of(HttpVersion.HTTP_1_1), sslOptions, key_.proxyOptions, key_.ssl);
-      return new WebSocketGroup(key_.server, httpMetrics, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
+      ClientMetrics clientMetrics = WebSocketClientImpl.this.httpMetrics != null ? WebSocketClientImpl.this.httpMetrics.createEndpointMetrics(addr, maxPoolSize) : null;
+      PoolMetrics queueMetrics = WebSocketClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("ws", addr.toString(), maxPoolSize) : null;
+      HttpConnectParams params = new HttpConnectParams(List.of(HttpVersion.HTTP_1_1), sslOptions, proxyOptions, key_.ssl);
+      return new WebSocketGroup(addr, httpMetrics, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM
       .withResourceAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, connectOptions, 0L))
