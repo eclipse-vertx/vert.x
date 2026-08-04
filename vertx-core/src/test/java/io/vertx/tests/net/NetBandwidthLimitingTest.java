@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.vertx.core.net.*;
@@ -190,25 +191,29 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     Buffer received = Buffer.buffer();
     NetServer server = netServer();
     server.connectHandler(sock -> {
-      sock.handler(buff -> {
-        received.appendBuffer(buff);
-        if (received.length() == expected.length()) {
-          long expectedTimeInMillis = expectedTimeMillis(received.length(), INBOUND_LIMIT);
-          assertEquals(expected, received);
-          long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-          assertTimeTakenFallsInRange(expectedTimeInMillis, elapsedMillis);
-          testComplete();
+      AtomicBoolean ping = new AtomicBoolean();
+      sock.handler(data -> {
+        if (ping.compareAndSet(false, true)) {
+          sock.write("pong");
+        } else {
+          received.appendBuffer(data);
+          if (received.length() == expected.length()) {
+            long expectedTimeInMillis = expectedTimeMillis(received.length(), INBOUND_LIMIT);
+            assertEquals(expected, received);
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+            assertTimeTakenFallsInRange(expectedTimeInMillis, elapsedMillis);
+            testComplete();
+          }
         }
       });
-      // Send some data to the client to trigger the sendfile
-      sock.write("foo");
     });
     server.listen(testAddress).await();
     Future<NetSocket> clientConnect = client.connect(testAddress);
     clientConnect.onComplete(onSuccess(sock -> {
-      sock.handler(buf -> {
+      sock.handler(pong -> {
         sock.sendFile(file.getAbsolutePath());
       });
+      sock.write("ping");
     }));
     await();
   }
