@@ -184,17 +184,20 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(boolean resolveOrigin, HttpClientTransport transport) {
+  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(boolean resolveOrigin, SocketAddress server, ProxyOptions _proxyOptions, HttpClientTransport transport) {
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
-      ClientMetrics clientMetrics = HttpClientImpl.this.httpMetrics != null ? HttpClientImpl.this.httpMetrics.createEndpointMetrics(key.server, maxPoolSize) : null;
+      ClientMetrics clientMetrics = HttpClientImpl.this.httpMetrics != null ? HttpClientImpl.this.httpMetrics.createEndpointMetrics(server, maxPoolSize) : null;
       PoolMetrics poolMetrics = HttpClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("http", key.authority.toString(), maxPoolSize) : null;
-      ProxyOptions proxyOptions = key.proxyOptions;
+      ProxyOptions proxyOptions = _proxyOptions;
       ClientSSLOptions sslOptions = key.sslOptions;
+      SocketAddress connect;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
-        SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
-        key = new EndpointKey(key.ssl, key.protocol, sslOptions, proxyOptions, server, key.authority);
+        connect = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
+        key = new EndpointKey(key.ssl, key.protocol, sslOptions, proxyOptions, key.authority);
         proxyOptions = null;
+      } else {
+        connect = server;
       }
       HttpVersion protocol = key.protocol;
       List<HttpVersion> protocols;
@@ -243,7 +246,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         p,
         poolMetrics,
         key.authority,
-        key.server);
+        connect);
     };
   }
 
@@ -519,11 +522,20 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String traceOperation,
     long idleTimeout,
     boolean followRedirects,
-    ProxyOptions proxyOptions, SocketAddress server, boolean useSSL, ClientSSLOptions sslOptions,
-                                 HostAndPort authority, long connectTimeout) {
+    ProxyOptions proxyOptions,
+    SocketAddress server,
+    boolean useSSL,
+    ClientSSLOptions sslOptions,
+    HostAndPort authority,
+    long connectTimeout) {
     ContextInternal streamCtx = vertx.getOrCreateContext();
-    EndpointKey key = new EndpointKey(useSSL, protocol, sslOptions, proxyOptions, server, authority);
-    Future<ConnectionObtainedResult> fut2 = resourceManager.withResourceAsync(key, httpEndpointProvider(false, transport), (endpoint, created) -> {
+    EndpointKey key;
+    if (proxyOptions != null) {
+      key = new EndpointKey(useSSL, protocol, sslOptions, proxyOptions, authority);
+    } else {
+      key = new EndpointKey(useSSL, protocol, sslOptions, server, authority);
+    }
+    Future<ConnectionObtainedResult> fut2 = resourceManager.withResourceAsync(key, httpEndpointProvider(false, server, proxyOptions, transport), (endpoint, created) -> {
       Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
       return fut.compose(lease -> {
         HttpClientConnection conn = lease.get();
@@ -735,14 +747,20 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                         SocketAddress server,
                         HostAndPort authority,
                         Function<SharedHttpClientConnectionGroup, Future<T>> function) {
-    EndpointKey key = new EndpointKey(useSSL, protocol != null ? protocol.version() : null, sslOptions, null, server, authority);
+    SocketAddress serverKey = server;
+    if (serverKey.hostAddress() != null && Objects.equals(server.host(), authority.host())) {
+      // Ensure that two keys with same authority and distinct IP addresses are distinct
+      // such as DNS client side load balancing
+      serverKey = SocketAddress.inetSocketAddress(server.port(), server.hostAddress());
+    }
+    EndpointKey key = new EndpointKey(useSSL, protocol != null ? protocol.version() : null, sslOptions, serverKey, authority);
     HttpClientTransport transport;
     if (protocol != null && protocol.version() == HttpVersion.HTTP_3) {
       transport = quicTransport;
     } else {
       transport = tcpTransport;
     }
-    Function<EndpointKey, SharedHttpClientConnectionGroup> provider = httpEndpointProvider(resolveOrigin, transport);
+    Function<EndpointKey, SharedHttpClientConnectionGroup> provider = httpEndpointProvider(resolveOrigin, server, null, transport);
     return resourceManager.withResourceAsync(key, provider, (group, created) -> function.apply(group));
   }
 
