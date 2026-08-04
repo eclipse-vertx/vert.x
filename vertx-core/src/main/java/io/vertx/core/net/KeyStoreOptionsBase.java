@@ -55,6 +55,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
    */
   protected KeyStoreOptionsBase(KeyStoreOptionsBase other) {
     super();
+    this.provider = other.provider;
     this.type = other.type;
     this.password = other.password;
     this.path = other.path;
