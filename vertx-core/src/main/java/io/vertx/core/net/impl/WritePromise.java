@@ -12,20 +12,32 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 
 /**
  * A write promise.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class WritePromise extends PromiseImpl<Void> implements MessageWrite {
+public abstract class WritePromise extends PromiseImpl<Void> implements MessageWrite, WriteResult<Void> {
+
+  private boolean writable;
 
   public WritePromise(ContextInternal context) {
     super(context);
   }
 
   @Override
+  public void enqueued(boolean writable) {
+    this.writable = writable;
+  }
+
+  @Override
   public void cancel(Throwable cause) {
     fail(cause);
+  }
+
+  public boolean isWritable() {
+    return writable;
   }
 }

@@ -269,7 +269,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public final Future<Void> write(WritePromise write) {
-    outboundQueue.write(write);
+    boolean writable = outboundQueue.write(write);
+    write.enqueued(writable);
     return write;
   }
 
