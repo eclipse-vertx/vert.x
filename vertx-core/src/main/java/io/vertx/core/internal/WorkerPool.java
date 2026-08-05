@@ -11,8 +11,10 @@
 
 package io.vertx.core.internal;
 
+import io.vertx.core.Future;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -20,7 +22,7 @@ import java.util.concurrent.ExecutorService;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class WorkerPool {
+public class WorkerPool implements Closeable {
 
   private final ExecutorService executor;
   private final PoolMetrics metrics;
@@ -44,13 +46,12 @@ public class WorkerPool {
     return metrics;
   }
 
-  /**
-   * Close the pool
-   */
-  public void close() {
+  @Override
+  public Future<Void> shutdown(Duration timeout) {
     if (metrics != null) {
       metrics.close();
     }
     executor.shutdownNow();
+    return Future.succeededFuture();
   }
 }

@@ -19,6 +19,7 @@ import io.netty.util.internal.MathUtil;
 import io.netty.util.internal.ThreadExecutorMap;
 import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Closeable;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -78,6 +79,7 @@ import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -362,19 +364,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public NetClient createNetClient(TcpClientConfig config, ClientSSLOptions sslOptions) {
-    NetClientImpl netClient = new NetClientBuilder(this, new TcpClientConfig(config))
+    NetClientInternal netClient = new NetClientBuilder(this, new TcpClientConfig(config))
       .sslOptions(sslOptions != null ? sslOptions.copy() : null)
       .build();
-    CloseFuture fut = resolveCloseFuture();
-    fut.add(netClient);
-    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), netClient);
+    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), registerResource(netClient));
   }
 
   public NetClient createNetClient(NetClientOptions options) {
     NetClientImpl netClient = new NetClientBuilder(this, options).build();
-    CloseFuture fut = resolveCloseFuture();
-    fut.add(netClient);
-    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), netClient);
+    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), registerResource(netClient));
   }
 
   @Override
@@ -415,25 +413,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
-    CloseFuture cf = resolveCloseFuture();
-    WebSocketClient client;
-    Closeable closeable;
-    if (options.isShared()) {
-      CloseFuture closeFuture = new CloseFuture();
-      client = createSharedResource("__vertx.shared.webSocketClients", options.getName(), closeFuture, cf_ -> {
-        WebSocketClientImpl impl = createWebSocketClientImpl(options);
-        cf_.add(completion -> impl.close().onComplete(completion));
-        return impl;
-      });
-      client = new CleanableWebSocketClient(client, CleanerProvider.INSTANCE.get(), (timeout) -> closeFuture.close());
-      closeable = closeFuture;
+    CloseableResource<WebSocketClientImpl> resource;
+    if ( (options.isShared())) {
+      resource = createSharedResource("__vertx.shared.webSocketClients", options.getName(), () -> createWebSocketClientImpl(options));
     } else {
-      WebSocketClientImpl impl = createWebSocketClientImpl(options);
-      closeable = completion -> impl.close().onComplete(completion);
-      client = new CleanableWebSocketClient(impl, CleanerProvider.INSTANCE.get(), impl::shutdown);
+      resource = CloseableResource.of(createWebSocketClientImpl(options));
     }
-    cf.add(closeable);
-    return client;
+    resource = registerResource(resource);
+    return new CleanableWebSocketClient(cleaner(), resource);
   }
 
   private WebSocketClientImpl createWebSocketClientImpl(WebSocketClientOptions options) {
@@ -1116,41 +1103,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    CloseFuture execCf = new CloseFuture();
-    WorkerPool sharedWorkerPool = createSharedWorkerPool(execCf, name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-    CloseFuture parentCf = resolveCloseFuture();
-    parentCf.add(execCf);
+    CloseableResource<WorkerPool> sharedWorkerPool = createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+    sharedWorkerPool = registerResource(sharedWorkerPool);
     return new WorkerExecutorImpl(this, CleanerProvider.INSTANCE.get(), sharedWorkerPool);
   }
 
-  public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    return createSharedWorkerPool(new CloseFuture(), name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-  }
-
-  private synchronized WorkerPool createSharedWorkerPool(CloseFuture closeFuture, String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+  public CloseableResource<WorkerPool> createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     if (poolSize < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("maxExecuteTime must be > 0");
     }
-    WorkerPool shared = createSharedResource("__vertx.shared.workerPools", name, closeFuture, cf -> {
+    Supplier<WorkerPool> factory = () -> {
       ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
       ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
-      PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
-      WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
-      cf.add(completion -> {
-        pool.close();
-        completion.succeed();
-      });
-      return pool;
-    });
-    return new WorkerPool(shared.executor(), shared.metrics()) {
-      @Override
-      public void close() {
-        closeFuture.close();
-      }
+      PoolMetrics<?, ?> workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
+      return new WorkerPool(workerExec, workerMetrics);
     };
+    return createSharedResource("__vertx.shared.workerPools", name, factory);
   }
 
   @Override
@@ -1339,8 +1310,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <C> CloseableResource<C> createSharedResource(String resourceKey, String resourceName, Supplier<CloseableResource<C>> supplier) {
-    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, supplier);
+  public <R> CloseableResource<R> registerResource(CloseableResource<R> resource) {
+    CloseFuture closeFuture = resolveCloseFuture();
+    ResourceHook<R> hook = new ResourceHook<>(closeFuture, resource);
+    closeFuture.add(hook);
+    return hook;
+  }
+
+  @Override
+  public <R extends io.vertx.core.internal.Closeable> CloseableResource<R> createSharedResource(String resourceKey, String resourceName, Supplier<R> factory) {
+    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, factory);
   }
 
   void duplicate(ContextBase src, ContextBase dst) {

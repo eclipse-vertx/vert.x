@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -276,6 +277,21 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   public HttpClientInternal exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return HttpClientInternal.super.shutdown(timeout, unit);
+  }
+
+  @Override
+  public Future<Void> close() {
+    return super.close();
+  }
+
+  @Override
+  public Future<Void> shutdown() {
+    return super.shutdown();
   }
 
   protected void setDefaultSslOptions(ClientSSLOptions options) {

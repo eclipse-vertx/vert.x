@@ -15,12 +15,14 @@ import io.vertx.core.*;
 import io.vertx.core.impl.ContextBuilderImpl;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.logging.Logger;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -51,7 +53,7 @@ public class DefaultDeployment implements Deployment {
     if (deployables.size() != numberOfInstances) {
       throw new VertxException("Same deployable supplied more than once", true);
     }
-    WorkerPool workerPool = null;
+    CloseableResource<WorkerPool> workerPool = null;
     ThreadingModel mode = options.getThreadingModel();
     if (mode == null) {
       mode = ThreadingModel.EVENT_LOOP;
@@ -74,6 +76,7 @@ public class DefaultDeployment implements Deployment {
   private final Logger log;
   private final List<Deployable> deployables;
   private final ThreadingModel threading;
+  private final CloseableResource<WorkerPool> workerPoolResource;
   private final WorkerPool workerPool;
   private final String identifier;
   private final List<Instance> instances = new CopyOnWriteArrayList<>();
@@ -85,12 +88,13 @@ public class DefaultDeployment implements Deployment {
                            List<Deployable> deployables,
                            String identifier,
                            ThreadingModel threading,
-                           WorkerPool workerPool,
+                           CloseableResource<WorkerPool> workerPoolResource,
                            ClassLoader tccl) {
     this.vertx = vertx;
     this.log = log;
     this.options = options;
-    this.workerPool = workerPool;
+    this.workerPoolResource = workerPoolResource;
+    this.workerPool = workerPoolResource != null ? workerPoolResource.get() : null;
     this.deployables = deployables;
     this.identifier = identifier;
     this.threading = threading;
@@ -241,9 +245,8 @@ public class DefaultDeployment implements Deployment {
       futs.add(instance.context.closeFuture().close());
     }
     Future<?> fut = Future.join(futs);
-    if (workerPool != null) {
-      fut = fut.andThen(ar -> workerPool.close());
-      workerPool.close();
+    if (workerPoolResource != null) {
+      fut = fut.compose(ar -> workerPoolResource.shutdown(Duration.ZERO));
     }
     return fut;
   }
