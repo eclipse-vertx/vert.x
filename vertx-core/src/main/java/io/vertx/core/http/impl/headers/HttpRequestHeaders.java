@@ -108,6 +108,7 @@ public class HttpRequestHeaders extends HttpHeaders {
   private HostAndPort authority;
   private String uri;
   private String scheme;
+  private String protocol;
   private String trace;
 
   public HttpRequestHeaders(Headers<CharSequence, CharSequence, ?> headers) {
@@ -167,6 +168,15 @@ public class HttpRequestHeaders extends HttpHeaders {
     return this;
   }
 
+  public String protocol() {
+    return protocol;
+  }
+
+  public HttpHeaders protocol(String protocol) {
+    this.protocol = protocol;
+    return this;
+  }
+
   public boolean validate() {
     CharSequence methodHeader = headers.get(io.vertx.core.http.HttpHeaders.PSEUDO_METHOD);
     if (methodHeader == null) {
@@ -197,7 +207,15 @@ public class HttpRequestHeaders extends HttpHeaders {
       authorityPresence = authority;
     }
 
-    if (method == HttpMethod.CONNECT) {
+    CharSequence protocolHeader = headers.get(io.vertx.core.http.HttpHeaders.PSEUDO_PROTOCOL);
+    String protocol;
+    if (method == HttpMethod.CONNECT && protocolHeader != null) {
+      protocol = protocolHeader.toString();
+    } else {
+      protocol = null;
+    }
+
+    if (method == HttpMethod.CONNECT && protocol == null) {
       if (scheme != null || uri != null || authorityPresence == null) {
         return false;
       }
@@ -225,6 +243,7 @@ public class HttpRequestHeaders extends HttpHeaders {
     this.uri = uri;
     this.authority = authority;
     this.scheme = scheme;
+    this.protocol = protocol;
 
     return true;
   }
@@ -253,6 +272,9 @@ public class HttpRequestHeaders extends HttpHeaders {
     }
     if (scheme != null) {
       headers.set(io.vertx.core.http.HttpHeaders.PSEUDO_SCHEME, scheme);
+    }
+    if (method == HttpMethod.CONNECT && protocol != null) {
+      headers.set(io.vertx.core.http.HttpHeaders.PSEUDO_PROTOCOL, protocol);
     }
   }
 

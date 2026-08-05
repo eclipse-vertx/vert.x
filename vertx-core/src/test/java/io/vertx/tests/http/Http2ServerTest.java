@@ -110,19 +110,19 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 public class Http2ServerTest extends Http2TestBase {
 
-  private static Http2Headers headers(String method, String scheme, String path) {
+  static Http2Headers headers(String method, String scheme, String path) {
     return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
   }
 
-  private static Http2Headers GET(String scheme, String path) {
+  static Http2Headers GET(String scheme, String path) {
     return headers("GET", scheme, path);
   }
 
-  private static Http2Headers GET(String path) {
+  static Http2Headers GET(String path) {
     return headers("GET", "https", path);
   }
 
-  private static Http2Headers POST(String path) {
+  static Http2Headers POST(String path) {
     return headers("POST", "https", path);
   }
 
@@ -447,6 +447,30 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testEnableConnectProtocolSetting() throws Exception {
+    io.vertx.core.http.Http2Settings settings = new io.vertx.core.http.Http2Settings();
+    settings.set(io.vertx.core.http.Http2Settings.ENABLE_CONNECT_PROTOCOL, true);
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setInitialSettings(settings));
+    server.requestHandler(req -> {
+    });
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, connection -> {
+      connection.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings newSettings) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            Long val = newSettings.get((char) 0x08);
+            Assert.assertEquals((Long) 1L, val);
+            testComplete();
+          });
+        }
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testGet() throws Exception {
     String expected = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
@@ -731,6 +755,38 @@ public class Http2ServerTest extends Http2TestBase {
       Http2Headers headers = new DefaultHttp2Headers().method("CONNECT").authority("whatever.com");
       request.encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       request.context.flush();
+    });
+    await();
+  }
+
+  @Test
+  public void testExtendedConnect() throws Exception {
+    io.vertx.core.http.Http2Settings settings = new io.vertx.core.http.Http2Settings();
+    settings.set(io.vertx.core.http.Http2Settings.ENABLE_CONNECT_PROTOCOL, true);
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setInitialSettings(settings));
+    server.requestHandler(req -> {
+      Assert.assertEquals("the-protocol", req.connectProtocol());
+      req.response().end();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, connection -> {
+      int id = connection.nextStreamId();
+      connection.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          if (endStream) {
+            vertx.runOnContext(v -> {
+              testComplete();
+            });
+          }
+        }
+      });
+      Http2Headers headers = headers("CONNECT", "https", "/")
+        .authority(DEFAULT_HTTPS_HOST_AND_PORT)
+        .set(":protocol", "the-protocol");
+      connection.encoder.writeHeaders(connection.context, id, headers, 0, true, connection.context.newPromise());
+      connection.context.flush();
     });
     await();
   }

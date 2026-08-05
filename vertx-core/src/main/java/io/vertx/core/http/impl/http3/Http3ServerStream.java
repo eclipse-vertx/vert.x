@@ -62,6 +62,7 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
         requestHeaders.scheme(),
         requestHeaders.method(),
         requestHeaders.path(),
+        requestHeaders.protocol(),
         requestHeaders,
         requestHeaders.authority(),
         null,

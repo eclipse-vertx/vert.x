@@ -401,7 +401,8 @@ public class Http3ClientTest extends VertxTestBase {
         .setInitialSettings(new Http3Settings()
           .setMaxFieldSectionSize(1024)
           .setQPackMaxTableCapacity(1024)
-          .setQPackBlockedStreams(1024)));
+          .setQPackBlockedStreams(1024)
+          .set(HttpSettings.ENABLE_CONNECT_PROTOCOL, true)));
 
     server.close();
     server = vertx.createHttpServer(serverConfig, serverSslOptions);
@@ -443,6 +444,7 @@ public class Http3ClientTest extends VertxTestBase {
     Assert.assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.MAX_FIELD_SECTION_SIZE));
     Assert.assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_BLOCKED_STREAMS));
     Assert.assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_MAX_TABLE_CAPACITY));
+    Assert.assertEquals(true, settings.get(HttpSettings.ENABLE_CONNECT_PROTOCOL));
   }
 
 //  @Test
@@ -518,5 +520,34 @@ public class Http3ClientTest extends VertxTestBase {
     } catch (Throwable e) {
       Assert.assertTrue(e instanceof TimeoutException);
     }
+  }
+
+  @Test
+  public void testExtendedConnect() {
+
+    server.close();
+    Http3ServerConfig cfg = new Http3ServerConfig()
+      .setInitialSettings(new io.vertx.core.http.Http3Settings()
+        .set(HttpSettings.ENABLE_CONNECT_PROTOCOL, true));
+    server = vertx.createHttpServer(new HttpServerConfig(serverOptions).setHttp3Config(cfg), serverSslOptions);
+
+    server.requestHandler(req -> {
+      Assert.assertEquals("the-protocol", req.connectProtocol());
+      req.response().end();
+    });
+    server.listen(8443, "localhost").await();
+
+    HttpClientConnection connection = client.connect(new HttpConnectOptions()
+      .setHost("localhost")
+      .setPort(8443)).await();
+
+    connection.request(HttpMethod.CONNECT, 8443, "localhost", "/")
+      .expecting(request -> request.version() == HttpVersion.HTTP_3)
+      .compose(request -> request
+        .connectProtocol("the-protocol")
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
   }
 }

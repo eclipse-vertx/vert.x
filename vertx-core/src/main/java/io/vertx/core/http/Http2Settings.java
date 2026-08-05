@@ -161,7 +161,7 @@ public final class Http2Settings extends HttpSettings {
    * Default constructor
    */
   public Http2Settings() {
-    super(7);
+    super(9);
     extraSettings = DEFAULT_EXTRA_SETTINGS;
   }
 
