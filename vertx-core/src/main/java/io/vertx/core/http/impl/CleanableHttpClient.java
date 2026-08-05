@@ -34,7 +34,7 @@ import java.util.function.Function;
  */
 public class CleanableHttpClient extends CleanableObject<HttpClientInternal> implements HttpClientInternal {
 
-  public CleanableHttpClient(Cleaner cleaner, CloseableResource<HttpClientInternal> dispose) {
+  public CleanableHttpClient(Cleaner cleaner, CloseableResource<? extends HttpClientInternal> dispose) {
     super(cleaner, dispose);
   }
 

@@ -1,8 +1,5 @@
 package io.vertx.core.http.impl;
 
-
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
@@ -351,50 +348,16 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     }
 
     HttpClientConfig co2 = co;
-    CloseFuture cf = resolveCloseFuture();
-    CloseableResource<HttpClientInternal> resource;
+    CloseableResource<HttpClientImpl> resource;
     if (shared != null) {
       resource = vertx.createSharedResource(
         "__vertx.shared.httpClients",
         co.getName(),
         () -> createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
     } else {
-      resource = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
+      resource = CloseableResource.of(createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
     }
-    ClientCloseableResource ccr = new ClientCloseableResource(cf, resource);
-    cf.add(ccr);
+    CloseableResource<HttpClientImpl> ccr = vertx.registerResource(resource);
     return new CleanableHttpClient(vertx.cleaner(), ccr);
-  }
-
-  // This should somehow get unified and reused
-  // at the moment this is required to unregister the resource from the owner when the client closes
-  // either explicitly or is collected
-  private static class ClientCloseableResource implements CloseableResource<HttpClientInternal>, Closeable {
-
-    private final CloseFuture owner;
-    private final CloseableResource<HttpClientInternal> resource;
-
-    public ClientCloseableResource(CloseFuture owner, CloseableResource<HttpClientInternal> resource) {
-      this.owner = owner;
-      this.resource = resource;
-    }
-
-    @Override
-    public void close(Completable<Void> completion) {
-      resource
-        .shutdown(Duration.ZERO)
-        .onComplete(completion);
-    }
-
-    @Override
-    public HttpClientInternal get() {
-      return resource.get();
-    }
-
-    @Override
-    public Future<Void> shutdown(Duration duration) {
-      owner.remove(this);
-      return resource.shutdown(duration);
-    }
   }
 }
