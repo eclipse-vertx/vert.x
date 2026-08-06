@@ -37,9 +37,7 @@ import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -101,21 +99,12 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       }
       done = true;
     }
-    ServerWebSocket ws;
-    try {
-      ws = acceptHandshake();
-    } catch (Exception e) {
-      return rejectHandshake(BAD_REQUEST.code())
-        .transform(ar -> {
-          if (ar.succeeded()) {
-            return request.context().failedFuture(e);
-          } else {
-            // result is null
-            return (Future) ar;
-          }
-        });
-    }
-    tryComplete(ws);
+    acceptHandshake()
+      .onSuccess(ws -> tryComplete(ws))
+      .onFailure(e -> {
+        tryFail(e);
+        rejectHandshake(BAD_REQUEST.code());
+      });
     return this;
   }
 
@@ -168,7 +157,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     return response.setStatusCode(sc).end(status.reasonPhrase());
   }
 
-  private ServerWebSocket acceptHandshake() {
+  private Future<ServerWebSocket> acceptHandshake() {
     Http1ServerConnection httpConn = (Http1ServerConnection) request.connection();
     ChannelHandlerContext chctx = httpConn.channelHandlerContext();
     Channel channel = chctx.channel();
@@ -198,25 +187,23 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       webSocketConn.metric(httpConn.metric());
       return webSocketConn;
     });
-    CompletableFuture<Void> latch = new CompletableFuture<>();
+    Promise<ServerWebSocket> promise = request.context().promise();
     httpConn.context().execute(() -> {
-      // Must be done on event-loop
-      pipeline.replace(VertxHandler.class, "handler", handler);
-      latch.complete(null);
+      try {
+        // pipeline swap must happen on the event-loop context
+        pipeline.replace(VertxHandler.class, "handler", handler);
+        ServerWebSocketImpl webSocket = (ServerWebSocketImpl) handler.getConnection().webSocket();
+        if (METRICS_ENABLED && httpConn.httpMetrics != null) {
+          httpConn.httpMetrics.requestUpgraded(request.metric());
+          webSocket.setMetric(httpConn.httpMetrics.connected(request));
+        }
+        webSocket.registerHandler(httpConn.context().owner().eventBus());
+        promise.complete(webSocket);
+      } catch (Exception e) {
+        promise.fail(e);
+      }
     });
-    // This should actually only block the thread on a worker thread
-    try {
-      latch.get(10, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-    ServerWebSocketImpl webSocket = (ServerWebSocketImpl) handler.getConnection().webSocket();
-    if (METRICS_ENABLED && httpConn.httpMetrics != null) {
-      httpConn.httpMetrics.requestUpgraded(request.metric());
-      webSocket.setMetric(httpConn.httpMetrics.connected(request));
-    }
-    webSocket.registerHandler(httpConn.context().owner().eventBus());
-    return webSocket;
+    return promise.future();
   }
 
   @Override
