@@ -442,6 +442,11 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    return sendFile(filename, offset, length, new SendFileOptions());
+  }
+
+  @Override
+  public Future<Void> sendFile(String filename, long offset, long length, SendFileOptions options) {
     File file = vertx.fileResolver().resolve(filename);
     RandomAccessFile raf;
     long size;
@@ -458,11 +463,16 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       }
       headers.set(CONTENT_TYPE, mimeType);
     }
-    return sendFileInternal(offset, length, size, raf, null, true);
+    return sendFileInternal(offset, length, size, raf, null, true, options);
   }
 
   @Override
   public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    return sendFile(file, offset, length, new SendFileOptions());
+  }
+
+  @Override
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length, SendFileOptions options) {
     if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
       headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
@@ -472,11 +482,16 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     } catch (IOException e) {
       return context.failedFuture(e);
     }
-    return sendFileInternal(offset, length, size, file, null, false);
+    return sendFileInternal(offset, length, size, file, null, false, options);
   }
 
   @Override
   public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    return sendFile(channel, offset, length, new SendFileOptions());
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length, SendFileOptions options) {
     if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
       headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
@@ -486,10 +501,10 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     } catch (IOException e) {
       return context.failedFuture(e);
     }
-    return sendFileInternal(offset, length, size, null, channel, false);
+    return sendFileInternal(offset, length, size, null, channel, false, options);
   }
 
-  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel fileChannel, boolean close) {
+  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel fileChannel, boolean close, SendFileOptions options) {
     Future<Void> ret = null;
     try {
       ContextInternal ctx = vertx.getOrCreateContext();
@@ -516,7 +531,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         written = true;
         conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
         FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
-        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
+        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength, options.getChunkSize());
         PromiseInternal<Void> promise = context.promise();
         ret = promise.future();
         channelFuture.addListener(future -> {
