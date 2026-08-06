@@ -14,7 +14,6 @@ package io.vertx.tests.future;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.FutureInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.Repeat;
@@ -330,8 +329,10 @@ public class FutureTest extends FutureTestBase {
   public void testCreateFailedWithNullFailure() {
     io.vertx.core.Future<String> future = io.vertx.core.Future.failedFuture((Throwable)null);
     Checker<String> checker = new Checker<>(future);
-    NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
+    Throwable failure = checker.assertFailed();
+    assertEquals(VertxException.class, failure.getClass());
     assertNull(failure.getMessage());
+    assertEquals(0, failure.getStackTrace().length);
   }
 
   @Test
@@ -339,8 +340,42 @@ public class FutureTest extends FutureTestBase {
     Promise<String> promise = Promise.promise();
     promise.fail((Throwable)null);
     Checker<String> checker = new Checker<>(promise.future());
-    NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
+    Throwable failure = checker.assertFailed();
+    assertEquals(VertxException.class, failure.getClass());
     assertNull(failure.getMessage());
+    assertEquals(0, failure.getStackTrace().length);
+  }
+
+  @Test
+  public void testFailWithMessage() {
+    Promise<String> promise = Promise.promise();
+    promise.fail("the-message");
+    Checker<String> checker = new Checker<>(promise.future());
+    Throwable failure = checker.assertFailed();
+    assertEquals(VertxException.class, failure.getClass());
+    assertEquals("the-message", failure.getMessage());
+    assertEquals(0, failure.getStackTrace().length);
+  }
+
+  @Test
+  public void testTryFailWithMessage() {
+    Promise<String> promise = Promise.promise();
+    assertTrue(promise.tryFail("the-message"));
+    Checker<String> checker = new Checker<>(promise.future());
+    Throwable failure = checker.assertFailed();
+    assertEquals(VertxException.class, failure.getClass());
+    assertEquals("the-message", failure.getMessage());
+    assertEquals(0, failure.getStackTrace().length);
+  }
+
+  @Test
+  public void testFailedFutureWithMessage() {
+    io.vertx.core.Future<String> future = io.vertx.core.Future.failedFuture("the-message");
+    Checker<String> checker = new Checker<>(future);
+    Throwable failure = checker.assertFailed();
+    assertEquals(VertxException.class, failure.getClass());
+    assertEquals("the-message", failure.getMessage());
+    assertEquals(0, failure.getStackTrace().length);
   }
 
   @Test
@@ -1913,7 +1948,7 @@ public class FutureTest extends FutureTestBase {
   @Test
   public void testAndThenComplete() {
     waitFor(4);
-    Throwable throwable = new NoStackTraceThrowable("test");
+    Throwable throwable = VertxException.noStackTrace("test");
 
     testAndThen(io.vertx.core.Future.succeededFuture(), null, null);
 
@@ -1934,7 +1969,7 @@ public class FutureTest extends FutureTestBase {
   @Repeat(times = 50)
   public void testAndThenCompleteContextual() {
     waitFor(4);
-    Throwable throwable = new NoStackTraceThrowable("test");
+    Throwable throwable = VertxException.noStackTrace("test");
 
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
 
