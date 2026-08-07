@@ -22,7 +22,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -34,6 +36,14 @@ public class SslEngineUtils {
   private static final List<String> PQ_COMPLIANT_GROUPS = Collections.unmodifiableList(Arrays.asList("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024"));
   private static final List<String> DEFAULT_KEY_EXCHANGE_GROUPS = Collections.unmodifiableList(Arrays.asList("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024", "X25519", "secp256r1", "x448",
     "secp384r1", "secp521r1"));
+  private static final Set<String> PQ_COMPLIANT_GROUPS_UPPER;
+  static {
+    Set<String> upper = new HashSet<>();
+    for (String g : PQ_COMPLIANT_GROUPS) {
+      upper.add(g.toUpperCase());
+    }
+    PQ_COMPLIANT_GROUPS_UPPER = Collections.unmodifiableSet(upper);
+  }
 
   public static List<String> getPqCompliantGroups() {
     return PQ_COMPLIANT_GROUPS;
@@ -48,19 +58,22 @@ public class SslEngineUtils {
     }
     switch (pqcPolicy) {
       case STRICT:
-        if (groups != null && !groups.isEmpty()) {
-          if (!(PQ_COMPLIANT_GROUPS.containsAll(groups))) {
-            log.debug("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
-          }
+        if (groups == null || groups.isEmpty()) {
+          log.warn("No key exchange groups list was specified, the default list " + PQ_COMPLIANT_GROUPS + " is used");
+          return PQ_COMPLIANT_GROUPS;
         }
-        return PQ_COMPLIANT_GROUPS;
+        if (!groups.stream().allMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
+          log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
+          return PQ_COMPLIANT_GROUPS;
+        }
+        return groups;
       case CLIENT_NEGOTIATED:
         if (groups == null || groups.isEmpty()) {
-          log.debug("No key exchange groups list was specified, a default list containing X25519MLKEM768 is selected");
+          log.warn("No key exchange groups list was specified, the default list " + DEFAULT_KEY_EXCHANGE_GROUPS + " is used");
           return DEFAULT_KEY_EXCHANGE_GROUPS;
         }
-        if (groups.stream().noneMatch(PQ_COMPLIANT_GROUPS::contains)) {
-          log.debug("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
+        if (groups.stream().noneMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
+          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
           List<String> result = new ArrayList<>(groups.size() + 1);
           result.addAll(PQ_COMPLIANT_GROUPS);
           result.addAll(groups);
