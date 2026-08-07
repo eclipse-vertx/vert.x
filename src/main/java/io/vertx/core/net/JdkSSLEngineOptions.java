@@ -72,7 +72,7 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
         SSLParameters params = ctx.getDefaultSSLParameters();
         Method getNamedGroups = SSLParameters.class.getDeclaredMethod("getNamedGroups");
         String[] groups = (String[]) getNamedGroups.invoke(params);
-        available = groups != null && Arrays.stream(groups).anyMatch(SslEngineUtils.getPqCompliantGroups()::contains);
+        available = groups != null && Arrays.stream(groups).anyMatch(g -> SslEngineUtils.getPqCompliantGroups().stream().anyMatch(g::equalsIgnoreCase));
       } catch (Exception ignore) {
       }
       jdkPqcAvailable = available;
