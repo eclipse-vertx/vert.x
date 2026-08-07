@@ -17,6 +17,7 @@ import javax.net.ssl.SSLParameters;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Utils dependent on the JDK implementation.
@@ -43,13 +44,16 @@ public class JdkDependent {
   }
 
   private static final Set<String> PQ_COMPLIANT_GROUPS = Set.of("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024");
+  private static final Set<String> PQ_COMPLIANT_GROUPS_UPPER = PQ_COMPLIANT_GROUPS.stream()
+    .map(String::toUpperCase)
+    .collect(Collectors.toUnmodifiableSet());
 
   public static boolean isPqcAvailable() {
     try {
       SSLContext ctx = SSLContext.getDefault();
       SSLParameters params = ctx.getDefaultSSLParameters();
       String[] groups = params.getNamedGroups();
-      return groups != null && Arrays.stream(groups).anyMatch(PQ_COMPLIANT_GROUPS::contains);
+      return groups != null && Arrays.stream(groups).anyMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()));
     } catch (Exception e) {
       return false;
     }
