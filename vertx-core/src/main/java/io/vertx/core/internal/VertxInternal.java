@@ -181,7 +181,7 @@ public interface VertxInternal extends Vertx {
    * the {@code resource} is cascade closed.
    *
    * @param resource the actual resource
-   * @return the new resource to use
+   * @return the new resource to use or {@code null} when the resource could not be registered, e.g. on a vertx close
    */
   default <R extends io.vertx.core.internal.Closeable> CloseableResource<R> registerResource(R resource) {
     return registerResource(CloseableResource.of(resource));
@@ -192,7 +192,7 @@ public interface VertxInternal extends Vertx {
    * the {@code resource} is cascade closed.
    *
    * @param resource the actual resource
-   * @return the new resource to use
+   * @return the new resource to use or {@code null} when the resource could not be registered, e.g. on a vertx close
    */
   <R> CloseableResource<R> registerResource(CloseableResource<R> resource);
 

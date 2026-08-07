@@ -462,7 +462,7 @@ public interface ContextInternal extends Context {
    * the {@code resource} is cascade closed.
    *
    * @param resource the actual resource
-   * @return the new resource to use
+   * @return the new resource to use or {@code null} when the resource could not be registered, e.g. on a context close
    */
   default <R extends io.vertx.core.internal.Closeable> CloseableResource<R> registerResource(R resource) {
     return registerResource(CloseableResource.of(resource));
@@ -473,13 +473,16 @@ public interface ContextInternal extends Context {
    * the {@code resource} is cascade closed.
    *
    * @param resource the actual resource
-   * @return the new resource to use
+   * @return the new resource to use or {@code null} when the resource could not be registered, e.g. on a context close
    */
   default <R> CloseableResource<R> registerResource(CloseableResource<R> resource) {
     CloseFuture owner = closeFuture();
     ResourceHook<R> hook = new ResourceHook<>(owner, resource);
-    owner.add(hook);
-    return hook;
+    if (owner.add(hook)) {
+      return hook;
+    } else {
+      return null;
+    }
   }
 
   /**

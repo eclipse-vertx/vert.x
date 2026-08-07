@@ -1313,8 +1313,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public <R> CloseableResource<R> registerResource(CloseableResource<R> resource) {
     CloseFuture closeFuture = resolveCloseFuture();
     ResourceHook<R> hook = new ResourceHook<>(closeFuture, resource);
-    closeFuture.add(hook);
-    return hook;
+    if (closeFuture.add(hook)) {
+      return hook;
+    } else {
+      return null;
+    }
   }
 
   @Override
