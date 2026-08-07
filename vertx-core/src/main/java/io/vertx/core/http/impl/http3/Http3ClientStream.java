@@ -25,7 +25,7 @@ import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.internal.net.QuicStreamInternal;
 
 import java.util.Map;
 

@@ -18,7 +18,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.internal.net.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
