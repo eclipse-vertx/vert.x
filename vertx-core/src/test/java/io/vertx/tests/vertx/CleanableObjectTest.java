@@ -57,9 +57,9 @@ public class CleanableObjectTest extends VertxTestBase {
     AtomicInteger count = new AtomicInteger();
     TestResource resource = new TestResource() {
       @Override
-      public Future<Void> shutdown(Duration duration) {
+      public Future<Void> shutdown(Duration timeout) {
         count.incrementAndGet();
-        return super.shutdown(duration);
+        return super.shutdown(timeout);
       }
     };
     CleanableTest object = new CleanableTest(cleaner, resource);
@@ -97,8 +97,8 @@ public class CleanableObjectTest extends VertxTestBase {
       return this;
     }
     @Override
-    public Future<Void> shutdown(Duration duration) {
-      shutdownDuration = duration;
+    public Future<Void> shutdown(Duration timeout) {
+      shutdownDuration = timeout;
       return shutdownCompletion.future();
     }
   }
