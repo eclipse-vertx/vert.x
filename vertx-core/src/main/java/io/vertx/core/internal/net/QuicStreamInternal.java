@@ -8,14 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.internal.quic;
+package io.vertx.core.internal.net;
 
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.net.StreamChannelInternal;
 import io.vertx.core.net.QuicStream;
 
 /**

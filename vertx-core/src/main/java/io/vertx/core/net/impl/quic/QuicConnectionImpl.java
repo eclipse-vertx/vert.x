@@ -31,7 +31,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.core.internal.quic.QuicConnectionInternal;
+import io.vertx.core.internal.net.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.ConnectionGroup;

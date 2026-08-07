@@ -20,7 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.internal.net.QuicStreamInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.StreamChannelBase;
 import io.vertx.core.net.QuicConnection;

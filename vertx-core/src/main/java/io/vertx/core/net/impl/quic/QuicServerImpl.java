@@ -38,7 +38,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.quic.QuicServerInternal;
+import io.vertx.core.internal.net.QuicServerInternal;
 import io.vertx.core.internal.tls.*;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SslContextProviderReference;
