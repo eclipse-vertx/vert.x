@@ -1,1462 +1,506 @@
-/*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
- * which is available at https://www.apache.org/licenses/LICENSE-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
- */
-
-package io.vertx.core.http.impl.http1;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
-import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.compression.Brotli;
-import io.netty.handler.codec.compression.ZlibCodecFactory;
-import io.netty.handler.codec.compression.Zstd;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.websocketx.*;
-import io.netty.handler.codec.http.websocketx.WebSocketFrame;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
-import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
-import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
-import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.*;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.WebSocketVersion;
-import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.http.Http1ClientConfig;
-import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.http.impl.headers.Http1xHeaders;
-import io.vertx.core.http.impl.websocket.WebSocketConnectionImpl;
-import io.vertx.core.http.impl.websocket.WebSocketHandshakeInboundHandler;
-import io.vertx.core.http.impl.websocket.WebSocketImpl;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.MessageWrite;
-import io.vertx.core.net.impl.tcp.NetSocketImpl;
-import io.vertx.core.net.impl.VertxHandler;
-import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.WebSocketMetrics;
-import io.vertx.core.spi.tracing.SpanKind;
-import io.vertx.core.spi.tracing.TagExtractor;
-import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.tracing.TracingPolicy;
-
-import java.net.URI;
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-
-import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
-import static io.vertx.core.http.HttpHeaders.*;
-
-/**
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
-public class Http1ClientConnection extends Http1Connection implements io.vertx.core.http.impl.HttpClientConnection {
-
-  private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
-
-  private final WebSocketMetrics<?> webSocketMetrics;
-  private final TransportMetrics<?> transportMetrics;
-  private final Http1ClientConfig config;
-  private final TracingPolicy tracingPolicy;
-  private final boolean useDecompression;
-  private final boolean ssl;
-  private final SocketAddress server;
-  private final HostAndPort authority;
-  public final ClientMetrics clientMetrics;
-  private final HttpVersion version;
-
-  private final Deque<Stream> pending;
-  private final Deque<Stream> inflight;
-  private Stream current;
-  private boolean closed;
-  private boolean evicted;
-
-  private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
-  private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
-  private Handler<AltSvcEvent> alternativeServicesHandler;
-  private boolean wantClose;
-  private boolean isConnect;
-  private int keepAliveTimeout;
-  private long expirationTimestamp;
-  private int seq = 1;
-  private Deque<WebSocketFrame> pendingFrames;
-
-  private long creationTimestamp;
-  private long lastResponseReceivedTimestamp;
-
-  public Http1ClientConnection(HttpVersion version,
-                               WebSocketMetrics<?> httpMetrics,
-                               TransportMetrics<?> transportMetrics,
-                               Http1ClientConfig config,
-                               TracingPolicy tracingPolicy,
-                               boolean useDecompression,
-                               ChannelHandlerContext chctx,
-                               boolean ssl,
-                               SocketAddress server,
-                               HostAndPort authority,
-                               ContextInternal context,
-                               ClientMetrics clientMetrics) {
-    super(context, chctx);
-    this.webSocketMetrics = httpMetrics;
-    this.transportMetrics = transportMetrics;
-    this.clientMetrics = clientMetrics;
-    this.config = config;
-    this.tracingPolicy = tracingPolicy;
-    this.useDecompression = useDecompression;
-    this.ssl = ssl;
-    this.server = server;
-    this.authority = authority;
-    this.version = version;
-    this.keepAliveTimeout = config.getKeepAliveTimeout() == null ? 0 : (int)config.getKeepAliveTimeout().toSeconds();
-    this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
-    this.pending = new ArrayDeque<>();
-    this.inflight = new ArrayDeque<>();
-    this.creationTimestamp = System.currentTimeMillis();
-  }
-
-  @Override
-  public MultiMap newHttpRequestHeaders() {
-    return Http1xHeaders.httpHeaders();
-  }
-
-  @Override
-  public HostAndPort authority() {
-    return authority;
-  }
-
-  @Override
-  public boolean isSsl() {
-    // Report the origin ssl, not the pipeline: in forward-proxy mode the TLS leg to an HTTPS proxy is
-    // itself the pipeline "ssl" handler.
-    return ssl;
-  }
-
-  @Override
-  public io.vertx.core.http.impl.HttpClientConnection evictionHandler(Handler<Void> handler) {
-    evictionHandler = handler;
-    return this;
-  }
-
-  @Override
-  public io.vertx.core.http.impl.HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
-    invalidMessageHandler = handler;
-    return this;
-  }
-
-  @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<AltSvcEvent> handler) {
-    alternativeServicesHandler = handler;
-    return this;
-  }
-
-  @Override
-  public io.vertx.core.http.impl.HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
-    // Never changes
-    return this;
-  }
-
-  @Override
-  public long concurrency() {
-    return config.isPipelining() ? config.getPipeliningLimit() : 1;
-  }
-
-  @Override
-  public synchronized long activeStreams() {
-    return (pending.isEmpty() && current == null && inflight.isEmpty()) ? 0 : 1;
-  }
-
-  /**
-   * @return a raw {@code NetSocket} - for internal use - must be called from event-loop
-   */
-  public NetSocketInternal toNetSocket() {
-    evictionHandler.handle(null);
-    chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> {
-      NetSocketImpl socket = new NetSocketImpl(context, ctx, null, null, metrics(), false);
-      socket.metric(metric());
-      return socket;
-    }));
-    VertxHandler<NetSocketImpl> handler = (VertxHandler<NetSocketImpl>) chctx.pipeline().get(VertxHandler.class);
-    return handler.getConnection();
-  }
-
-  private HttpRequest createRequest(
-    HttpMethod method,
-    String uri,
-    MultiMap headerMap,
-    HostAndPort authority,
-    boolean chunked,
-    ByteBuf buf,
-    boolean end) {
-    HttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), method.toNetty(), uri, false);
-    HttpHeaders headers = request.headers();
-    if (headerMap != null) {
-      for (Map.Entry<String, String> header : headerMap) {
-        headers.add(header.getKey(), header.getValue());
-      }
-    }
-    if (!headers.contains(HOST)) {
-      if (authority != null) {
-        request.headers().set(HOST, authority.toString(ssl));
-      }
-    } else {
-      headers.remove(TRANSFER_ENCODING);
-    }
-    if (chunked) {
-      HttpUtil.setTransferEncodingChunked(request, true);
-    }
-    if (useDecompression && request.headers().get(ACCEPT_ENCODING) == null) {
-      // if compression should be used but nothing is specified by the user support deflate and gzip.
-      CharSequence acceptEncoding = determineCompressionAcceptEncoding();
-      request.headers().set(ACCEPT_ENCODING, acceptEncoding);
-    }
-    if (!config.isKeepAlive() && version == io.vertx.core.http.HttpVersion.HTTP_1_1) {
-      request.headers().set(CONNECTION, CLOSE);
-    } else if (config.isKeepAlive() && version == io.vertx.core.http.HttpVersion.HTTP_1_0) {
-      request.headers().set(CONNECTION, KEEP_ALIVE);
-    }
-    if (end) {
-      if (buf != null) {
-        request = new VertxFullHttpRequest(request, buf);
-      } else {
-        request = new VertxFullHttpRequest(request);
-      }
-    } else if (buf != null) {
-      request = new VertxAssembledHttpRequest(request, buf);
-    }
-    return request;
-  }
-
-  public static CharSequence determineCompressionAcceptEncoding() {
-    if (isBrotliAvailable() && isZstdAvailable()) {
-      return DEFLATE_GZIP_ZSTD_BR_SNAPPY;
-    }
-    else if (!isBrotliAvailable() && isZstdAvailable()) {
-      return DEFLATE_GZIP_ZSTD;
-    }
-    else if (isBrotliAvailable() && !isZstdAvailable()) {
-      return DEFLATE_GZIP_BR;
-    } else {
-      return DEFLATE_GZIP;
-    }
-  }
-
-  // Encapsulated in a method, so GraalVM can substitute it
-  private static boolean isBrotliAvailable() {
-    return Brotli.isAvailable();
-  }
-
-  // Encapsulated in a method, so GraalVM can substitute it
-  private static boolean isZstdAvailable() {
-    return Zstd.isAvailable();
-  }
-
-  private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
-    stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
-    HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
-    synchronized (this) {
-      assert current == null;
-      Stream removed = pending.removeFirst();
-      assert stream == removed;
-      current = removed;
-      inflight.addLast(stream);
-      this.isConnect = connect;
-      if (clientMetrics != null) {
-        ObservableRequest observable = new ObservableRequest(request);
-        clientMetrics.requestBegin(stream.metric, request.uri, observable);
-      }
-      VertxTracer tracer = stream.context.tracer();
-      if (tracer != null) {
-        BiConsumer<String, String> headers = (key, val) -> new HeadersAdaptor(nettyRequest.headers()).add(key, val);
-        String operation = request.traceOperation;
-        if (operation == null) {
-          operation = request.method.name();
-        }
-        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, tracingPolicy, new ObservableRequest(request), operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
-      }
-    }
-    unsafeWrite(nettyRequest, promise);
-    if (end) {
-      endRequest(stream);
-    }
-  }
-
-  private void writeBufferToChannel(Stream s, ByteBuf buff, boolean end, Promise<Void> listener) {
-    assert current == s;
-    s.bytesWritten += buff != null ? buff.readableBytes() : 0L;
-    Object msg;
-    if (isConnect) {
-      msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
-      if (end) {
-        unsafeWrite(msg, listener)
-          .addListener(v -> closeInternal());
-      } else {
-        unsafeWrite(msg, listener);
-      }
-    } else {
-      if (end) {
-        if (buff != null && buff.isReadable()) {
-          msg = new DefaultLastHttpContent(buff, false);
-        } else {
-          msg = LastHttpContent.EMPTY_LAST_CONTENT;
-        }
-      } else {
-        msg = new DefaultHttpContent(buff);
-      }
-      unsafeWrite(msg, listener);
-      if (end) {
-        endRequest(s);
-      }
-    }
-  }
-
-  private void endRequest(Stream s) {
-    Stream next;
-    boolean responseEnded;
-    synchronized (this) {
-      assert s == current;
-      current = null;
-      s.requestEnded = true;
-      next = pending.peek();
-      responseEnded = s.responseEnded;
-      if (clientMetrics != null) {
-        clientMetrics.requestEnd(s.metric, s.bytesWritten);
-      }
-    }
-    flushBytesWritten();
-    if (next != null) {
-      Promise<HttpClientStream> promise = next.promise;
-      next.promise = null;
-      promise.complete((HttpClientStream) next);
-    }
-    if (responseEnded) {
-      s.onClose();
-      checkLifecycle();
-    }
-  }
-
-  /**
-   * Resets the given {@code stream}.
-   *
-   * @param stream to reset
-   * @return whether the stream should be considered as closed
-   */
-  private Boolean reset(Stream stream) {
-    if (stream.reset) {
-      return null;
-    }
-    stream.reset = true;
-    boolean removed = pending.remove(stream);
-    if (!removed) {
-      close();
-    }
-    return removed;
-  }
-
-  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> listener) {
-    writeToChannel(new MessageWrite() {
-      @Override
-      public void write() {
-        if (stream.reset) {
-          listener.fail("Stream reset");
-          return;
-        }
-        stream.request = request;
-        beginRequest(stream, request, chunked, buf, end, connect, listener);
-      }
-      @Override
-      public void cancel(Throwable cause) {
-        listener.fail(cause);
-      }
-    });
-  }
-
-  private void writeBuffer(Stream stream, ByteBuf buff, boolean end, Promise<Void> listener) {
-    writeToChannel(new MessageWrite() {
-      @Override
-      public void write() {
-        if (stream.reset) {
-          listener.fail("Stream reset");
-          return;
-        }
-        writeBufferToChannel(stream, buff, end, listener);
-      }
-
-      @Override
-      public void cancel(Throwable cause) {
-        listener.fail(cause);
-      }
-    });
-  }
-
-  private abstract static class Stream {
-
-    private Promise<HttpClientStream> promise;
-
-    private final InboundMessageQueue<Object> queue;
-    protected final ContextInternal context;
-    protected final Http1ClientConnection conn;
-    protected final int id;
-
-    private HttpVersion version;
-    private Object trace;
-    private Object metric;
-    private io.vertx.core.http.impl.HttpRequestHead request;
-    private io.vertx.core.http.impl.HttpResponseHead response;
-    private boolean requestEnded;
-    private boolean responseEnded;
-    private long bytesRead;
-    private long bytesWritten;
-    private boolean reset;
-    private boolean closed;
-
-    Stream(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
-      this.context = context;
-      this.id = id;
-      this.conn = conn;
-      this.metric = metric;
-      this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
-        @Override
-        protected void handleResume() {
-          conn.doResume();
-        }
-        @Override
-        protected void handlePause() {
-          conn.doPause();
-        }
-        @Override
-        protected void handleMessage(Object item) {
-          if (item instanceof MultiMap) {
-            handleEnd((MultiMap) item);
-          } else {
-            handleChunk((Buffer) item);
-          }
-        }
-      };
-    }
-
-    Object metric() {
-      return metric;
-    }
-
-    Object trace() {
-      return trace;
-    }
-
-    public HttpClientStream pause() {
-      queue.pause();
-      return (HttpClientStream)this;
-    }
-
-    public HttpClientStream fetch(long amount) {
-      queue.fetch(amount);
-      return (HttpClientStream)this;
-    }
-
-    void onException(Throwable err) {
-      context.execute(err, this::handleException);
-    }
-
-    void onClose() {
-      if (!closed) {
-        closed = true;
-        if (!requestEnded || !responseEnded) {
-          onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-        }
-        context.execute(null, this::handleClosed);
-      }
-    }
-
-    void onEarlyHints(MultiMap headers) {
-      context.execute(headers, this::handleEarlyHints);
-    }
-
-    void onHead(io.vertx.core.http.impl.HttpResponseHead response) {
-      context.emit(response, this::handleHead);
-    }
-
-    void onContinue() {
-      context.emit(null, this::handleContinue);
-    }
-
-    void onEnd(LastHttpContent trailer) {
-      queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
-    }
-
-    void onChunk(Buffer buff) {
-      queue.write(buff);
-    }
-
-    abstract void handleEnd(MultiMap trailer);
-    abstract void handleChunk(Buffer chunk);
-    abstract void handleContinue(Void v);
-    abstract void handleEarlyHints(MultiMap headers);
-    abstract void handleHead(io.vertx.core.http.impl.HttpResponseHead response);
-    abstract void handleWriteQueueDrained(Void v);
-    abstract void handleException(Throwable cause);
-    abstract void handleClosed(Void v);
-
-    final void reset(long code, Promise<Void> promise) {
-      Boolean removed = conn.reset(this);
-      if (removed == null) {
-        promise.fail("Stream already reset");
-      } else {
-        Throwable cause = new StreamResetException(code);
-        if (removed) {
-          onClose();
-        } else {
-          onException(cause);
-        }
-        promise.complete();
-      }
-    }
-  }
-
-  /**
-   * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
-   * state managed by the connection and this class defines the state managed by the stream implementation
-   */
-  private static class StreamImpl extends Stream implements HttpClientStream {
-
-    private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
-    private Handler<Buffer> chunkHandler;
-    private Handler<MultiMap> trailerHandler;
-    private Handler<Void> drainHandler;
-    private Handler<Void> continueHandler;
-
-    private Handler<MultiMap> earlyHintsHandler;
-    private Handler<Throwable> exceptionHandler;
-    private Handler<Void> closeHandler;
-
-    StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
-      super(context, conn, id, metric);
-    }
-
-    @Override
-    public HttpClientStream continueHandler(Handler<Void> handler) {
-      continueHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream earlyHintsHandler(Handler<MultiMap> handler) {
-      earlyHintsHandler = handler;
-      return this;
-    }
-
-    @Override
-    public StreamImpl drainHandler(Handler<Void> handler) {
-      drainHandler = handler;
-      return this;
-    }
-
-    @Override
-    public StreamImpl exceptionHandler(Handler<Throwable> handler) {
-      exceptionHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream setWriteQueueMaxSize(int maxSize) {
-      conn.doSetWriteQueueMaxSize(maxSize);
-      return this;
-    }
-
-    @Override
-    public boolean isWritable() {
-      return !conn.writeQueueFull();
-    }
-
-    @Override
-    public HttpClientStream headHandler(Handler<io.vertx.core.http.impl.HttpResponseHead> handler) {
-      this.headHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream resetHandler(Handler<Long> handler) {
-      return this;
-    }
-
-    @Override
-    public HttpClientStream closeHandler(Handler<Void> handler) {
-      closeHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
-      // No op
-      return this;
-    }
-
-    @Override
-    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
-      // No op
-      return this;
-    }
-
-    @Override
-    public HttpClientStream customFrameHandler(Handler<HttpFrame> handler) {
-      // No op
-      return this;
-    }
-
-    @Override
-    public long id() {
-      return id;
-    }
-
-    @Override
-    public Object metric() {
-      return super.metric();
-    }
-
-    @Override
-    public Object trace() {
-      return super.trace();
-    }
-
-    @Override
-    public HttpVersion version() {
-      return conn.version;
-    }
-
-    @Override
-    public io.vertx.core.http.impl.HttpClientConnection connection() {
-      return conn;
-    }
-
-    @Override
-    public ContextInternal context() {
-      return context;
-    }
-
-    @Override
-    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
-      PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, connect, promise);
-      return promise.future();
-    }
-
-    @Override
-    public Future<Void> writeChunk(Buffer buff, boolean end) {
-      if (buff != null || end) {
-        Promise<Void> listener = context.promise();
-        conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);
-        return listener.future();
-      } else {
-        throw new IllegalStateException("???");
-      }
-    }
-
-    @Override
-    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
-      throw new IllegalStateException("Cannot write an HTTP/2 frame over an HTTP/1.x connection");
-    }
-
-    @Override
-    public Future<Boolean> cancel() {
-      return writeReset(0x8).map(true);
-    }
-
-    @Override
-    public Future<Void> writeReset(long code) {
-      Promise<Void> promise = context.promise();
-      EventLoop eventLoop = conn.context.nettyEventLoop();
-      if (eventLoop.inEventLoop()) {
-        reset(code, promise);
-      } else {
-        eventLoop.execute(() -> reset(code, promise));
-      }
-      return promise.future();
-    }
-
-    @Override
-    public StreamPriority priority() {
-      return null;
-    }
-
-    @Override
-    public HttpClientStream updatePriority(StreamPriority streamPriority) {
-      return this;
-    }
-
-    @Override
-    void handleWriteQueueDrained(Void v) {
-      Handler<Void> handler;
-      synchronized (conn) {
-        handler = drainHandler;
-      }
-      if (handler != null) {
-        context.dispatch(handler);
-      }
-    }
-
-    @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
-      chunkHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
-      trailerHandler = handler;
-      return this;
-    }
-
-    @Override
-    void handleEnd(MultiMap trailer) {
-      Handler<MultiMap> handler = trailerHandler;
-      if (handler != null) {
-        handler.handle(trailer);
-      }
-    }
-
-    @Override
-    void handleChunk(Buffer chunk) {
-      Handler<Buffer> handler = chunkHandler;
-      if (handler != null) {
-        handler.handle(chunk);
-      }
-    }
-
-    void handleContinue(Void v) {
-      Handler<Void> handler = continueHandler;
-      if (handler != null) {
-        handler.handle(null);
-      }
-    }
-
-    void handleEarlyHints(MultiMap headers) {
-      Handler<MultiMap> handler = earlyHintsHandler;
-      if (handler != null) {
-        context.emit(headers, handler);
-      }
-    }
-
-    @Override
-    void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
-      Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
-      if (handler != null) {
-        handler.handle(response);
-      }
-    }
-
-    void handleException(Throwable cause) {
-      Handler<Throwable> handler = exceptionHandler;
-      if (handler != null) {
-        handler.handle(cause);
-      }
-    }
-
-    @Override
-    void handleClosed(Void v) {
-      Handler<Void> handler = closeHandler;
-      if (handler != null) {
-        handler.handle(null);
-      }
-    }
-  }
-
-  @Override
-  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
-    super.handleShutdown(timeout, promise);
-    if (!timeout.isZero()) {
-      checkLifecycle();
-    }
-  }
-
-  private boolean checkLifecycle() {
-    if (wantClose || (shutdownInitiated != null && pending.isEmpty() && current == null && inflight.isEmpty())) {
-      closeInternal();
-      return true;
-    } else if (!isConnect) {
-      expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
-    }
-    return false;
-  }
-
-  @Override
-  protected void writeClose(ChannelPromise promise) {
-    // Maybe move to handleShutdown
-    if (!evicted) {
-      evicted = true;
-      if (evictionHandler != null) {
-        evictionHandler.handle(null);
-      }
-    }
-    super.writeClose(promise);
-  }
-
-  private Throwable validateMessage(Object msg) {
-    if (msg instanceof HttpObject) {
-      HttpObject obj = (HttpObject) msg;
-      DecoderResult result = obj.decoderResult();
-      if (result.isFailure()) {
-        return result.cause();
-      } else if (obj instanceof io.netty.handler.codec.http.HttpResponse) {
-        io.netty.handler.codec.http.HttpVersion version = ((io.netty.handler.codec.http.HttpResponse) obj).protocolVersion();
-        if (version != io.netty.handler.codec.http.HttpVersion.HTTP_1_0 && version != io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
-          return new IllegalStateException("Unsupported HTTP version: " + version);
-        }
-      }
-    }
-    return null;
-  }
-
-  public void handleMessage(Object msg) {
-    Throwable error = validateMessage(msg);
-    if (error != null) {
-      ReferenceCountUtil.release(msg);
-      fail(error);
-    } else if (msg instanceof HttpObject) {
-      handleHttpMessage((HttpObject) msg);
-    } else if (msg instanceof ByteBuf && isConnect) {
-      handleChunk((ByteBuf) msg);
-    } else if (msg instanceof WebSocketFrame) {
-      WebSocketFrame frame = (WebSocketFrame) msg;
-      if (pendingFrames == null) {
-        pendingFrames = new ArrayDeque<>();
-      }
-      // Todo: use the new feature to park frames within the handler later
-      pendingFrames.add(frame);
-    } else {
-      invalidMessageHandler.handle(msg);
-      fail(new VertxException("Received an invalid message: " + msg.getClass().getName()));
-    }
-  }
-
-  private void handleHttpMessage(HttpObject obj) {
-    Stream stream;
-    synchronized (this) {
-      stream = inflight.peekFirst();
-    }
-    if (stream == null) {
-      invalidMessageHandler.handle(obj);
-      fail(new VertxException("Received an HTTP message with no request in progress: " + obj.getClass().getName()));
-    } else if (obj instanceof io.netty.handler.codec.http.HttpResponse) {
-      io.netty.handler.codec.http.HttpResponse response = (io.netty.handler.codec.http.HttpResponse) obj;
-      HttpVersion version;
-      if (response.protocolVersion() == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
-        version = io.vertx.core.http.HttpVersion.HTTP_1_0;
-      } else {
-        version = io.vertx.core.http.HttpVersion.HTTP_1_1;
-      }
-      handleResponseBegin(stream, version, new io.vertx.core.http.impl.HttpResponseHead(
-        response.status().code(),
-        response.status().reasonPhrase(),
-        new HeadersAdaptor(response.headers())));
-    } else if (obj instanceof HttpContent) {
-      HttpContent chunk = (HttpContent) obj;
-      if (chunk.content().isReadable()) {
-        handleResponseChunk(stream, chunk.content());
-      }
-      if (!isConnect && chunk instanceof LastHttpContent) {
-        handleResponseEnd(stream, (LastHttpContent) chunk);
-      }
-    }
-  }
-
-  private void handleChunk(ByteBuf chunk) {
-    Stream stream;
-    synchronized (this) {
-      stream = inflight.peekFirst();
-      if (stream == null) {
-        // Unsolicited ?
-        return;
-      }
-    }
-    if (chunk.isReadable()) {
-      handleResponseChunk(stream, chunk);
-    }
-  }
-
-  private void handleResponseBegin(Stream stream, HttpVersion version, io.vertx.core.http.impl.HttpResponseHead response) {
-    // How can we handle future undefined 1xx informational response codes?
-    if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
-      stream.onContinue();
-    } else if (response.statusCode == HttpResponseStatus.EARLY_HINTS.code()) {
-      stream.onEarlyHints(response.headers);
-    } else {
-      io.vertx.core.http.impl.HttpRequestHead request;
-      synchronized (this) {
-        request = stream.request;
-        stream.version = version;
-        stream.response = response;
-        if (clientMetrics != null) {
-          clientMetrics.responseBegin(stream.metric, new ObservableResponse(response));
-        }
-      }
-      stream.onHead(response);
-      if (isConnect) {
-        if ((request.method == HttpMethod.CONNECT &&
-             response.statusCode == 200) || (
-             request.method == HttpMethod.GET &&
-             request.headers != null && request.headers.contains(CONNECTION, UPGRADE, true) &&
-             response.statusCode == 101)) {
-          removeChannelHandlers();
-        } else {
-          isConnect = false;
-        }
-      }
-      String altSvcHeader = response.headers.get(ALT_SVC);
-      Handler<AltSvcEvent> handler;
-      AltSvc altSvc;
-      if (altSvcHeader != null && (altSvc = AltSvc.parseAltSvc(altSvcHeader)) != null && (handler = alternativeServicesHandler) != null) {
-        int port = authority.port();
-        if (port == -1) {
-          port = ssl ? 443 : 80;
-        }
-        Origin origin = new Origin(ssl ? "https" : "http", authority.host(), port);
-        context.emit(new AltSvcEvent(origin, altSvc), handler);
-      }
-    }
-  }
-
-  /**
-   * Remove all HTTP channel handlers of this connection
-   */
-  private void removeChannelHandlers() {
-    ChannelPipeline pipeline = chctx.pipeline();
-    ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
-    if (inflater != null) {
-      pipeline.remove(inflater);
-    }
-    // removing this codec might fire pending buffers in the HTTP decoder
-    // this happens when the channel reads the HTTP response and the following data in a single buffer
-    Handler<Object> prev = invalidMessageHandler;
-    invalidMessageHandler = INVALID_MSG_HANDLER;
-    try {
-      pipeline.remove("codec");
-    } finally {
-      invalidMessageHandler = prev;
-    }
-  }
-
-  private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.safeBuffer(chunk);
-    int len = buff.length();
-    stream.bytesRead += len;
-    if (!stream.reset) {
-      stream.onChunk(buff);
-    }
-  }
-
-  private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
-    boolean check;
-    io.vertx.core.http.impl.HttpResponseHead response;
-    HttpVersion version;
-    synchronized (this) {
-      response = stream.response;
-      version = stream.version;
-      if (response == null) {
-        // 100-continue
-        return;
-      }
-      inflight.removeFirst();
-      HttpRequestHead request = stream.request;
-      if ((request.method != HttpMethod.CONNECT && response.statusCode != 101)) {
-        // See https://tools.ietf.org/html/rfc7230#section-6.3
-        String responseConnectionHeader = response.headers.get(HttpHeaderNames.CONNECTION);
-        String requestConnectionHeader = request.headers != null ? request.headers.get(HttpHeaderNames.CONNECTION) : null;
-        // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
-        boolean close = !config.isKeepAlive();
-        if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
-          // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
-          close = true;
-        } else if (version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
-          // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
-          // currently Vertx forces the Connection header if keepalive is enabled for 1.0
-          close = true;
-        }
-        this.wantClose = close;
-        String keepAliveHeader = response.headers.get(HttpHeaderNames.KEEP_ALIVE);
-        if (keepAliveHeader != null) {
-          int timeout = HttpUtils.parseKeepAliveHeaderTimeout(keepAliveHeader);
-          if (timeout != -1) {
-            this.keepAliveTimeout = timeout;
-          }
-        }
-      }
-      stream.responseEnded = true;
-    }
-    VertxTracer tracer = stream.context.tracer();
-    if (tracer != null) {
-      tracer.receiveResponse(stream.context, new ObservableResponse(response), stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
-    }
-    if (clientMetrics != null) {
-      clientMetrics.responseEnd(stream.metric, stream.bytesRead);
-    }
-    flushBytesRead();
-    checkLifecycle();
-    lastResponseReceivedTimestamp = System.currentTimeMillis();
-    if (!stream.reset) {
-      stream.onEnd(trailer);
-    }
-    if (stream.requestEnded) {
-      stream.onClose();
-    }
-  }
-
-  public TransportMetrics<?> metrics() {
-    return transportMetrics;
-  }
-
-  public synchronized void toWebSocket(
-    ContextInternal context,
-    String requestURI,
-    MultiMap headers,
-    boolean allowOriginHeader,
-    WebSocketClientOptions options,
-    WebSocketVersion vers,
-    List<String> subProtocols,
-    long handshakeTimeout,
-    boolean registerWriteHandlers,
-    int maxWebSocketFrameSize,
-    Promise<WebSocket> promise) {
-    try {
-      URI wsuri = new URI(requestURI);
-      if (!wsuri.isAbsolute()) {
-        // Netty requires an absolute url
-        wsuri = new URI((ssl ? "https:" : "http:") + "//" + server.host() + ":" + server.port() + requestURI);
-      }
-      io.netty.handler.codec.http.websocketx.WebSocketVersion version =
-         io.netty.handler.codec.http.websocketx.WebSocketVersion.valueOf((vers == null ?
-           io.netty.handler.codec.http.websocketx.WebSocketVersion.V13 : vers).toString());
-      HttpHeaders nettyHeaders;
-      if (headers != null) {
-        nettyHeaders = new DefaultHttpHeaders();
-        for (Map.Entry<String, String> entry: headers) {
-          nettyHeaders.add(entry.getKey(), entry.getValue());
-        }
-      } else {
-        nettyHeaders = null;
-      }
-
-      long timer;
-      if (handshakeTimeout > 0L) {
-        timer = vertx.setTimer(handshakeTimeout, id -> closeInternal());
-      } else {
-        timer = -1;
-      }
-
-      ChannelPipeline p = chctx.channel().pipeline();
-      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(options);
-      if (!extensionHandshakers.isEmpty()) {
-        p.addBefore("handler", "webSocketsExtensionsHandler", new WebSocketClientExtensionHandler(
-          extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[0])));
-      }
-
-      String subp = null;
-      if (subProtocols != null) {
-        subp = String.join(",", subProtocols);
-      }
-      WebSocketClientHandshaker handshaker = newHandshaker(
-        wsuri,
-        version,
-        subp,
-        !extensionHandshakers.isEmpty(),
-        allowOriginHeader,
-        nettyHeaders,
-        maxWebSocketFrameSize,
-        !options.isSendUnmaskedFrames());
-
-      io.netty.util.concurrent.Promise<HttpHeaders> upgrade = chctx.executor().newPromise();
-      WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, upgrade);
-      p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
-      upgrade.addListener((GenericFutureListener<io.netty.util.concurrent.Future<HttpHeaders>>) future -> {
-        if (timer > -1L) {
-          vertx.cancelTimer(timer);
-        }
-        if (future.isSuccess()) {
-
-          VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
-            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), webSocketMetrics, transportMetrics);
-            WebSocketImpl webSocket = new WebSocketImpl(
-              context,
-              conn,
-              version != V00,
-              options.getMaxFrameSize(),
-              options.getMaxMessageSize(),
-              registerWriteHandlers);
-            conn.webSocket(webSocket);
-            conn.metric(Http1ClientConnection.this.metric());
-            return conn;
-          });
-
-          ChannelPipeline pipeline = chctx.pipeline();
-          pipeline.replace(VertxHandler.class, "handler", handler);
-
-          WebSocketImpl ws = (WebSocketImpl) handler.getConnection().webSocket();
-          ws.headers(new HeadersAdaptor(future.getNow()));
-          ws.subProtocol(handshaker.actualSubprotocol());
-          ws.registerHandler(vertx.eventBus());
-
-          if (webSocketMetrics != null) {
-            ws.setMetric(webSocketMetrics.connected(new ObservableRequest(new HttpRequestHead(
-              ssl ? "https" : "http", HttpMethod.GET, requestURI, headers, authority, "/", null
-            ))));
-          }
-          ws.pause();
-          Deque<WebSocketFrame> toResubmit = pendingFrames;
-          if (toResubmit != null) {
-            pendingFrames = null;
-            WebSocketFrame frame;
-            while ((frame = toResubmit.poll()) != null) {
-              handler.getConnection().handleWsFrame(frame);
-            }
-          }
-          promise.complete(ws);
-        } else {
-          closeInternal();
-          promise.fail(future.cause());
-        }
-      });
-    } catch (Exception e) {
-      handleException(e);
-    }
-  }
-
-  static WebSocketClientHandshaker newHandshaker(
-    URI webSocketURL, io.netty.handler.codec.http.websocketx.WebSocketVersion version, String subprotocol,
-    boolean allowExtensions, boolean allowOriginHeader, HttpHeaders customHeaders, int maxFramePayloadLength,
-    boolean performMasking) {
-    WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
-      .expectMaskedFrames(false)
-      .allowExtensions(allowExtensions)
-      .maxFramePayloadLength(maxFramePayloadLength)
-      .allowMaskMismatch(false)
-      .closeOnProtocolViolation(false)
-      .build();
-    if (version == V13) {
-      return new WebSocketClientHandshaker13(
-        webSocketURL, V13, subprotocol, allowExtensions, customHeaders,
-        maxFramePayloadLength, performMasking, false, -1) {
-        @Override
-        protected WebSocketFrameDecoder newWebsocketDecoder() {
-          return new WebSocket13FrameDecoder(config);
-        }
-
-        @Override
-        protected FullHttpRequest newHandshakeRequest() {
-          FullHttpRequest request = super.newHandshakeRequest();
-          if (!allowOriginHeader) {
-            request.headers().remove(ORIGIN);
-          }
-          return request;
-        }
-      };
-    }
-    if (version == V08) {
-      return new WebSocketClientHandshaker08(
-        webSocketURL, V08, subprotocol, allowExtensions, customHeaders,
-        maxFramePayloadLength, performMasking, false, -1) {
-        @Override
-        protected WebSocketFrameDecoder newWebsocketDecoder() {
-          return new WebSocket08FrameDecoder(config);
-        }
-
-        @Override
-        protected FullHttpRequest newHandshakeRequest() {
-          FullHttpRequest request = super.newHandshakeRequest();
-          if (!allowOriginHeader) {
-            request.headers().remove(HttpHeaderNames.SEC_WEBSOCKET_ORIGIN);
-          }
-          return request;
-        }
-      };
-    }
-    if (version == V07) {
-      return new WebSocketClientHandshaker07(
-        webSocketURL, V07, subprotocol, allowExtensions, customHeaders,
-        maxFramePayloadLength, performMasking, false, -1) {
-        @Override
-        protected WebSocketFrameDecoder newWebsocketDecoder() {
-          return new WebSocket07FrameDecoder(config);
-        }
-
-        @Override
-        protected FullHttpRequest newHandshakeRequest() {
-          FullHttpRequest request = super.newHandshakeRequest();
-          if (!allowOriginHeader) {
-            request.headers().remove(HttpHeaderNames.SEC_WEBSOCKET_ORIGIN);
-          }
-          return request;
-        }
-      };
-    }
-    if (version == V00) {
-      return new WebSocketClientHandshaker00(
-        webSocketURL, V00, subprotocol, customHeaders, maxFramePayloadLength, -1) {
-        @Override
-        protected FullHttpRequest newHandshakeRequest() {
-          FullHttpRequest request = super.newHandshakeRequest();
-          if (!allowOriginHeader) {
-            request.headers().remove(ORIGIN);
-          }
-          return request;
-        }
-      };
-    }
-
-    throw new WebSocketHandshakeException("Protocol version " + version + " not supported.");
-  }
-
-  ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(WebSocketClientOptions options) {
-    ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (options.getTryUsePerFrameCompression()) {
-      extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getCompressionLevel(),
-        false));
-    }
-
-    if (options.getTryUsePerMessageCompression()) {
-      extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getCompressionLevel(),
-        ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        options.getCompressionAllowClientNoContext(), options.getCompressionRequestServerNoContext()));
-    }
-
-    return extensionHandshakers;
-  }
-
-  @Override
-  protected void handleWriteQueueDrained() {
-    Stream s = inflight.peekLast();
-    if (s != null) {
-      s.context.execute(s::handleWriteQueueDrained);
-    } else {
-      super.handleWriteQueueDrained();
-    }
-  }
-
-  protected void handleClosed() {
-    super.handleClosed();
-    closed = true;
-    if (clientMetrics != null) {
-      clientMetrics.disconnected();
-    }
-    if (!evicted) {
-      evicted = true;
-      if (evictionHandler != null) {
-        evictionHandler.handle(null);
-      }
-    }
-    Deque<Stream> pending;
-    Deque<Stream> inflight;
-    synchronized (this) {
-      Stream c = current;
-      pending = new ArrayDeque<>(this.pending);
-      inflight = new ArrayDeque<>(this.inflight);
-      if (c != null && !inflight.contains(c)) {
-        inflight.add(c);
-      }
-    }
-    for (Stream stream : pending) {
-      Promise<HttpClientStream> promise = stream.promise;
-      if (promise != null) {
-        stream.promise = null;
-        promise.tryFail(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      } else {
-        stream.onClose();
-      }
-    }
-    for (Stream stream : inflight) {
-      if (clientMetrics != null) {
-        clientMetrics.requestReset(stream.metric);
-      }
-      Object trace = stream.trace;
-      VertxTracer tracer = stream.context.tracer();
-      if (tracer != null && trace != null) {
-        tracer.receiveResponse(stream.context, null, trace, HttpUtils.CONNECTION_CLOSED_EXCEPTION, TagExtractor.empty());
-      }
-      stream.onClose();
-    }
-  }
-
-  protected void handleIdle(IdleStateEvent event) {
-    synchronized (this) {
-      if (pending.isEmpty() && current == null && inflight.isEmpty()) {
-        return;
-      }
-    }
-    super.handleIdle(event);
-  }
-
-  @Override
-  public boolean handleException(Throwable e) {
-    boolean ret = super.handleException(e);
-    List<Stream> allStreams = new ArrayList<>(pending.size() + 1 + inflight.size());
-    synchronized (this) {
-      allStreams.addAll(pending);
-      if (current != null && !inflight.contains(current)) {
-        allStreams.add(current);
-      }
-      allStreams.addAll(inflight);
-    }
-    for (Stream stream : allStreams) {
-      stream.onException(e);
-    }
-    return ret;
-  }
-
-  @Override
-  public Future<HttpClientStream> createStream(ContextInternal context) {
-    PromiseInternal<HttpClientStream> promise = context.promise();
-    createStream(context, promise);
-    return promise.future();
-  }
-
-  private void createStream(ContextInternal context, Promise<HttpClientStream> promise) {
-    EventLoop eventLoop = context.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      Object result;
-      synchronized (this) {
-        if (!closed) {
-          if (pending.size() < concurrency()) {
-            Object metric;
-            if (clientMetrics != null) {
-              metric = clientMetrics.init();
-            } else {
-              metric = null;
-            }
-            if (pending.size() >= concurrency()) {
-              return;
-            }
-            Stream stream = new StreamImpl(context, this, seq++, metric);
-            pending.addLast(stream);
-            if (pending.size() > 1 || current != null) {
-              stream.promise = promise;
-              return;
-            }
-            result = stream;
-          } else {
-            result = new VertxException("Pipelining limit exceeded");
-          }
-        } else {
-          result = HttpUtils.CONNECTION_CLOSED_EXCEPTION;
-        }
-      }
-      if (result instanceof HttpClientStream) {
-        promise.complete((HttpClientStream) result);
-      } else {
-        promise.fail((Throwable) result);
-      }
-    } else {
-      eventLoop.execute(() -> {
-        createStream(context, promise);
-      });
-    }
-  }
-
-  @Override
-  public long lastResponseReceivedTimestamp() {
-    return lastResponseReceivedTimestamp;
-  }
-
-  @Override
-  public long creationTimestamp() {
-    return creationTimestamp;
-  }
-
-  @Override
-  public boolean isValid() {
-    return System.currentTimeMillis() <= expirationTimestamp;
-  }
-
-  /**
-   * Compute the expiration timeout of the connection, relative to the current time.
-   *
-   * @param timeout the timeout
-   * @return the expiration timestamp
-   */
-  private static long expirationTimestampOf(long timeout) {
-    return timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : Long.MAX_VALUE;
-  }
-
-  @Override
-  public String toString() {
-    return super.toString() + "[lastResponseReceivedTimestamp=" + lastResponseReceivedTimestamp + "]";
-  }
-
-  private class ObservableRequest implements io.vertx.core.spi.observability.HttpRequest {
-
-    private final io.vertx.core.http.impl.HttpRequestHead request;
-
-    public ObservableRequest(io.vertx.core.http.impl.HttpRequestHead requestHead) {
-      this.request = requestHead;
-    }
-
-    @Override
-    public long id() {
-      return 1L;
-    }
-    @Override
-    public HttpVersion version() {
-      return HttpVersion.HTTP_1_1;
-    }
-    @Override
-    public String uri() {
-      return request.uri;
-    }
-    @Override
-    public String absoluteURI() {
-      return request.absoluteURI;
-    }
-    @Override
-    public HttpMethod method() {
-      return request.method;
-    }
-    @Override
-    public MultiMap headers() {
-      return request.headers;
-    }
-
-    @Override
-    public SocketAddress remoteAddress() {
-      return Http1ClientConnection.this.remoteAddress();
-    }
-  }
-
-  private class ObservableResponse implements io.vertx.core.spi.observability.HttpResponse {
-
-    private final io.vertx.core.http.impl.HttpResponseHead response;
-
-    public ObservableResponse(io.vertx.core.http.impl.HttpResponseHead requestHead) {
-      this.response = requestHead;
-    }
-
-    @Override
-    public int statusCode() {
-      return response.statusCode;
-    }
-
-    @Override
-    public MultiMap headers() {
-      return response.headers;
-    }
-  }
-}
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+import logging
+from pathlib import Path, PurePosixPath
+from typing import Any, Callable, Dict, Optional, Type
+from zipfile import ZipFile
+
+import yaml
+from marshmallow import fields, Schema, validate
+from marshmallow.exceptions import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from superset import db
+from superset.commands.importers.exceptions import IncorrectVersionError
+from superset.databases.ssh_tunnel.models import SSHTunnel
+from superset.extensions import feature_flag_manager
+from superset.models.core import Database
+from superset.models.dashboard import dashboard_slices
+from superset.models.helpers import SKIP_VISIBILITY_FILTER_CLASSES
+from superset.tags.models import Tag, TaggedObject
+from superset.utils import json
+from superset.utils.core import check_is_safe_zip
+from superset.utils.decorators import transaction
+
+METADATA_FILE_NAME = "metadata.yaml"
+IMPORT_VERSION = "1.0.0"
+
+logger = logging.getLogger(__name__)
+
+
+def remove_root(file_path: str) -> str:
+    """Remove the first directory of a path"""
+    full_path = PurePosixPath(file_path)
+    relative_path = PurePosixPath(*full_path.parts[1:])
+    return str(relative_path)
+
+
+class MetadataSchema(Schema):
+    version = fields.String(required=True, validate=validate.Equal(IMPORT_VERSION))
+    type = fields.String(required=False)
+    timestamp = fields.DateTime()
+
+
+def load_yaml(file_name: str, content: str) -> dict[str, Any]:
+    """Try to load a YAML file"""
+    try:
+        return yaml.safe_load(content)
+    except yaml.YAMLError as ex:
+        logger.exception("Invalid YAML in %s", file_name)
+        raise ValidationError({file_name: "Not a valid YAML file"}) from ex
+
+
+def load_metadata(contents: dict[str, str]) -> dict[str, str]:
+    """Apply validation and load a metadata file"""
+    if METADATA_FILE_NAME not in contents:
+        # if the contents have no METADATA_FILE_NAME this is probably
+        # a original export without versioning that should not be
+        # handled by this command
+        raise IncorrectVersionError(f"Missing {METADATA_FILE_NAME}")
+
+    metadata = load_yaml(METADATA_FILE_NAME, contents[METADATA_FILE_NAME])
+    try:
+        MetadataSchema().load(metadata)
+    except ValidationError as ex:
+        # if the version doesn't match raise an exception so that the
+        # dispatcher can try a different command version
+        if "version" in ex.messages:
+            raise IncorrectVersionError(ex.messages["version"][0]) from ex
+
+        # otherwise we raise the validation error
+        ex.messages = {METADATA_FILE_NAME: ex.messages}
+        raise
+
+    return metadata
+
+
+def validate_metadata_type(
+    metadata: Optional[dict[str, str]],
+    type_: str,
+    exceptions: list[ValidationError],
+) -> None:
+    """Validate that the type declared in METADATA_FILE_NAME is correct"""
+    if metadata and "type" in metadata:
+        type_validator = validate.Equal(type_)
+        try:
+            type_validator(metadata["type"])
+        except ValidationError as exc:
+            exc.messages = {METADATA_FILE_NAME: {"type": exc.messages}}
+            exceptions.append(exc)
+
+
+# pylint: disable=too-many-locals,too-many-arguments
+# ruff: noqa: C901
+def load_configs(
+    contents: dict[str, str],
+    schemas: dict[str, Schema],
+    passwords: dict[str, str],
+    exceptions: list[ValidationError],
+    ssh_tunnel_passwords: dict[str, str],
+    ssh_tunnel_private_keys: dict[str, str],
+    ssh_tunnel_priv_key_passwords: dict[str, str],
+    encrypted_extra_secrets: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    configs: dict[str, Any] = {}
+
+    # load existing databases so we can apply the password validation
+    db_passwords: dict[str, str] = {
+        str(uuid): password
+        for uuid, password in db.session.query(Database.uuid, Database.password).all()
+    }
+    # load existing ssh_tunnels so we can apply the password validation
+    db_ssh_tunnel_passwords: dict[str, str] = {
+        str(uuid): password
+        for uuid, password in db.session.query(SSHTunnel.uuid, SSHTunnel.password).all()
+    }
+    # load existing ssh_tunnels so we can apply the private_key validation
+    db_ssh_tunnel_private_keys: dict[str, str] = {
+        str(uuid): private_key
+        for uuid, private_key in db.session.query(
+            SSHTunnel.uuid, SSHTunnel.private_key
+        ).all()
+    }
+    # load existing ssh_tunnels so we can apply the private_key_password validation
+    db_ssh_tunnel_priv_key_passws: dict[str, str] = {
+        str(uuid): private_key_password
+        for uuid, private_key_password in db.session.query(
+            SSHTunnel.uuid, SSHTunnel.private_key_password
+        ).all()
+    }
+    for file_name, content in contents.items():
+        # skip directories
+        if not content:
+            continue
+
+        prefix = file_name.split("/")[0]
+        schema = schemas.get(f"{prefix}/")
+        if schema:
+            try:
+                config = load_yaml(file_name, content)
+
+                # populate passwords from the request, from YAML config,
+                # or from existing DBs
+                if file_name in passwords:
+                    config["password"] = passwords[file_name]
+                elif prefix == "databases" and config.get("password"):
+                    # password already in YAML config, keep it
+                    pass
+                elif prefix == "databases" and config["uuid"] in db_passwords:
+                    config["password"] = db_passwords[config["uuid"]]
+
+                # populate ssh_tunnel_passwords from the request or from existing DBs
+                if file_name in ssh_tunnel_passwords:
+                    config["ssh_tunnel"]["password"] = ssh_tunnel_passwords[file_name]
+                elif (
+                    prefix == "databases" and config["uuid"] in db_ssh_tunnel_passwords
+                ):
+                    config["ssh_tunnel"]["password"] = db_ssh_tunnel_passwords[
+                        config["uuid"]
+                    ]
+
+                # populate ssh_tunnel_private_keys from the request or from existing DBs
+                if file_name in ssh_tunnel_private_keys:
+                    config["ssh_tunnel"]["private_key"] = ssh_tunnel_private_keys[
+                        file_name
+                    ]
+                elif (
+                    prefix == "databases"
+                    and config["uuid"] in db_ssh_tunnel_private_keys
+                ):
+                    config["ssh_tunnel"]["private_key"] = db_ssh_tunnel_private_keys[
+                        config["uuid"]
+                    ]
+
+                # populate ssh_tunnel_passwords from the request or from existing DBs
+                if file_name in ssh_tunnel_priv_key_passwords:
+                    config["ssh_tunnel"]["private_key_password"] = (
+                        ssh_tunnel_priv_key_passwords[file_name]
+                    )
+                elif (
+                    prefix == "databases"
+                    and config["uuid"] in db_ssh_tunnel_priv_key_passws
+                ):
+                    config["ssh_tunnel"]["private_key_password"] = (
+                        db_ssh_tunnel_priv_key_passws[config["uuid"]]
+                    )
+
+                # populate encrypted_extra secrets from the request
+                # The secrets dict maps JSONPath -> value
+                # e.g., {"$.oauth2_client_info.secret": "actual_value"}
+                if file_name in encrypted_extra_secrets and config.get(
+                    "masked_encrypted_extra"
+                ):
+                    # Normalize escape sequences (needed for PEM keys/certs)
+                    normalized_secrets = {
+                        path: value.replace("\\n", "\n")
+                        if isinstance(value, str)
+                        else value
+                        for path, value in encrypted_extra_secrets[file_name].items()
+                    }
+                    temp_dict = json.loads(config["masked_encrypted_extra"])
+                    temp_dict = json.set_masked_fields(temp_dict, normalized_secrets)
+                    config["masked_encrypted_extra"] = json.dumps(temp_dict)
+
+                # Normalize example data URLs before schema validation
+                if prefix == "datasets" and "data" in config:
+                    from superset.examples.helpers import normalize_example_data_url
+
+                    config["data"] = normalize_example_data_url(config["data"])
+
+                schema.load(config)
+                configs[file_name] = config
+            except ValidationError as exc:
+                logger.error(
+                    "Schema validation failed for %s (prefix: %s): %s",
+                    file_name,
+                    prefix,
+                    exc.messages,
+                )
+                # Log field names only; full values can be huge (e.g. inline
+                # example data) and drown out the validation error above. Guard
+                # the diagnostic so it can never raise and mask the validation
+                # error: config may be a non-mapping or have unsortable keys.
+                if isinstance(config, dict):
+                    field_names = ", ".join(sorted(map(str, config)))
+                    logger.debug(
+                        "Config fields present in %s: %s", file_name, field_names
+                    )
+                else:
+                    logger.debug(
+                        "Config in %s is not a mapping (type: %s)",
+                        file_name,
+                        type(config).__name__,
+                    )
+                exc.messages = {file_name: exc.messages}
+                exceptions.append(exc)
+
+    return configs
+
+
+def is_valid_config(file_name: str) -> bool:
+    path = Path(file_name)
+
+    # ignore system files that might've been added to the bundle
+    if path.name.startswith(".") or path.name.startswith("_"):
+        return False
+
+    # ensure extension is YAML
+    if path.suffix.lower() not in {".yaml", ".yml"}:
+        return False
+
+    return True
+
+
+def get_contents_from_bundle(bundle: ZipFile) -> dict[str, str]:
+    check_is_safe_zip(bundle)
+    return {
+        remove_root(file_name): bundle.read(file_name).decode()
+        for file_name in bundle.namelist()
+        if is_valid_config(file_name)
+    }
+
+
+# pylint: disable=consider-using-transaction
+# ruff: noqa: C901
+@transaction()
+def import_tag(
+    target_tag_names: list[str],
+    contents: dict[str, Any],
+    object_id: int,
+    object_type: str,
+    db_session: Session,
+) -> list[int]:
+    """Handles the import logic for tags for charts and dashboards"""
+
+    if not feature_flag_manager.is_feature_enabled("TAGGING_SYSTEM"):
+        return []
+
+    tag_descriptions = {}
+    new_tag_ids = []
+
+    if "tags.yaml" in contents:
+        try:
+            tags_config = yaml.safe_load(contents["tags.yaml"])
+        except yaml.YAMLError as err:
+            logger.error("Error parsing tags.yaml: %s", err)
+            tags_config = {}
+
+        for tag_info in tags_config.get("tags", []):
+            tag_name = tag_info.get("tag_name")
+            description = tag_info.get("description", None)
+            if tag_name:
+                tag_descriptions[tag_name] = description
+
+    existing_assocs = (
+        db_session.query(TaggedObject)
+        .filter_by(object_id=object_id, object_type=object_type)
+        .all()
+    )
+
+    existing_tags = {
+        tag.name: tag
+        for tag in db_session.query(Tag).filter(Tag.name.in_(target_tag_names))
+    }
+
+    for tag_name in target_tag_names:
+        try:
+            with db_session.begin_nested():
+                tag = existing_tags.get(tag_name)
+
+                # If tag does not exist, create it
+                if tag is None:
+                    description = tag_descriptions.get(tag_name, None)
+                    tag = Tag(name=tag_name, description=description, type="custom")
+                    db_session.add(tag)
+                    existing_tags[tag_name] = tag  # Update the existing_tags dict
+
+                # Ensure the association with the object
+                tagged_object = (
+                    db_session.query(TaggedObject)
+                    .filter_by(object_id=object_id, object_type=object_type, tag_id=tag.id)
+                    .first()
+                )
+                if not tagged_object:
+                    new_tagged_object = TaggedObject(
+                        tag_id=tag.id, object_id=object_id, object_type=object_type
+                    )
+                    db_session.add(new_tagged_object)
+
+                new_tag_ids.append(tag.id)
+
+        except SQLAlchemyError as err:
+            logger.error(
+                "Error processing tag '%s' for %s ID %d: %s",
+                tag_name,
+                object_type,
+                object_id,
+                err,
+            )
+            continue  # SAVEPOINT rolled back, session is clean
+
+    # Remove old tags not in the new config
+    for tag in existing_assocs:
+        if tag.tag_id not in new_tag_ids:
+            db_session.delete(tag)
+
+    return new_tag_ids
+
+
+def safe_insert_dashboard_chart_relationships(
+    dashboard_chart_ids: list[tuple[int, int]],
+) -> None:
+    """
+    Safely insert dashboard-chart relationships, handling duplicates.
+
+    This function checks for existing relationships and only inserts new ones
+    to avoid duplicate key constraint errors.
+    """
+    from sqlalchemy.sql import select
+
+    if not dashboard_chart_ids:
+        return
+
+    # Get existing relationships only for dashboards being updated
+    dashboard_ids = {dashboard_id for dashboard_id, _ in dashboard_chart_ids}
+    existing_relationships = db.session.execute(
+        select(dashboard_slices.c.dashboard_id, dashboard_slices.c.slice_id).where(
+            dashboard_slices.c.dashboard_id.in_(dashboard_ids)
+        )
+    ).fetchall()
+    existing_relationships_set = {(row[0], row[1]) for row in existing_relationships}
+
+    # Filter out relationships that already exist
+    new_relationships = [
+        (dashboard_id, chart_id)
+        for dashboard_id, chart_id in dashboard_chart_ids
+        if (dashboard_id, chart_id) not in existing_relationships_set
+    ]
+
+    # Insert new relationships in bulk, deduplicating to avoid unique constraint issues
+
+    if unique_new_relationships := set(new_relationships):
+        _prime_versioning_unit_of_work()
+        db.session.execute(
+            dashboard_slices.insert(),
+            [
+                {"dashboard_id": dashboard_id, "slice_id": chart_id}
+                for dashboard_id, chart_id in unique_new_relationships
+            ],
+        )
+
+
+def _prime_versioning_unit_of_work() -> None:
+    """Ensure Continuum has a unit-of-work for the current connection.
+
+    ``dashboard_slices`` is a Continuum-tracked (versioned) association
+    table, so a raw Core INSERT/DELETE on it fires Continuum's engine-level
+    ``before_execute`` listener, which looks up a unit-of-work for the
+    connection and raises ``KeyError`` when none is registered (the same
+    failure class the dashboard test factory hit). The normal import flow
+    registers one via prior ORM flushes, so this is belt-and-suspenders for
+    a bulk relationship insert that might run before any flush on the
+    connection. No-op (the listener is detached) when version capture is
+    disabled, which is the shipped default; never allowed to break an import.
+    """
+    try:
+        # pylint: disable=import-outside-toplevel
+        from sqlalchemy_continuum import versioning_manager
+
+        # Mirror the exact condition Continuum's track_association_operations
+        # listener uses to decide whether it acts (versioning OR
+        # native_versioning), so the prime can't skip while the listener runs.
+        options = versioning_manager.options
+        if options.get("versioning") or options.get("native_versioning"):
+            versioning_manager.unit_of_work(db.session)
+    except Exception:  # pylint: disable=broad-except
+        logger.warning(
+            "versioning: could not prime Continuum unit-of-work before a "
+            "bulk dashboard_slices insert; proceeding without it.",
+            exc_info=True,
+        )
+
+
+def get_resource_mappings_batched(
+    model_class: Type[Any],
+    batch_size: int = 1000,
+    value_func: Callable[[Any], Any] = lambda x: x.id,
+) -> Dict[str, Any]:
+    offset = 0
+    mapping = {}
+    while True:
+        batch = db.session.query(model_class).limit(batch_size).offset(offset).all()
+        if not batch:
+            break
+        mapping.update({str(x.uuid): value_func(x) for x in batch})
+        offset += batch_size
+    return mapping
+
+
+def find_existing_for_import(model_cls: type[Any], uuid: str) -> Any | None:
+    """Look up an existing row by UUID for an import, including soft-deleted matches.
+
+    Bypasses the soft-delete visibility filter so a soft-deleted row with
+    the matching UUID is returned, not hidden. Side-effect-free: returns
+    the row as-is whether it's live or soft-deleted (or ``None`` if no
+    row exists). The caller is responsible for deciding what to do with
+    a soft-deleted match.
+
+    **Canonical pattern — restore in place.** The dashboard importer
+    (``superset/commands/dashboard/importers/v1/utils.py``) establishes
+    the reference handling: after validating permissions/editorship, clear
+    ``deleted_at`` on the existing row (``existing.restore()``) and apply
+    the config as an update, preserving the PK and all relationship rows
+    (junction tables, editor/viewer subjects, tags) that a hard delete would
+    cascade away. Entity importers adopting soft delete should follow the
+    same pattern so re-import semantics stay uniform across entities.
+    :func:`clear_soft_deleted_for_import` (hard-delete-and-replace) is the
+    escape hatch for entities where restore-in-place is unworkable —
+    prefer restore-in-place unless there's a specific reason not to.
+
+    Splitting the lookup from any destructive cleanup keeps the
+    destructive action explicit at the call site, so a future change
+    that adds a permission check on the overwrite path doesn't
+    silently leave a "duck around it via soft-delete" backdoor.
+    """
+    return (
+        db.session.query(model_cls)
+        .execution_options(**{SKIP_VISIBILITY_FILTER_CLASSES: {model_cls}})
+        .filter_by(uuid=uuid)
+        .first()
+    )
+
+
+def clear_soft_deleted_for_import(existing: Any) -> None:
+    """Hard-delete a soft-deleted row to free its UUID for re-import.
+
+    Uses ``db.session.delete()`` rather than a raw Core ``DELETE`` so
+    the ORM ``after_delete`` event listeners fire. Cleanup that depends
+    on those listeners would otherwise be skipped — notably tag rows in
+    ``tagged_object`` (cleaned up by ``ObjectUpdater.after_delete`` in
+    ``superset/tags/core.py``; the table's ``object_id`` is a plain
+    integer, not a foreign key, so the database cannot cascade them)
+    and dataset permission-view rows (cleaned up by
+    ``SqlaTable.after_delete`` in ``superset/connectors/sqla/models.py``).
+
+    Caller contract: ``existing`` must be a soft-deleted row returned
+    from :func:`find_existing_for_import`. Callers should run their
+    overwrite / permission validation *before* invoking this so the
+    destructive action only happens once the import path is committed
+    to proceeding.
+    """
+    db.session.delete(existing)
+    db.session.flush()
