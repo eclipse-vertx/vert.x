@@ -22,7 +22,6 @@ import io.netty.util.ReferenceCounted;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.EventLoopExecutor;
@@ -90,9 +89,14 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
 
   @Override
   public Future<Void> writeMessage(Object message) {
-    Promise<Void> promise = context.promise();
-    writeToChannel(message, promise);
-    return promise.future();
+    WritePromise messageWrite = new WritePromise(context) {
+      @Override
+      public void write() {
+        unsafeWrite(message, false, this);
+      }
+    };
+    writeToChannel(messageWrite);
+    return messageWrite;
   }
 
   @Override

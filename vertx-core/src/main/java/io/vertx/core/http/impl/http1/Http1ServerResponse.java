@@ -312,7 +312,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeHead() {
     checkThread();
-    PromiseInternal<Void> promise = context.promise();
+    Future<Void> f;
     synchronized (conn) {
       if (headWritten) {
         throw new IllegalStateException();
@@ -323,44 +323,35 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       VertxHttpObject msg;
       prepareHeaders(-1);
       msg = new VertxHttpResponse(head, version, status, headers);
-      conn.write(msg, promise);
+      f = conn.write(msg);
     }
-    return promise.future();
+    return f;
   }
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    PromiseInternal<Void> promise = context.promise();
-    write(((BufferInternal)chunk).getByteBuf(), promise);
-    return promise.future();
+    return write(((BufferInternal)chunk).getByteBuf());
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    PromiseInternal<Void> promise = context.promise();
-    write(BufferInternal.buffer(chunk, enc).getByteBuf(), promise);
-    return promise.future();
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf());
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    PromiseInternal<Void> promise = context.promise();
-    write(BufferInternal.buffer(chunk).getByteBuf(), promise);
-    return promise.future();
+    return write(BufferInternal.buffer(chunk).getByteBuf());
   }
 
   @Override
   public Future<Void> writeContinue() {
     checkThread();
-    Promise<Void> promise = context.promise();
-    conn.write100Continue(promise);
-    return promise.future();
+    return conn.write100Continue();
   }
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     checkThread();
-    PromiseInternal<Void> promise = context.promise();
     Http1xHeaders headersMultiMap;
     if (headers instanceof Http1xHeaders) {
       headersMultiMap = (Http1xHeaders) headers;
@@ -371,8 +362,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    conn.write103EarlyHints(headersMultiMap, promise);
-    return promise.future();
+    return conn.write103EarlyHints(headersMultiMap);
   }
 
   @Override
@@ -387,12 +377,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    PromiseInternal<Void> promise = context.promise();
-    end(chunk, promise);
-    return promise.future();
-  }
-
-  private void end(Buffer chunk, PromiseInternal<Void> listener) {
     checkThread();
     synchronized (conn) {
       if (written) {
@@ -410,7 +394,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         msg = new VertxLastHttpContent(data, trailingHeaders);
       }
-      conn.write(msg, listener);
+      Future<Void> result = conn.write(msg);
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
@@ -420,6 +404,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       if (!keepAlive) {
         closed = true; // ?????
       }
+      return result;
     }
   }
 
@@ -514,7 +499,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         prepareHeaders(actualLength);
         bytesWritten = actualLength;
         written = true;
-        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers));
         FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
         ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
         PromiseInternal<Void> promise = context.promise();
@@ -541,7 +526,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
             }
 
             // write an empty last content to let the http encoder know the response is complete
-            conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
+            Future<Void> f = conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()));
+            f.onComplete(promise);
           } else {
             promise.fail(future.cause());
           }
@@ -718,7 +704,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  private Http1ServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
+  private Future<Void> write(ByteBuf chunk) {
     checkThread();
     synchronized (conn) {
       if (written) {
@@ -736,8 +722,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         msg = new VertxHttpContent(chunk);
       }
-      conn.write(msg, promise);
-      return this;
+      return conn.write(msg);
     }
   }
 
@@ -758,8 +743,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         }
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
-        PromiseInternal<Void> upgradePromise = context.promise();
-        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers));
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();
