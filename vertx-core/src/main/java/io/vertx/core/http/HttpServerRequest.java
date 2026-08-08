@@ -150,6 +150,29 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
   HttpServerResponse response();
 
   /**
+   * Return the first trailer value with the specified name
+   * <p>
+   * Trailers are only available after the request has been fully received, i.e. after the
+   * {@link #endHandler(Handler) end handler} has been called.
+   *
+   * @param trailerName  the trailer name
+   * @return the trailer value
+   */
+  @Nullable String getTrailer(String trailerName);
+
+  /**
+   * Return the trailers.
+   * <p>
+   * Trailers are only available after the request has been fully received, i.e. after the
+   * {@link #endHandler(Handler) end handler} has been called. Before that, and for requests
+   * that carry no trailers, the returned map is empty.
+   *
+   * @return the trailers
+   */
+  @CacheReturn
+  MultiMap trailers();
+
+  /**
    * Override the charset to use for decoding the query parameter map, when none is set, {@code UTF8} is used.
    *
    * @param charset the charset to use for decoding query params

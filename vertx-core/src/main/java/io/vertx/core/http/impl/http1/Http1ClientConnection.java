@@ -31,6 +31,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
@@ -141,6 +142,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   @Override
   public MultiMap newHttpRequestHeaders() {
+    return Http1xHeaders.httpHeaders();
+  }
+
+  @Override
+  public MultiMap newHttpTrailers() {
     return Http1xHeaders.httpHeaders();
   }
 
@@ -388,6 +394,26 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         stream.request = request;
         beginRequest(stream, request, chunked, buf, end, connect, listener);
       }
+      @Override
+      public void cancel(Throwable cause) {
+        listener.fail(cause);
+      }
+    });
+  }
+
+  private void writeTrailers(Stream stream, io.netty.handler.codec.http.HttpHeaders trailers, Promise<Void> listener) {
+    writeToChannel(new MessageWrite() {
+      @Override
+      public void write() {
+        if (stream.reset) {
+          listener.fail("Stream reset");
+          return;
+        }
+        assert current == stream;
+        unsafeWrite(new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, trailers), listener);
+        endRequest(stream);
+      }
+
       @Override
       public void cancel(Throwable cause) {
         listener.fail(cause);
@@ -661,6 +687,14 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       PromiseInternal<Void> promise = context.promise();
       conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, connect, promise);
       return promise.future();
+    }
+
+    @Override
+    public Future<Void> writeHeaders(MultiMap headers, boolean end) {
+      // HTTP/1 trailers ride on the terminating zero-length chunk.
+      Promise<Void> listener = context.promise();
+      conn.writeTrailers(this, (io.netty.handler.codec.http.HttpHeaders) headers, listener);
+      return listener.future();
     }
 
     @Override

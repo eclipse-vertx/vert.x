@@ -71,6 +71,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   // Cache this for performance
   private MultiMap headers;
+  private MultiMap trailers;
   private String absoluteURI;
 
   private HttpEventHandler eventHandler;
@@ -103,6 +104,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
             @Override
             protected void handleMessage(Object elt) {
               if (elt == InboundBuffer.END_SENTINEL) {
+                onEnd();
+              } else if (elt instanceof MultiMap) {
+                // Trailers travel through the queue so they cannot be observed before the
+                // preceding data has been delivered.
+                setTrailers((MultiMap) elt);
                 onEnd();
               } else {
                 onData((Buffer) elt);
@@ -155,19 +161,37 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
   }
 
-  void handleEnd() {
+  void handleEnd(HttpHeaders nettyTrailers) {
+    Object end = nettyTrailers != null && !nettyTrailers.isEmpty()
+      ? new HeadersAdaptor(nettyTrailers)
+      : InboundBuffer.END_SENTINEL;
     InboundMessageQueue<Object> queue = queue(false);
     if (queue != null) {
-      handleEnd(queue);
+      handleEnd(queue, end);
     } else {
+      if (end != InboundBuffer.END_SENTINEL) {
+        setTrailers((MultiMap) end);
+      }
       context.execute(this, Http1ServerRequest::onEnd);
     }
   }
 
-  private void handleEnd(InboundMessageQueue<Object> queue) {
-    boolean drain = queue.add(InboundBuffer.END_SENTINEL);
+  private void handleEnd(InboundMessageQueue<Object> queue, Object end) {
+    boolean drain = queue.add(end);
     if (drain) {
       queue.drain();
+    }
+  }
+
+  private void setTrailers(MultiMap trailers) {
+    synchronized (conn) {
+      // Must not race with trailers(), where the field can escape: if the user already
+      // obtained the empty map, update it in place instead of replacing it.
+      if (this.trailers == null) {
+        this.trailers = trailers;
+      } else if (this.trailers != trailers) {
+        this.trailers.setAll(trailers);
+      }
     }
   }
 
@@ -280,6 +304,25 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   @Override
   public HostAndPort authority(boolean real) {
     return real ? null : authority();
+  }
+
+  @Override
+  public MultiMap trailers() {
+    synchronized (conn) {
+      if (trailers == null) {
+        trailers = new HeadersAdaptor(new DefaultHttpHeaders());
+      }
+      return trailers;
+    }
+  }
+
+  @Override
+  public String getTrailer(String trailerName) {
+    MultiMap trailers;
+    synchronized (conn) {
+      trailers = this.trailers;
+    }
+    return trailers != null ? trailers.get(trailerName) : null;
   }
 
   @Override

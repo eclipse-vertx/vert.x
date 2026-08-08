@@ -123,7 +123,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.requestHandler(req -> {
       req.bodyHandler(body -> {
-        // No API to get client trailers
+        Assert.assertEquals("value", req.getTrailer("key"));
+        Assert.assertEquals(1, req.trailers().size());
         req.response().end(body);
       });
     });
