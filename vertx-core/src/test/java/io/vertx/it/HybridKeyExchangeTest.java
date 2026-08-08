@@ -103,7 +103,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(pqcClientSsl)
       .build();
@@ -137,7 +139,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     ClientSSLOptions nonPqcClientSsl = new ClientSSLOptions()
       .setTrustAll(true);
     HttpClientAgent client2 = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(nonPqcClientSsl)
       .build();
@@ -173,7 +177,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     ClientSSLOptions nonPqcClientSsl = new ClientSSLOptions()
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(nonPqcClientSsl)
       .build();
 
@@ -206,7 +212,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(pqcClientSsl)
       .build();
@@ -247,7 +255,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(pqcClientSsl)
       .build();
@@ -285,7 +295,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
       .setTrustAll(true);
     HttpClientAgent client2 = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(nonPqcClientSsl)
       .build();
@@ -333,7 +345,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
     try {
       client = vertx.httpClientBuilder()
-        .with(new HttpClientOptions().setSsl(true))
+        .with(new HttpClientOptions()
+          .setSsl(true)
+          .setVerifyHost(false))
         .with(new JdkSSLEngineOptions())
         .with(clientSsl)
         .build();
@@ -366,7 +380,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(pqcClientSsl)
       .build();
@@ -402,7 +418,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setKeyExchangeGroups(List.of("X25519MLKEM768"))
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(new OpenSSLEngineOptions())
       .with(clientSsl)
       .build();
@@ -432,7 +450,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     ClientSSLOptions clientSsl = new ClientSSLOptions()
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setSsl(true))
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setVerifyHost(false))
       .with(clientSsl)
       .build();
 

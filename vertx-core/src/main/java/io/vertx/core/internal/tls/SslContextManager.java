@@ -186,7 +186,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     if (sslOptions instanceof ClientSSLOptions) {
       ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
       if (clientSSLOptions.isTrustAll()) {
-        return TrustAllOptions.INSTANCE;
+        return TrustAllOptions.instance(!clientSSLOptions.getHostnameVerificationAlgorithm().isEmpty());
       }
     }
     return sslOptions.getTrustOptions();
