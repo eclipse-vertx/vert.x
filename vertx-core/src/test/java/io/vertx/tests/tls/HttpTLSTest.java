@@ -333,20 +333,20 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   @Test
   // Specify some matching cipher suites
   public void testTLSMatchingCipherSuites() throws Exception {
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledCipherSuites(ENABLED_CIPHER_SUITES).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverEnabledCipherSuites(ENABLED_CIPHER_SUITES).pass();
   }
 
   @Test
   // Specify some non matching cipher suites
   public void testTLSNonMatchingCipherSuites() throws Exception {
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledCipherSuites(new String[]{"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"}).clientEnabledCipherSuites(new String[]{"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"}).fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverEnabledCipherSuites(new String[]{"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"}).clientEnabledCipherSuites(new String[]{"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"}).fail();
   }
 
   @Test
   // Specify some matching TLS protocols
   public void testTLSMatchingProtocolVersions() throws Exception {
     assumeTcp();
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
   }
 
@@ -383,14 +383,14 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   // Specify some matching TLS protocols
   public void testTLSInvalidProtocolVersion() throws Exception {
     assumeTcp();
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"HelloWorld"}).fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverEnabledSecureTransportProtocol(new String[]{"HelloWorld"}).fail();
   }
 
   @Test
   // Specify some non matching TLS protocols
   public void testTLSNonMatchingProtocolVersions() throws Exception {
     assumeTcp();
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1.1"}).fail();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"}).clientEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1.1"}).fail();
   }
 
   @Test
@@ -488,7 +488,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   // TLSv1.3
   public void testTLSv1_3() throws Exception {
     Assume.assumeFalse(System.getProperty("java.version").startsWith("1.8"));
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"}).pass();
   }
@@ -497,7 +497,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   // TLSv1.3 with OpenSSL
   public void testTLSv1_3OpenSSL() throws Exception {
     assumeOpenSSL();
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .clientOpenSSL()
       .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
       .serverOpenSSL()
@@ -509,7 +509,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   public void testDisableTLSv1_3() throws Exception {
     assumeTcp();
     Assume.assumeFalse(System.getProperty("java.version").startsWith("1.8"));
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
       .fail();
@@ -519,7 +519,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   // Disable TLSv1.3 with OpenSSL
   public void testDisableTLSv1_3OpenSSL() throws Exception {
     assumeOpenSSL();
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
       .serverOpenSSL()
@@ -531,7 +531,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   public void testDisableTLSv1_2() throws Exception {
     assumeTcp();
     Assume.assumeFalse(System.getProperty("java.version").startsWith("1.8"));
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
       .fail();
@@ -541,7 +541,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   // Disable TLSv1.2 with OpenSSL
   public void testDisableTLSv1_2OpenSSL() throws Exception {
     assumeOpenSSL();
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
       .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
       .serverOpenSSL()
