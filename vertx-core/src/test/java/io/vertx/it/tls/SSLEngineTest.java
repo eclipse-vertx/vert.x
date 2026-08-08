@@ -91,6 +91,7 @@ public class SSLEngineTest extends HttpTestBase {
           .setSsl(true)
           .setUseAlpn(useAlpn)
           .setTrustAll(true)
+          .setVerifyHost(false)
           .setProtocolVersion(version));
         client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
           .compose(req -> req
@@ -134,7 +135,8 @@ public class SSLEngineTest extends HttpTestBase {
         WebSocketClient wsClient = vertx.createWebSocketClient(new WebSocketClientOptions()
           .setSslEngineOptions(engineOptions)
           .setSsl(true)
-          .setTrustAll(true));
+          .setTrustAll(true)
+          .setVerifyHost(false));
         wsClient.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
           .onComplete(onSuccess(ws -> {
             assertSslSessionContextType(expectedEng, ws.sslSession().getSessionContext());
