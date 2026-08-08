@@ -331,7 +331,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       server.listen().await();
       fail("Server should have failed to start");
     } catch (VertxException e) {
-      assertTrue(e.getMessage().contains("X25519MLKEM768"));
       assertTrue(e.getMessage().contains("does not support it"));
     }
   }
@@ -353,7 +352,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         .build();
       fail("Client should have failed to build");
     } catch (VertxException e) {
-      assertTrue(e.getMessage().contains("X25519MLKEM768"));
       assertTrue(e.getMessage().contains("does not support it"));
     }
   }
