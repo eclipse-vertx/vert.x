@@ -5770,4 +5770,33 @@ public class Http1xTest extends HttpTest {
     Assert.assertEquals("absoluteURI() should not synthesize ':-1'", "http://example.com/path", body.toString());
   }
 
+
+  @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6294
+  public void testResetCompletedRequestDoesNotCloseReusedConnection() throws Exception {
+    CountDownLatch serverLatch = new CountDownLatch(2);
+    server.requestHandler(req -> {
+      req.response().end();
+      serverLatch.countDown();
+    });
+    startServer(testAddress);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setKeepAlive(true))
+      .with(new PoolOptions().setHttp1MaxSize(1))
+      .build();
+    // Request A - completes and returns connection to pool
+    client.request(new RequestOptions(requestOptions).setURI("/first"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .await();
+    // Request B - reuses the pooled connection from A
+    client.request(new RequestOptions(requestOptions).setURI("/second"))
+      .compose(req -> {
+        // Late reset() on the already-completed request A must not close the pooled connection
+        req.reset(0);
+        return req.send().expecting(HttpResponseExpectation.SC_OK).compose(HttpClientResponse::end);
+      })
+      .await();
+    serverLatch.await(10, TimeUnit.SECONDS);
+  }
+
 }
