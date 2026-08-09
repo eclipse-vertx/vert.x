@@ -332,10 +332,14 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     await();
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testRateUpdateWhenServerStartedWithoutTrafficShaping() throws Exception {
     NetServerOptions options = new NetServerOptions().setHost(DEFAULT_HOST).setPort(DEFAULT_PORT);
     NetServer testServer = netServer(options);
+
+    testServer.connectHandler(so -> {
+
+    });
 
     testServer
       .listen()
@@ -345,9 +349,13 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
                                              .setOutboundGlobalBandwidth(OUTBOUND_LIMIT)
                                              .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
-    testServer
-      .updateTrafficShapingOptions(trafficOptions)
-      .await(20, TimeUnit.SECONDS);
+    try {
+      testServer
+        .updateTrafficShapingOptions(trafficOptions)
+        .await(20, TimeUnit.SECONDS);
+      Assert.fail();
+    } catch (IllegalStateException expected) {
+    }
   }
 
   /**

@@ -345,12 +345,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
-    CloseFuture closeFuture = new CloseFuture(log);
-    DatagramSocketImpl so = DatagramSocketImpl.create(this, closeFuture, options);
-    closeFuture.add(so);
-    CloseFuture fut = resolveCloseFuture();
-    fut.add(closeFuture);
-    return so;
+    return DatagramSocketImpl.create(getOrCreateContext(), options);
   }
 
   public NetServerInternal createNetServer(NetServerOptions options) {
