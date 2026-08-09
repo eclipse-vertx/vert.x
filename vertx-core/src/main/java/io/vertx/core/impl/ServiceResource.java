@@ -12,7 +12,6 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.VertxException;
 import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.ContextInternal;
 
