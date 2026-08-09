@@ -10,9 +10,8 @@
  */
 package io.vertx.core.net.impl.quic;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
 import io.vertx.core.Future;
+import io.vertx.core.impl.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
@@ -22,58 +21,35 @@ import java.time.Duration;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableQuicClient extends QuicClientImpl implements Closeable {
+public class CleanableQuicClient extends QuicClientImpl {
 
   private final VertxInternal vertx;
-  private ContextInternal listenContext;
+  private final ServiceResource<SocketAddress, SocketAddress> serviceResource;
 
   public CleanableQuicClient(VertxInternal vertx,
                              QuicClientConfig config,
                              ClientSSLOptions sslOptions) {
     super(vertx, config, null, sslOptions);
     this.vertx = vertx;
+    this.serviceResource = new ServiceResource<>() {
+      @Override
+      protected Future<SocketAddress> startImpl(ContextInternal context, SocketAddress args) {
+        return CleanableQuicClient.super.bind(context, args);
+      }
+      @Override
+      protected Future<?> stopImpl(ContextInternal context, SocketAddress args, Duration timeout) {
+        return CleanableQuicClient.super.shutdown(timeout);
+      }
+    };
   }
 
   @Override
   public Future<SocketAddress> bind(ContextInternal current, SocketAddress address) {
-    synchronized (this) {
-      if (listenContext != null) {
-        return current.failedFuture(new IllegalStateException());
-      }
-      listenContext = current;
-    }
-    current.addCloseHook(this);
-    return super
-      .bind(current, address)
-      .andThen(ar -> {
-        if (ar.failed()) {
-          synchronized (CleanableQuicClient.this) {
-            if (listenContext == null) {
-              return;
-            }
-            listenContext = null;
-          }
-          current.removeCloseHook(this);
-        }
-      });
+    return serviceResource.start(current, address);
   }
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    ContextInternal context;
-    synchronized (this) {
-      if (listenContext == null) {
-        return vertx.succeededFuture();
-      }
-      context = listenContext;
-      listenContext = null;
-    }
-    context.removeCloseHook(this);
-    return super.shutdown(timeout);
-  }
-
-  @Override
-  public void close(Completable<Void> completion) {
-    close().onComplete(completion);
+    return serviceResource.stop(vertx.getOrCreateContext(), timeout);
   }
 }

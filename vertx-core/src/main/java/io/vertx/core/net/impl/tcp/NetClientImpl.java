@@ -23,11 +23,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.internal.CloseableResource;
+import io.vertx.core.internal.*;
 import io.vertx.core.impl.Utils;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -55,7 +52,7 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetClientImpl implements NetClientInternal, CloseableResource<NetClientInternal> {
+public class NetClientImpl implements NetClientInternal {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
   protected final Duration idleTimeout;
@@ -117,11 +114,6 @@ public class NetClientImpl implements NetClientInternal, CloseableResource<NetCl
     if (idleTimeout.toMillis() > 0 || readIdleTimeout.toMillis() > 0 || writeIdleTimeout.toMillis() > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout.toMillis(), writeIdleTimeout.toMillis(), idleTimeout.toMillis(), TimeUnit.MILLISECONDS));
     }
-  }
-
-  @Override
-  public NetClientInternal get() {
-    return this;
   }
 
   @Override
@@ -187,11 +179,6 @@ public class NetClientImpl implements NetClientInternal, CloseableResource<NetCl
     } finally {
       completion.succeed();
     }
-  }
-
-  @Override
-  public void close(Completable<Void> completion) {
-    channelGroup.shutdown(0, TimeUnit.SECONDS).onComplete(completion);
   }
 
   @Override

@@ -10,17 +10,15 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
+import io.vertx.core.impl.CleanableObject;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.lang.ref.Cleaner;
-import java.time.Duration;
-import java.util.function.Function;
 
 /**
  * A lightweight proxy of Vert.x {@link HttpClient} that can be collected by the garbage collector and release
@@ -28,62 +26,28 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableWebSocketClient implements WebSocketClient, MetricsProvider, Closeable {
+public class CleanableWebSocketClient extends CleanableObject<WebSocketClient> implements WebSocketClient, MetricsProvider {
 
-  static class Action implements Runnable {
-    private final Function<Duration, Future<Void>> dispose;
-    private Duration timeout = Duration.ofSeconds(30);
-    private Future<Void> closeFuture;
-    private Action(Function<Duration, Future<Void>> dispose) {
-      this.dispose = dispose;
-    }
-    @Override
-    public void run() {
-      closeFuture = dispose.apply(timeout);
-    }
-  }
-
-  public final WebSocketClient delegate;
-  private final Cleaner.Cleanable cleanable;
-  private final Action action;
-
-  public CleanableWebSocketClient(WebSocketClient delegate, Cleaner cleaner, Function<Duration, Future<Void>> dispose) {
-    this.action = new Action(dispose);
-    this.delegate = delegate;
-    this.cleanable = cleaner.register(this, action);
+  public CleanableWebSocketClient(Cleaner cleaner, CloseableResource<? extends WebSocketClient> resource) {
+    super(cleaner, resource);
   }
 
   @Override
   public ClientWebSocket webSocket() {
-    return delegate.webSocket();
+    return getOrDie().webSocket();
   }
 
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
-    return delegate.connect(options);
+    return getOrDie().connect(options);
   }
 
   @Override
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
-    return delegate.updateSSLOptions(options, force);
-  }
-
-  @Override
-  public Future<Void> shutdown(Duration timeout) {
-    if (timeout.isNegative()) {
-      throw new IllegalArgumentException();
-    }
-    action.timeout = timeout;
-    cleanable.clean();
-    return action.closeFuture;
-  }
-
-  @Override
-  public void close(Completable<Void> completion) {
-    ((Closeable)delegate).close(completion);
+    return getOrDie().updateSSLOptions(options, force);
   }
 
   @Override
   public Metrics getMetrics() {
-    return ((MetricsProvider)delegate).getMetrics();
+    return ((MetricsProvider)getOrDie()).getMetrics();
   }
 }

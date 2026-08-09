@@ -13,6 +13,7 @@ package io.vertx.core.internal;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
 import io.vertx.core.internal.deployment.DeploymentContext;
@@ -457,13 +458,43 @@ public interface ContextInternal extends Context {
   Future<Void> close();
 
   /**
+   * Register the {@code resource} against the current context. When the owner closes,
+   * the {@code resource} is cascade closed.
+   *
+   * @param resource the actual resource
+   * @return the new resource to use or {@code null} when the resource could not be registered, e.g. on a context close
+   */
+  default <R extends io.vertx.core.internal.Closeable> CloseableResource<R> registerResource(R resource) {
+    return registerResource(CloseableResource.of(resource));
+  }
+
+  /**
+   * Register the {@code resource} against the current context. When the owner closes,
+   * the {@code resource} is cascade closed.
+   *
+   * @param resource the actual resource
+   * @return the new resource to use or {@code null} when the resource could not be registered, e.g. on a context close
+   */
+  default <R> CloseableResource<R> registerResource(CloseableResource<R> resource) {
+    CloseFuture owner = closeFuture();
+    ResourceHook<R> hook = new ResourceHook<>(owner, resource);
+    if (owner.add(hook)) {
+      return hook;
+    } else {
+      return null;
+    }
+  }
+
+  /**
    * Add a close hook.
    *
    * <p> The {@code hook} will be called when the associated resource needs to be released. Hooks are useful
    * for automatically cleanup resources when a Verticle is undeployed.
    *
    * @param hook the close hook
+   * @deprecated instead use {@link #registerResource(CloseableResource)}
    */
+  @Deprecated
   default void addCloseHook(Closeable hook) {
     closeFuture().add(hook);
   }

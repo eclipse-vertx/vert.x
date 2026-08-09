@@ -16,9 +16,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.websocket.ClientWebSocketImpl;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.*;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.net.ClientSSLOptions;
@@ -33,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
@@ -58,6 +57,21 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     this.webSocketCM = new ResourceManager<>();
     this.connector = connector;
     this.defaultSslOptions = sslOptions;
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return WebSocketClient.super.shutdown(timeout, unit);
+  }
+
+  @Override
+  public Future<Void> close() {
+    return super.close();
+  }
+
+  @Override
+  public Future<Void> shutdown() {
+    return super.shutdown();
   }
 
   protected void doShutdown(Duration timeout, Completable<Void> p) {
