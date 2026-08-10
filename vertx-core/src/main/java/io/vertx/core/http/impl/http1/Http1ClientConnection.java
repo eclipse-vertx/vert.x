@@ -371,7 +371,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
     stream.reset = true;
     boolean removed = pending.remove(stream);
-    if (!removed && !stream.closed) {
+    if (!removed) {
       close();
     }
     return removed;
