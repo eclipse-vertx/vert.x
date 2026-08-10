@@ -35,6 +35,7 @@ import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.verticles.SimpleServer;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -3164,21 +3165,21 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testResetClientRequestNotYetSent() throws Exception {
-    testResetClientRequestNotYetSent(false, false);
+  public void testResetClientStreamNotYetSent() throws Exception {
+    testResetClientStreamNotYetSent(false, false);
   }
 
   @Test
-  public void testResetKeepAliveClientRequestNotYetSent() throws Exception {
-    testResetClientRequestNotYetSent(true, false);
+  public void testResetKeepAliveClientStreamNotYetSent() throws Exception {
+    testResetClientStreamNotYetSent(true, false);
   }
 
   @Test
-  public void testResetPipelinedClientRequestNotYetSent() throws Exception {
-    testResetClientRequestNotYetSent(true, true);
+  public void testResetPipelinedClientStreamNotYetSent() throws Exception {
+    testResetClientStreamNotYetSent(true, true);
   }
 
-  private void testResetClientRequestNotYetSent(boolean keepAlive, boolean pipelined) throws Exception {
+  private void testResetClientStreamNotYetSent(boolean keepAlive, boolean pipelined) throws Exception {
     waitFor(2);
     server.close();
     NetServer server = vertx.createNetServer();
@@ -3227,6 +3228,38 @@ public class Http1xTest extends HttpTest {
     }
   }
 
+  @Test
+  public void testResetClientStreamClosed() throws Exception {
+    server.requestHandler(request -> {
+      request.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions()
+      .setMaxPoolSize(1)
+      .setKeepAlive(true)
+      .setPipelining(false)
+    );
+    Set<HttpConnection> clientConnections = ConcurrentHashMap.newKeySet();
+    waitFor(2);
+    for (int i = 0;i < 2;i++) {
+      client
+        .request(requestOptions)
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end).map(req))
+        .onComplete(onSuccess(request -> {
+          vertx.runOnContext(v -> {
+            clientConnections.add(request.connection());
+            request.reset(1);
+            complete();
+          });
+        }));
+    }
+    await();
+    Assert.assertEquals(1, clientConnections.size());
+  }
   @Test
   public void testResetKeepAliveClientRequest() throws Exception {
     waitFor(3);
