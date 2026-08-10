@@ -323,11 +323,15 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private boolean reset(Stream stream) {
     boolean inflight;
     synchronized (this) {
-      inflight = responses.contains(stream) || stream.responseEnded;
-      if (!inflight) {
-        requests.remove(stream);
+      if (requests.contains(stream)) {
+        close = responses.contains(stream) || stream.responseEnded;
+        if (!close) {
+          requests.remove(stream);
+        }
+      } else {
+        close = !stream.responseEnded;
       }
-      close = inflight;
+      inflight = close;
     }
     checkLifecycle();
     return !inflight;
