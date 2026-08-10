@@ -15,9 +15,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.impl.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.test.core.Checkpoint;
-import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase2;
+import io.vertx.test.core.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -151,7 +149,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     } catch (IllegalStateException expected) {
     }
     assertEquals(1, stop.get());
-    assertFalse(resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
   }
 
   @Test
@@ -171,10 +169,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
     resource.start(context, null).await();
     Duration timeout = Duration.ofSeconds(1);
     Future<?> stopped = resource.stop((ContextInternal) vertx.getOrCreateContext(), timeout);
-    assertEquals(1, stop.get());
+    TestUtils.assertWaitUntil(() -> stop.get() == 1);
     continuation.succeed();
     stopped.await();
-    assertFalse(resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
     assertEquals(timeout, timeoutRef.get());
   }
 
@@ -196,6 +194,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     assertEquals(0, stop.get());
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testStartingStop() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
@@ -225,6 +224,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testStopAfterStartFailure() {
     AtomicInteger stop = new AtomicInteger();
@@ -251,9 +251,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
     }
     stopped.await();
     assertEquals(0, stop.get());
-    assertFalse(resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testStartImplFailure() {
     RuntimeException expected = new RuntimeException();
@@ -267,6 +268,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     TestUtils.assertWaitUntil(f::failed);
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testStopImplFailure() {
     RuntimeException expected = new RuntimeException();
