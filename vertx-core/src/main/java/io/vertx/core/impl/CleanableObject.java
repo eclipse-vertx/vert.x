@@ -81,7 +81,8 @@ public class CleanableObject<T> {
       assert cleanable != null;
       action.timeout = timeout;
       cleanable.clean();
-      return action.closeFuture;
+      Future<Void> closeFuture = action.closeFuture;
+      return closeFuture != null ? closeFuture : Future.succeededFuture();
     } else {
       return Future.succeededFuture();
     }
