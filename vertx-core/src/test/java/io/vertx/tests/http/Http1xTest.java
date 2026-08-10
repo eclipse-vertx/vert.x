@@ -2918,21 +2918,21 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testResetClientRequestNotYetSent(Checkpoint checkpoint) throws Exception {
-    testResetClientRequestNotYetSent(checkpoint, false, false);
+  public void testResetClientStreamNotYetSent(Checkpoint checkpoint) throws Exception {
+    testResetClientStreamNotYetSent(checkpoint, false, false);
   }
 
   @Test
-  public void testResetKeepAliveClientRequestNotYetSent(Checkpoint checkpoint) throws Exception {
-    testResetClientRequestNotYetSent(checkpoint, true, false);
+  public void testResetKeepAliveClientStreamNotYetSent(Checkpoint checkpoint) throws Exception {
+    testResetClientStreamNotYetSent(checkpoint, true, false);
   }
 
   @Test
-  public void testResetPipelinedClientRequestNotYetSent(Checkpoint checkpoint) throws Exception {
-    testResetClientRequestNotYetSent(checkpoint, true, true);
+  public void testResetPipelinedStreamRequestNotYetSent(Checkpoint checkpoint) throws Exception {
+    testResetClientStreamNotYetSent(checkpoint, true, true);
   }
 
-  private void testResetClientRequestNotYetSent(Checkpoint checkpoint, boolean keepAlive, boolean pipelined) throws Exception {
+  private void testResetClientStreamNotYetSent(Checkpoint checkpoint, boolean keepAlive, boolean pipelined) throws Exception {
     NetServer server = vertx.createNetServer();
     AtomicInteger numReq = new AtomicInteger();
     server.connectHandler(conn -> {
@@ -2967,6 +2967,27 @@ public class Http1xTest extends HttpTest {
         .compose(HttpClientResponse::end))
       .await();
     assertEquals(1, numReq.get());
+  }
+
+  @Test
+  public void testResetClientStreamClosed() throws Exception {
+    server.requestHandler(request -> {
+      request.response().end();
+    });
+    startServer();
+    io.vertx.core.http.HttpClientConnection connection = client
+      .connect(requestOptions)
+      .await();
+    for (int i = 0;i < 2;i++) {
+      HttpClientRequest request = connection
+        .request(requestOptions)
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end).map(req))
+        .await();
+      request.reset();
+    }
   }
 
   @Test
