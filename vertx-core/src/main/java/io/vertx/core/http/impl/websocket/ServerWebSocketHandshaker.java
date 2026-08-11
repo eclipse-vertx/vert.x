@@ -10,14 +10,13 @@
  */
 package io.vertx.core.http.impl.websocket;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -37,9 +36,7 @@ import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -101,21 +98,16 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       }
       done = true;
     }
-    ServerWebSocket ws;
-    try {
-      ws = acceptHandshake();
-    } catch (Exception e) {
-      return rejectHandshake(BAD_REQUEST.code())
-        .transform(ar -> {
-          if (ar.succeeded()) {
-            return request.context().failedFuture(e);
-          } else {
-            // result is null
-            return (Future) ar;
-          }
-        });
+    Http1ServerConnection httpConn = (Http1ServerConnection) request.connection();
+    ChannelHandlerContext chctx = httpConn.channelHandlerContext();
+    EventExecutor exec = chctx.executor();
+    if (exec.inEventLoop()) {
+      acceptHandshake(this);
+    } else {
+      exec.execute(() -> {
+        acceptHandshake(this);
+      });
     }
-    tryComplete(ws);
     return this;
   }
 
@@ -168,55 +160,68 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     return response.setStatusCode(sc).end(status.reasonPhrase());
   }
 
-  private ServerWebSocket acceptHandshake() {
+  private void acceptHandshake(FutureImpl<ServerWebSocket> promise) {
     Http1ServerConnection httpConn = (Http1ServerConnection) request.connection();
     ChannelHandlerContext chctx = httpConn.channelHandlerContext();
     Channel channel = chctx.channel();
     Http1ServerResponse response = request.response();
-    handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), channel.newPromise());
-    response.completeHandshake();
-    // remove compressor as it's not needed anymore once connection was upgraded to websockets
-    ChannelPipeline pipeline = channel.pipeline();
-    ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
-    if (compressor != null) {
-      pipeline.remove(compressor);
-    }
-    VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
-      long closingTimeoutMS = config.getClosingTimeout().toMillis() >= 0 ? config.getClosingTimeout().toMillis() : 0L;
-      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context(), ctx, true, closingTimeoutMS, httpConn.httpMetrics, httpConn.metrics());
-      ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
-        request.context(),
-        webSocketConn,
-        handshaker.version() != WebSocketVersion.V00,
-        request,
-        config.getMaxFrameSize(),
-        config.getMaxMessageSize(),
-        registerWebSocketWriteHandlers);
-      String subprotocol = handshaker.selectedSubprotocol();
-      webSocket.subProtocol(subprotocol);
-      webSocketConn.webSocket(webSocket);
-      webSocketConn.metric(httpConn.metric());
-      return webSocketConn;
-    });
-    CompletableFuture<Void> latch = new CompletableFuture<>();
-    httpConn.context().execute(() -> {
-      // Must be done on event-loop
-      pipeline.replace(VertxHandler.class, "handler", handler);
-      latch.complete(null);
-    });
-    // This should actually only block the thread on a worker thread
+    ChannelPromise p = channel.newPromise();
+    // We expect a full request - so the handshakes can use it
+    FullHttpRequest fullRequest = (FullHttpRequest) request.nettyRequest();
     try {
-      latch.get(10, TimeUnit.SECONDS);
+      handshaker.handshake(channel, fullRequest, (HttpHeaders) response.headers(), p);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      // Synchronous Netty handshake failure - no message written
+      rejectHandshake(BAD_REQUEST.code())
+        .onComplete(ar -> {
+          if (ar.succeeded()) {
+            promise.tryFail(e);
+          } else {
+            promise.tryFail(ar.cause());
+          }
+        });
+      return;
     }
-    ServerWebSocketImpl webSocket = (ServerWebSocketImpl) handler.getConnection().webSocket();
-    if (METRICS_ENABLED && httpConn.httpMetrics != null) {
-      httpConn.httpMetrics.requestUpgraded(request.metric());
-      webSocket.setMetric(httpConn.httpMetrics.connected(request));
-    }
-    webSocket.registerHandler(httpConn.context().owner().eventBus());
-    return webSocket;
+    p.addListener((ChannelFutureListener) future -> {
+      if (future.isSuccess()) {
+        // Response if fully written, update the response accordingly
+        response.completeHandshake();
+        // remove compressor as it's not needed anymore once connection was upgraded to websockets
+        ChannelPipeline pipeline = channel.pipeline();
+        ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
+        if (compressor != null) {
+          pipeline.remove(compressor);
+        }
+        VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
+          long closingTimeoutMS = config.getClosingTimeout().toMillis() >= 0 ? config.getClosingTimeout().toMillis() : 0L;
+          WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context(), ctx, true, closingTimeoutMS, httpConn.httpMetrics, httpConn.metrics());
+          ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
+            request.context(),
+            webSocketConn,
+            handshaker.version() != WebSocketVersion.V00,
+            request,
+            config.getMaxFrameSize(),
+            config.getMaxMessageSize(),
+            registerWebSocketWriteHandlers);
+          String subprotocol = handshaker.selectedSubprotocol();
+          webSocket.subProtocol(subprotocol);
+          webSocketConn.webSocket(webSocket);
+          webSocketConn.metric(httpConn.metric());
+          return webSocketConn;
+        });
+        pipeline.replace(VertxHandler.class, "handler", handler);
+        ServerWebSocketImpl webSocket = (ServerWebSocketImpl) handler.getConnection().webSocket();
+        if (METRICS_ENABLED && httpConn.httpMetrics != null) {
+          httpConn.httpMetrics.requestUpgraded(request.metric());
+          webSocket.setMetric(httpConn.httpMetrics.connected(request));
+        }
+        webSocket.registerHandler(httpConn.context().owner().eventBus());
+        promise.tryComplete(webSocket);
+      } else {
+        // TEST THIS ????
+        promise.tryFail(future.cause());
+      }
+    });
   }
 
   @Override
