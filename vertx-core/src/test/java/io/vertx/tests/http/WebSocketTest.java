@@ -39,6 +39,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.http1.Http1ServerConnection;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.http.impl.websocket.WebSocketFrameImpl;
 import io.vertx.core.internal.VertxInternal;
@@ -1989,6 +1990,48 @@ public class WebSocketTest extends VertxTestBase {
         ws.write(Buffer.buffer("foo"));
       }));
     });
+    await();
+  }
+
+  @Test
+  public void testEventLoopServerUpgradeRequestToWebSocket() throws Exception {
+    testServerUpgradeRequestToWebSocket(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testWorkerServerUpgradeRequestToWebSocket() throws Exception {
+    testServerUpgradeRequestToWebSocket(ThreadingModel.WORKER);
+  }
+
+  private void testServerUpgradeRequestToWebSocket(ThreadingModel threadingModel) throws Exception {
+    Vertx vertx = Vertx.vertx(new VertxOptions().setWorkerPoolSize(1));
+    ContextInternal ctx = ((VertxInternal) vertx).createContext(threadingModel);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server.requestHandler(request -> {
+      request.pause();
+      new Thread(() -> {
+        request.toWebSocket().onComplete(TestUtils.onSuccess(ws -> {
+          ws.handler(ws::write);
+        }));
+      }).start();
+    });
+    Promise<HttpServer> promise = Promise.promise();
+    ctx.runOnContext(v -> {
+      server
+        .listen()
+        .onComplete(promise);
+    });
+    promise.future().await();
+    client = vertx.createWebSocketClient();
+    Future<WebSocket> f = client
+      .webSocket()
+      .handler(msg -> {
+        testComplete();
+      })
+      .connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+    f.onComplete(TestUtils.onSuccess(ws -> {
+      ws.write(Buffer.buffer("ping"));
+    }));
     await();
   }
 
