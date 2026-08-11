@@ -38,6 +38,8 @@ public class CleanableObject<T> {
       CloseableResource<T> d = get();
       if (d != null) {
         closeFuture = d.shutdown(timeout);
+      } else {
+        closeFuture = Future.succeededFuture();
       }
     }
   }
