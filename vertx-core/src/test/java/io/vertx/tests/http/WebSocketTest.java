@@ -39,6 +39,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.http1.Http1ServerConnection;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.http.impl.websocket.WebSocketFrameImpl;
 import io.vertx.core.internal.VertxInternal;
@@ -1975,6 +1976,47 @@ public class WebSocketTest extends VertxTestBase2 {
         ws.write(Buffer.buffer("foo"));
       }));
     });
+  }
+
+  @Test
+  public void testEventLoopServerUpgradeRequestToWebSocket(Checkpoint checkpoint) throws Exception {
+    testServerUpgradeRequestToWebSocket(checkpoint, ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testWorkerServerUpgradeRequestToWebSocket(Checkpoint checkpoint) throws Exception {
+    testServerUpgradeRequestToWebSocket(checkpoint, ThreadingModel.WORKER);
+  }
+
+  private void testServerUpgradeRequestToWebSocket(Checkpoint checkpoint, ThreadingModel threadingModel) throws Exception {
+    Vertx vertx = Vertx.vertx(new VertxOptions().setWorkerPoolSize(1));
+    ContextInternal ctx = ((VertxInternal) vertx).createContext(threadingModel);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server.requestHandler(request -> {
+      request.pause();
+      new Thread(() -> {
+        request.toWebSocket().onComplete(TestUtils.onSuccess(ws -> {
+          ws.handler(ws::write);
+        }));
+      }).start();
+    });
+    Promise<HttpServer> promise = Promise.promise();
+    ctx.runOnContext(v -> {
+      server
+        .listen()
+        .onComplete(promise);
+    });
+    promise.future().await();
+    client = vertx.createWebSocketClient();
+    Future<WebSocket> f = client
+      .webSocket()
+      .handler(msg -> {
+        checkpoint.succeed();
+      })
+      .connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+    f.onComplete(TestUtils.onSuccess(ws -> {
+      ws.write(Buffer.buffer("ping"));
+    }));
   }
 
   @Test
