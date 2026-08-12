@@ -17,6 +17,9 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
 
+import java.time.Duration;
+import java.util.Objects;
+
 /**
  * Configuration options for Vert.x DNS client.
  *
@@ -56,12 +59,18 @@ public class DnsClientOptions {
   */
   public static final boolean DEFAULT_RECURSION_DESIRED = true;
 
+  /**
+   * The default value for the host resolution retry delay = {@code 10} seconds
+   */
+  public static final Duration DEFAULT_HOST_RESOLUTION_RETRY_DELAY = Duration.ofSeconds(10);
+
   private int port = DEFAULT_PORT;
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
   private ByteBufFormat activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
   private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
+  private Duration hostResolutionRetryDelay = DEFAULT_HOST_RESOLUTION_RETRY_DELAY;
 
   public DnsClientOptions() {
   }
@@ -77,6 +86,7 @@ public class DnsClientOptions {
     logActivity = other.logActivity;
     activityLogFormat = other.activityLogFormat;
     recursionDesired = other.recursionDesired;
+    hostResolutionRetryDelay = other.hostResolutionRetryDelay;
   }
 
   /**
@@ -194,6 +204,25 @@ public class DnsClientOptions {
    */
   public DnsClientOptions setRecursionDesired(boolean recursionDesired) {
     this.recursionDesired = recursionDesired;
+    return this;
+  }
+
+  /**
+   * @return the delay between DNS server host resolution retry attempts
+   */
+  public Duration getHostResolutionRetryDelay() {
+    return hostResolutionRetryDelay;
+  }
+
+  /**
+   * Set the delay between retry attempts to resolve the DNS server host name, when the host is specified
+   * as a name instead of an IP address.
+   *
+   * @param hostResolutionRetryDelay the retry delay
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DnsClientOptions setHostResolutionRetryDelay(Duration hostResolutionRetryDelay) {
+    this.hostResolutionRetryDelay = Objects.requireNonNull(hostResolutionRetryDelay);
     return this;
   }
 

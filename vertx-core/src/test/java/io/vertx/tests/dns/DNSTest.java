@@ -17,27 +17,26 @@ import io.netty.resolver.dns.DnsNameResolverTimeoutException;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
+import io.vertx.core.dns.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.MockDnsServer;
 import io.vertx.test.fakedns.MockDnsServer.RecordStore;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.net.UnknownHostException;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.vertx.test.core.TestUtils;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.fakedns.MockDnsServer.A_store;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -127,17 +126,6 @@ public class DNSTest extends VertxTestBase {
         testComplete();
       }));
     await();
-  }
-
-  @Test
-  public void testUnresolvedDnsServer() throws Exception {
-    try {
-      DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setHost("iamanunresolvablednsserver.com").setPort(53));
-      Assert.fail();
-    } catch (Exception e) {
-      Assert.assertTrue(e instanceof IllegalArgumentException);
-      Assert.assertEquals("Cannot resolve the host to a valid ip address", e.getMessage());
-    }
   }
 
   @Test
@@ -612,6 +600,79 @@ public class DNSTest extends VertxTestBase {
   public void testIpv6NameServer() {
     // We just want to verify that we can create a client with an IPv6 address as DNS server
     vertx.createDnsClient(new DnsClientOptions().setPort(53).setHost("::1"));
+  }
+
+  @Test
+  public void testResolveDnsServerNameSuccess() {
+    String ip = "10.0.0.1";
+    Map<String, String> store = new HashMap<>();
+    store.put("mydns.org", "127.0.0.1");
+    store.put("vertx.io", ip);
+    testResolveDnsServerName(store, DnsClientOptions.DEFAULT_HOST_RESOLUTION_RETRY_DELAY,
+      client -> {
+        List<String> result = client.resolveA("vertx.io").await();
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ip, result.get(0));
+      });
+  }
+
+  @Test
+  public void testResolveDnsServerNameFailureRecovery() throws Exception {
+    Map<String, String> store = new ConcurrentHashMap<>();
+    testResolveDnsServerName(store, Duration.ofMillis(150), client -> {
+      try {
+        client.resolveA("vertx.io").await();
+        Assert.fail();
+      } catch (Exception e) {
+        Assertions.assertThat(e).isInstanceOf(UnknownHostException.class);
+
+      }
+      try {
+        Thread.sleep(200);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      store.put("mydns.org", "127.0.0.1");
+      client.resolveA("vertx.io").await();
+    });
+  }
+
+  public void testResolveDnsServerName(Map<String, String> store, Duration retryDelay, Consumer<DnsClient> test) {
+    Vertx vertx = Vertx.vertx(new VertxOptions()
+      .setAddressResolverOptions(new AddressResolverOptions()
+        .setCacheNegativeTimeToLive(0)
+        .setServers(List.of(MockDnsServer.IP_ADDRESS + ":" + MockDnsServer.PORT)))
+    );
+    try {
+      mockDnsServer.store(A_store(store));
+      DnsClient dns = vertx.createDnsClient(new DnsClientOptions()
+        .setPort(MockDnsServer.PORT)
+        .setHost("mydns.org")
+        .setHostResolutionRetryDelay(retryDelay));
+      test.accept(dns);
+    } finally {
+      vertx.close().await();
+    }
+  }
+
+  @Test
+  public void testResolveNameServerFailure() {
+    String ip = "10.0.0.1";
+    mockDnsServer.testResolveA(ip);
+    DnsClient dns = vertx.createDnsClient(new DnsClientOptions()
+      .setPort(MockDnsServer.PORT)
+      .setHost("localhost"));
+
+    dns
+      .resolveA("vertx.io")
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ip, result.get(0));
+        testComplete();
+      }));
+    await();
   }
 
   private DnsClient prepareDns() {

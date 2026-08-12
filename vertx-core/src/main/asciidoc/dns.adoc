@@ -21,6 +21,8 @@ You can also create the client with options and configure the query timeout.
 Creating the client with no arguments or omitting the server address will use the address of the server used internally
 for non blocking address resolution.
 
+You can specify an unresolved server address, in which case the client will resolve the address prior querying the server.
+
 [source,$lang]
 ----
 {@link examples.DNSExamples#example1__}
