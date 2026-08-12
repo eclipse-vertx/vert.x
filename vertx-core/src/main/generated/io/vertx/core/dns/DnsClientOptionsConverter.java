@@ -42,6 +42,11 @@ public class DnsClientOptionsConverter {
             obj.setRecursionDesired((Boolean)member.getValue());
           }
           break;
+        case "hostResolutionRetryDelay":
+          if (member.getValue() instanceof Number) {
+            obj.setHostResolutionRetryDelay(java.time.Duration.of(((Number)member.getValue()).longValue(), java.time.temporal.ChronoUnit.MILLIS));
+          }
+          break;
       }
     }
   }
@@ -61,5 +66,8 @@ public class DnsClientOptionsConverter {
       json.put("activityLogFormat", obj.getActivityLogFormat().name());
     }
     json.put("recursionDesired", obj.isRecursionDesired());
+    if (obj.getHostResolutionRetryDelay() != null) {
+      json.put("hostResolutionRetryDelay", obj.getHostResolutionRetryDelay().toMillis());
+    }
   }
 }
