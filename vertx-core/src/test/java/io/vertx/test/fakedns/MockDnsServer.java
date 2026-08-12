@@ -107,7 +107,6 @@ public class MockDnsServer {
                 synchronized (MockDnsServer.this) {
                   currentMessage.add(msg);
                 }
-
                 DnsResponse response = new DatagramDnsResponse(msg.recipient(), msg.sender(), msg.id(), DnsOpCode.QUERY);
                 response.addRecord(DnsSection.QUESTION, dnsRecord);
                 RecordStore s = store;
