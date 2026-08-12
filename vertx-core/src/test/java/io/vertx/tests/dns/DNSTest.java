@@ -614,6 +614,11 @@ public class DNSTest extends VertxTestBase {
     vertx.createDnsClient(new DnsClientOptions().setPort(53).setHost("::1"));
   }
 
+  @Test
+  public void testLocalhostNameServer() {
+    vertx.createDnsClient(new DnsClientOptions().setPort(53).setHost("localhost"));
+  }
+
   private DnsClient prepareDns() {
     return prepareDns(new DnsClientOptions().setQueryTimeout(15000));
   }

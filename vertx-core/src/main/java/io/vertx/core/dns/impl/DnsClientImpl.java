@@ -56,7 +56,7 @@ public class DnsClientImpl implements DnsClient {
     }
 
     DnsAddressResolverProvider provider = DnsAddressResolverProvider.create(vertx, vertx.nameResolver().options()
-      .setServers(Collections.singletonList(dnsServer.getHostString() + ":" + dnsServer.getPort()))
+      .setServers(Collections.singletonList(dnsServer.getAddress().getHostAddress() + ":" + dnsServer.getPort()))
       .setOptResourceEnabled(false));
 
     this.options = new DnsClientOptions(options);
