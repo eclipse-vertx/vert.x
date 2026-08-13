@@ -22,7 +22,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.SslEngineUtils;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
