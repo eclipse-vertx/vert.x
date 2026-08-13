@@ -143,6 +143,54 @@ public class Http3ServerTest extends VertxTestBase {
   }
 
   @Test
+  public void testRequestTrailers() throws Exception{
+
+    server.requestHandler(req -> {
+      req.handler(buff -> {});
+      req.endHandler(v -> {
+        Assert.assertEquals("chunky", req.getTrailer("x-trailer"));
+        Assert.assertEquals("other", req.getTrailer("x-other"));
+        Assert.assertEquals(2, req.trailers().size());
+        req.response().end("done");
+      });
+    });
+
+    server.listen(8443, "localhost").await();
+
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
+
+    stream.write(new DefaultHttp3Headers().method("POST").path("/"));
+    stream.write("hello".getBytes(StandardCharsets.UTF_8));
+    stream.end(new DefaultHttp3Headers().set("x-trailer", "chunky").set("x-other", "other"));
+
+    Assert.assertEquals("done", new String(stream.responseBody()));
+  }
+
+  @Test
+  public void testRequestNoTrailers() throws Exception{
+
+    server.requestHandler(req -> {
+      req.handler(buff -> {});
+      req.endHandler(v -> {
+        Assert.assertTrue(req.trailers().isEmpty());
+        Assert.assertNull(req.getTrailer("x-trailer"));
+        req.response().end("done");
+      });
+    });
+
+    server.listen(8443, "localhost").await();
+
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
+
+    stream.write(new DefaultHttp3Headers().method("POST").path("/"));
+    stream.end("hello".getBytes(StandardCharsets.UTF_8));
+
+    Assert.assertEquals("done", new String(stream.responseBody()));
+  }
+
+  @Test
   public void testUnknownFrame() throws Exception{
 
     server.requestHandler(req -> {
