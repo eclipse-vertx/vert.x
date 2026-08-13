@@ -28,12 +28,6 @@ public interface HttpClientStream extends HttpStream {
 
   Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect);
 
-  /**
-   * Writes a trailing header block, mirroring {@link HttpServerStream#writeHeaders(MultiMap, boolean)}.
-   * Only called after the request body has been written with {@code end == false}.
-   */
-  Future<Void> writeHeaders(MultiMap headers, boolean end);
-
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream resetHandler(Handler<Long> handler);
   HttpClientStream exceptionHandler(Handler<Throwable> handler);

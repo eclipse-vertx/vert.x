@@ -190,8 +190,6 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   public void handleTrailers(MultiMap trailers) {
     HttpEventHandler handler;
     synchronized (connection) {
-      // Setting the trailers must not race with trailers(), where the field can escape:
-      // if the user already obtained the empty map, update it in place instead.
       if (this.trailers == null) {
         this.trailers = trailers;
       } else if (this.trailers != trailers) {

@@ -106,8 +106,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
               if (elt == InboundBuffer.END_SENTINEL) {
                 onEnd();
               } else if (elt instanceof MultiMap) {
-                // Trailers travel through the queue so they cannot be observed before the
-                // preceding data has been delivered.
                 setTrailers((MultiMap) elt);
                 onEnd();
               } else {
@@ -185,8 +183,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   private void setTrailers(MultiMap trailers) {
     synchronized (conn) {
-      // Must not race with trailers(), where the field can escape: if the user already
-      // obtained the empty map, update it in place instead of replacing it.
       if (this.trailers == null) {
         this.trailers = trailers;
       } else if (this.trailers != trailers) {

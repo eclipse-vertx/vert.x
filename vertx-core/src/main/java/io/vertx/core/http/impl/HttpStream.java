@@ -42,6 +42,7 @@ public interface HttpStream {
   ContextInternal context();
 
   Future<Void> writeChunk(Buffer buf, boolean end);
+  Future<Void> writeHeaders(MultiMap headers, boolean end);
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);
 
