@@ -8,16 +8,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.internal.quic;
+package io.vertx.core.internal.net;
 
-import io.netty.handler.codec.quic.QuicTokenHandler;
-import io.vertx.core.net.QuicServer;
+import io.netty.handler.codec.quic.FlushStrategy;
+import io.vertx.core.net.QuicEndpoint;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface QuicServerInternal extends QuicEndpointInternal, QuicServer {
+public interface QuicEndpointInternal extends QuicEndpoint {
 
-  QuicServerInternal tokenHandler(QuicTokenHandler tokenHandler);
+  QuicEndpointInternal flushStrategy(FlushStrategy flushStrategy);
 
 }

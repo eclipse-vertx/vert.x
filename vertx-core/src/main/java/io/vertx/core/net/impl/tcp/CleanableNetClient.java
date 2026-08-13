@@ -10,7 +10,6 @@
  */
 package io.vertx.core.net.impl.tcp;
 
-import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.CleanableObject;
@@ -66,11 +65,6 @@ public class CleanableNetClient extends CleanableObject<NetClientInternal> imple
   @Override
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
     return getOrDie().updateSSLOptions(options, force);
-  }
-
-  @Override
-  public void close(Completable<Void> completion) {
-    getOrDie().close(completion);
   }
 
   @Override

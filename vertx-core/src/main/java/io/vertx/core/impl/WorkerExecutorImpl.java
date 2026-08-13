@@ -13,41 +13,34 @@ package io.vertx.core.impl;
 
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.WorkerExecutorInternal;
-import io.vertx.core.internal.WorkerPool;
+import io.vertx.core.internal.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.Cleaner;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
+class WorkerExecutorImpl extends CleanableObject<WorkerPool> implements MetricsProvider, WorkerExecutorInternal {
 
   private final VertxInternal vertx;
-  private final WorkerPool pool;
-  private final Cleaner.Cleanable cleanable;
 
-  public WorkerExecutorImpl(VertxInternal vertx, Cleaner cleaner, WorkerPool pool) {
+  public WorkerExecutorImpl(VertxInternal vertx, Cleaner cleaner, CloseableResource<WorkerPool> resource) {
+    super(cleaner, resource);
     this.vertx = vertx;
-    this.pool = pool;
-    this.cleanable = cleaner.register(this, pool::close);
   }
 
   @Override
   public Metrics getMetrics() {
-    return pool.metrics();
+    return getOrDie().metrics();
   }
 
   @Override
   public boolean isMetricsEnabled() {
-    PoolMetrics metrics = pool.metrics();
-    return metrics != null;
+    return getMetrics() != null;
   }
 
   @Override
@@ -57,7 +50,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   @Override
   public WorkerPool pool() {
-    return pool;
+    return getOrDie();
   }
 
   @Override
@@ -74,12 +67,11 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
     } else {
       orderedTasks = null;
     }
-    return ExecuteBlocking.executeBlocking(pool, context, blockingCodeHandler, orderedTasks);
+    return ExecuteBlocking.executeBlocking(getOrDie(), context, blockingCodeHandler, orderedTasks);
   }
 
   @Override
   public Future<Void> close() {
-    cleanable.clean();
-    return vertx.getOrCreateContext().succeededFuture();
+    return shutdown(Duration.ZERO);
   }
 }

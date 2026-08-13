@@ -24,20 +24,22 @@ public class CleanableObject<T> {
 
   public static final Duration DEFAULT_CLEAN_TIMEOUT = Duration.ofSeconds(30);
 
-  private static class Action<T> extends WeakReference<CloseableResource<T>> implements Runnable {
+  private static class Action<T> extends WeakReference<CloseableResource<? extends T>> implements Runnable {
 
     private Duration timeout = DEFAULT_CLEAN_TIMEOUT;
     private Future<Void> closeFuture;
 
-    public Action(CloseableResource<T> resource) {
+    public Action(CloseableResource<? extends T> resource) {
       super(resource);
     }
 
     @Override
     public void run() {
-      CloseableResource<T> d = get();
+      CloseableResource<? extends T> d = get();
       if (d != null) {
         closeFuture = d.shutdown(timeout);
+      } else {
+        closeFuture = Future.succeededFuture();
       }
     }
   }
@@ -45,14 +47,14 @@ public class CleanableObject<T> {
   private Cleaner.Cleanable cleanable;
   private Action<T> action;
 
-  public CleanableObject(Cleaner cleaner, CloseableResource<T> dispose) {
+  public CleanableObject(Cleaner cleaner, CloseableResource<? extends T> dispose) {
     this.action = new Action<>(dispose);
     this.cleanable = cleaner.register(this, action);
   }
 
   protected final T get() {
     Action<T> action = this.action;
-    CloseableResource<T> resource;
+    CloseableResource<? extends T> resource;
     return action != null && (resource = action.get()) != null ? resource.get() : null;
   }
 

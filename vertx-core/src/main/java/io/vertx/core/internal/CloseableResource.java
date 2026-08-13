@@ -19,18 +19,24 @@ import java.time.Duration;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface CloseableResource<T> {
+public interface CloseableResource<R> extends Closeable {
+
+  static <R extends Closeable> CloseableResource<R> of(R resource) {
+    return new CloseableResource<R>() {
+      @Override
+      public R get() {
+        return resource;
+      }
+      @Override
+      public Future<Void> shutdown(Duration timeout) {
+        return resource.shutdown(timeout);
+      }
+    };
+  }
 
   /**
    * @return the actual resource
    */
-  T get();
-
-  /**
-   * Shutdown the resource
-   * @param duration the timeout
-   * @return the future completed after shutdown
-   */
-  Future<Void> shutdown(Duration duration);
+  R get();
 
 }

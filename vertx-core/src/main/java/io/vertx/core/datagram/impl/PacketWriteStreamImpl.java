@@ -14,7 +14,6 @@ package io.vertx.core.datagram.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.WriteStream;
 
@@ -73,8 +72,6 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = Promise.promise();
-    datagramSocket.close(promise);
-    return promise.future();
+    return datagramSocket.close();
   }
 }

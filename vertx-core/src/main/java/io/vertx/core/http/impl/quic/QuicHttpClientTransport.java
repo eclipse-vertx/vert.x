@@ -24,7 +24,7 @@ import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
-import io.vertx.core.internal.quic.QuicConnectionInternal;
+import io.vertx.core.internal.net.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.quic.QuicClientImpl;

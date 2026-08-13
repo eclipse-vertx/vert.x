@@ -293,15 +293,24 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(TEST_CONTENT_SIZE, INBOUND_LIMIT));
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
+  @Test
+  public void testRateUpdateWhenServerStartedWithoutTrafficShaping() throws Exception {
     HttpServer testServer = nonTrafficShapedServerFactory.apply(vertx);
+
+    testServer.requestHandler(req -> {});
+
+    startServer(testServer);
 
     // update inbound rate to twice the limit
     TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
                                              .setOutboundGlobalBandwidth(OUTBOUND_LIMIT)
                                              .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
-    testServer.updateTrafficShapingOptions(trafficOptions);
+
+    try {
+      testServer.updateTrafficShapingOptions(trafficOptions).await(20, TimeUnit.SECONDS);
+      Assert.fail();
+    } catch (IllegalStateException expected) {
+    }
   }
 
   /**

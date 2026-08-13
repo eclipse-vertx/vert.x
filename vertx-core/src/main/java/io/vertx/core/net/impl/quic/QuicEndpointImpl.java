@@ -25,7 +25,7 @@ import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.quic.QuicEndpointInternal;
+import io.vertx.core.internal.net.QuicEndpointInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;

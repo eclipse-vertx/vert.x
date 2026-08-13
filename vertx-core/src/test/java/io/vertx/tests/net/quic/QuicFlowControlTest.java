@@ -14,7 +14,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.Completable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.internal.net.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
