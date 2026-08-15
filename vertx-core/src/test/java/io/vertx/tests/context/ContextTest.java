@@ -474,6 +474,62 @@ public class ContextTest extends VertxTestBase {
     checkDuplicate(ctx, duplicated);
   }
 
+  @Test
+  public void testIsRunningOnContext() throws Exception {
+    testIsRunningOnContext((ContextInternal) vertx.getOrCreateContext(), (ContextInternal) ((VertxInternal) vertx).createEventLoopContext());
+  }
+
+  @Test
+  public void testIsRunningOnContextWorker() throws Exception {
+    testIsRunningOnContext(createWorkerContext(), createWorkerContext());
+  }
+
+  private void testIsRunningOnContext(ContextInternal ctx, ContextInternal other) throws Exception {
+    ContextInternal duplicate = ctx.duplicate();
+    assertFalse(ctx.isRunningOnContext());
+    assertFalse(duplicate.isRunningOnContext());
+    CountDownLatch latch1 = new CountDownLatch(1);
+    ctx.runOnContext(v -> {
+      assertTrue(ctx.isRunningOnContext());
+      // A duplicate shares the concurrency of the context it duplicates
+      assertTrue(duplicate.isRunningOnContext());
+      assertFalse(other.isRunningOnContext());
+      assertFalse(other.duplicate().isRunningOnContext());
+      latch1.countDown();
+    });
+    awaitLatch(latch1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    duplicate.runOnContext(v -> {
+      assertTrue(duplicate.isRunningOnContext());
+      // The original context and its duplicates are the same context from the concurrency perspective
+      assertTrue(ctx.isRunningOnContext());
+      assertTrue(ctx.duplicate().isRunningOnContext());
+      assertTrue(duplicate.duplicate().isRunningOnContext());
+      assertFalse(other.isRunningOnContext());
+      assertFalse(other.duplicate().isRunningOnContext());
+      latch2.countDown();
+    });
+    awaitLatch(latch2);
+  }
+
+  @Test
+  public void testIsRunningOnContextFromEventBusHandler() throws Exception {
+    // Event-bus messages are delivered on a duplicate of the consumer context, this
+    // must be observed as running on the verticle context (issue #4576)
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        ContextInternal ctx = (ContextInternal) context;
+        vertx.eventBus().<String>consumer("the-address", msg -> {
+          assertTrue(((ContextInternal) Vertx.currentContext()).isDuplicate());
+          assertTrue(ctx.isRunningOnContext());
+          testComplete();
+        }).completion().onComplete(startPromise);
+      }
+    }).onComplete(onSuccess(id -> vertx.eventBus().send("the-address", "msg")));
+    await();
+  }
+
   private void checkDuplicate(ContextInternal ctx, ContextInternal duplicated) throws Exception {
     assertSame(ctx.nettyEventLoop(), duplicated.nettyEventLoop());
     assertSame(ctx.deployment(), duplicated.deployment());
