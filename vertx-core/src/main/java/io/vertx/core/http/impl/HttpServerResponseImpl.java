@@ -374,10 +374,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private Future<Void> write(Buffer chunk, boolean end) {
-    Future<Void> future = write_(chunk, end && trailedMap == null);
+    // Trailers accessed but left empty are not sent, the last data frame ends the stream instead
+    MultiMap trailers = trailedMap != null && !trailedMap.isEmpty() ? trailedMap : null;
+    Future<Void> future = write_(chunk, end && trailers == null);
     if (end) {
-      if (trailedMap != null) {
-        future = stream.writeHeaders(trailedMap, true);
+      if (trailers != null) {
+        future = stream.writeHeaders(trailers, true);
       }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;

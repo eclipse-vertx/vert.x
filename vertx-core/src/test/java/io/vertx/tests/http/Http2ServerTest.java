@@ -884,6 +884,47 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testEmptyTrailers() throws Exception {
+    // Accessing the trailers without adding any must not send an empty trailers frame,
+    // the end of stream is signaled by the last data frame instead
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.trailers();
+      resp.end("some-content");
+    });
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int headersCount;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int count = headersCount++;
+          vertx.runOnContext(v -> {
+            Assert.assertEquals("Unexpected trailers frame", 0, count);
+            Assert.assertFalse(endStream);
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String content = data.toString(StandardCharsets.UTF_8);
+          vertx.runOnContext(v -> {
+            Assert.assertEquals("some-content", content);
+            Assert.assertTrue("Expected the last data frame to end the stream", endOfStream);
+            testComplete();
+          });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    await();
+  }
+
+  @Test
   public void testTrailers() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
