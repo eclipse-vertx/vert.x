@@ -677,6 +677,10 @@ Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
 {@link examples.HttpExamples#serverResponsePutTrailer}
 ----
 
+NOTE: accessing {@link io.vertx.core.http.HttpServerResponse#trailers} commits the response to sending trailers when it
+ends: an HTTP/2 or HTTP/3 stream is then ended by a trailers frame instead of the last data frame, even when no trailer
+was added. Only call it when you actually write trailers.
+
 ==== Serving files directly from disk or the classpath
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an {@link io.vertx.core.file.AsyncFile}
