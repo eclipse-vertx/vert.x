@@ -253,6 +253,11 @@ The simplest way to create a TCP client, using all default options is as follows
 {@link examples.TcpExamples#defaultTcpClient}
 ----
 
+IMPORTANT: Keep a reference to the client for as long as you use it. A client that is no longer referenced is
+shut down when it is garbage collected, as if {@link io.vertx.core.net.NetClient#shutdown()} had been called (see
+<<_tcp_graceful_shut_down>>): sockets without a shutdown handler are closed immediately. Typically you store the client
+in a field of the verticle or of the component that uses it, instead of creating it inline in the code that connects.
+
 === Configuring a TCP client
 
 If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.TcpClientConfig}
