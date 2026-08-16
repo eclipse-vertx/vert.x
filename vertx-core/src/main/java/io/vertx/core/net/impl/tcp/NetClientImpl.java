@@ -62,6 +62,7 @@ public class NetClientImpl implements NetClientInternal {
 
   private final VertxInternal vertx;
   private final TcpClientConfig config;
+  private final SocketAddress localAddress;
   private final TcpConfig transportOptions;
   private final String protocol;
   private final boolean registerWriteHandler;
@@ -77,8 +78,19 @@ public class NetClientImpl implements NetClientInternal {
                        ClientSSLOptions sslOptions,
                        SSLEngineOptions sslEngineOptions,
                        boolean registerWriteHandler) {
+    this(vertx, config, protocol, sslOptions, sslEngineOptions, registerWriteHandler, null);
+  }
+
+  public NetClientImpl(VertxInternal vertx,
+                       TcpClientConfig config,
+                       String protocol,
+                       ClientSSLOptions sslOptions,
+                       SSLEngineOptions sslEngineOptions,
+                       boolean registerWriteHandler,
+                       SocketAddress localAddress) {
 
     this.vertx = vertx;
+    this.localAddress = localAddress;
     this.channelGroup = new ConnectionGroup(vertx.acceptorEventLoopGroup().next()) {
       @Override
       protected void handleClose(Completable<Void> completion) {
@@ -314,7 +326,11 @@ public class NetClientImpl implements NetClientInternal {
       // Transport specific TCP configuration
       vertx.transport().configure(config.getTransportConfig(), domainSocket, bootstrap);
 
-      SocketAddress localAddress = config.getLocalAddress();
+      // The connect options local address overrides the client default local address
+      SocketAddress localAddress = connectOptions.getLocalAddress();
+      if (localAddress == null) {
+        localAddress = this.localAddress;
+      }
       if (localAddress != null) {
         bootstrap.localAddress(localAddress.host(), localAddress.port());
       }
