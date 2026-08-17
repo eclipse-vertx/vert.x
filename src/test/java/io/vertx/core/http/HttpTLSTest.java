@@ -248,7 +248,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequired() throws Exception {
-    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().pass();
+    TLSTest test = testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().pass();
+    // The client certificate chain is exposed by the server request
+    List<Certificate> certs = test.serverPeerCerts();
+    assertNotNull(certs);
+    assertFalse(certs.isEmpty());
+    assertTrue(certs.get(0) instanceof X509Certificate);
   }
 
   @Test
@@ -1053,6 +1058,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .setURI(DEFAULT_TEST_URI));
     };
     Certificate clientPeerCert;
+    List<Certificate> serverPeerCerts;
     String indicatedServerName;
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
@@ -1202,6 +1208,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return clientPeerCert;
     }
 
+    public List<Certificate> serverPeerCerts() {
+      return serverPeerCerts;
+    }
+
     TLSTest pass() {
       return run(true);
     }
@@ -1303,6 +1313,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
         indicatedServerName = req.connection().indicatedServerName();
         assertEquals(version, req.version());
         assertEquals(serverSSL, req.isSSL());
+        if (req.isSSL()) {
+          try {
+            serverPeerCerts = req.peerCertificates();
+          } catch (SSLPeerUnverifiedException ignore) {
+          }
+        }
         if (req.method() == HttpMethod.GET || req.method() == HttpMethod.HEAD) {
           req.response().end();
         } else {
