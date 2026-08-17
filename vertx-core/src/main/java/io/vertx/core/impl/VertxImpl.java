@@ -27,9 +27,8 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
-import io.vertx.core.eventbus.impl.EventBusInternal;
+import io.vertx.core.internal.eventbus.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
@@ -442,7 +441,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new HttpClientBuilderInternal(this);
   }
 
-  public EventBus eventBus() {
+  public EventBusInternal eventBus() {
     return eventBus;
   }
 

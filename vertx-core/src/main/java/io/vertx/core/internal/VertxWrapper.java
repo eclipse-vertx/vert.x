@@ -17,7 +17,7 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.internal.eventbus.EventBusInternal;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
@@ -127,7 +127,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public EventBus eventBus() {
+  public EventBusInternal eventBus() {
     return delegate.eventBus();
   }
 
