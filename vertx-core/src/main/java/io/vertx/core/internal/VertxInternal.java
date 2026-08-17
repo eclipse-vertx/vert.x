@@ -15,6 +15,7 @@ package io.vertx.core.internal;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.Closeable;
+import io.vertx.core.internal.eventbus.EventBusInternal;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.impl.*;
 import io.vertx.core.internal.deployment.DeploymentManager;
@@ -271,6 +272,8 @@ public interface VertxInternal extends Vertx {
     ContextInternal context = getOrCreateContext();
     return context.executeBlockingInternal(blockingCodeHandler);
   }
+
+  EventBusInternal eventBus();
 
   /**
    * @return the cluster manager

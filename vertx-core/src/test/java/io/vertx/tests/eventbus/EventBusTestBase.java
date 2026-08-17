@@ -15,6 +15,8 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
@@ -979,6 +981,29 @@ public abstract class EventBusTestBase extends VertxTestBase {
         testComplete();
       }));
     });
+    await();
+  }
+
+  @Test
+  public void testConsumerContext() {
+    Vertx[] vertices = vertices(2);
+    VertxInternal vertx1 = (VertxInternal)vertices[0];
+    ContextInternal ctx1 = vertx1.createEventLoopContext();
+    MessageConsumer<String> consumer = vertx1.eventBus().consumer(ctx1, new MessageConsumerOptions().setAddress(ADDRESS1));
+    consumer.handler(msg -> {
+      Assert.assertSame(vertx1.getOrCreateContext().unwrap(), ctx1);
+      msg.reply("pong");
+    });
+    consumer
+      .completion()
+      .await();
+    VertxInternal vertx2 = (VertxInternal)vertices[1];
+    ContextInternal ctx2 = vertx1.createEventLoopContext();
+    Future<Message<Object>> reply = vertx2.eventBus().request(ctx2, ADDRESS1, "ping", new DeliveryOptions());
+    reply.onComplete(TestUtils.onSuccess(msg -> {
+      Assert.assertSame(Vertx.currentContext(), ctx2);
+      testComplete();
+    }));
     await();
   }
 }
