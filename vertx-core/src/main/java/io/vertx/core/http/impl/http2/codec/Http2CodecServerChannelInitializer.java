@@ -37,6 +37,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
   private final boolean useDecompression;
   private final boolean useCompression;
   private final Http2ServerConfig config;
+  private final int sendFileChunkSize;
   private final CompressionManager compressionManager;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
@@ -49,6 +50,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
                                             boolean useDecompression,
                                             boolean useCompression,
                                             Http2ServerConfig config,
+                                            int sendFileChunkSize,
                                             CompressionManager compressionManager,
                                             Supplier<ContextInternal> streamContextSupplier,
                                             Handler<HttpServerConnection> connectionHandler,
@@ -61,6 +63,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
     this.useDecompression = useDecompression;
     this.useCompression = useCompression;
     this.config = config;
+    this.sendFileChunkSize = sendFileChunkSize;
     this.compressionManager = compressionManager;
     this.streamContextSupplier = streamContextSupplier;
     this.connectionHandler = connectionHandler;
@@ -95,7 +98,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
       .connectionFactory(connHandler -> {
         Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler,
           compressionManager != null ? compressionManager::determineEncoding : null, tracingPolicy, httpMetrics,
-          transportMetrics);
+          transportMetrics, sendFileChunkSize);
         conn.metric(metric);
         return conn;
       })

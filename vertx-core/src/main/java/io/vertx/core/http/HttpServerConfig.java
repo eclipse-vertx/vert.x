@@ -14,6 +14,7 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.net.*;
 
 import java.time.Duration;
@@ -42,6 +43,12 @@ public class HttpServerConfig {
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 256L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 3L;
 
+  /**
+   * Default chunk size, in bytes, used to send a file when the zero-copy (file region) transfer cannot be
+   * used = 8192
+   */
+  public static final int DEFAULT_SEND_FILE_CHUNK_SIZE = 8192;
+
   private static QuicServerConfig defaultQuicConfig() {
     QuicServerConfig config = new QuicServerConfig();
     config.getTransportConfig().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
@@ -65,6 +72,7 @@ public class HttpServerConfig {
   private QueryParamDecoderConfig queryParamDecoderConfig;
   private boolean handle100ContinueAutomatically;
   private boolean strictThreadMode;
+  private int sendFileChunkSize;
   private ObservabilityConfig observabilityConfig;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
@@ -136,6 +144,7 @@ public class HttpServerConfig {
     this.queryParamDecoderConfig = queryParamDecoderConfig;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.strictThreadMode = options.getStrictThreadMode();
+    this.sendFileChunkSize = DEFAULT_SEND_FILE_CHUNK_SIZE;
     this.observabilityConfig = observabilityConfig;
     this.http1Config = new Http1ServerConfig(options.getHttp1Config());
     this.http2Config = new Http2ServerConfig(options.getHttp2Config());
@@ -154,6 +163,7 @@ public class HttpServerConfig {
     this.queryParamDecoderConfig = null;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
+    this.sendFileChunkSize = DEFAULT_SEND_FILE_CHUNK_SIZE;
     this.observabilityConfig = null;
     this.http1Config = null;
     this.http2Config = null;
@@ -175,6 +185,7 @@ public class HttpServerConfig {
     this.queryParamDecoderConfig = other.queryParamDecoderConfig != null ? new QueryParamDecoderConfig(other.queryParamDecoderConfig) : null;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.strictThreadMode = other.strictThreadMode;
+    this.sendFileChunkSize = other.sendFileChunkSize;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : null;
@@ -420,6 +431,30 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setHandle100ContinueAutomatically(boolean handle100ContinueAutomatically) {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    return this;
+  }
+
+  /**
+   * @return the chunk size, in bytes, used to send files
+   */
+  public int getSendFileChunkSize() {
+    return sendFileChunkSize;
+  }
+
+  /**
+   * <p>Set the chunk size, in bytes, used by {@link HttpServerResponse#sendFile} to read the file and write it to the
+   * response.</p>
+   *
+   * <p>This setting only applies when the file cannot be transferred with the zero-copy (file region) mechanism, e.g.
+   * when the connection is encrypted or when the protocol is HTTP/2 or HTTP/3. The default value is a conservative
+   * one, a larger value can achieve a better throughput at the cost of a larger memory footprint.</p>
+   *
+   * @param sendFileChunkSize the chunk size in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setSendFileChunkSize(int sendFileChunkSize) {
+    Arguments.require(sendFileChunkSize > 0, "sendFileChunkSize must be > 0");
+    this.sendFileChunkSize = sendFileChunkSize;
     return this;
   }
 

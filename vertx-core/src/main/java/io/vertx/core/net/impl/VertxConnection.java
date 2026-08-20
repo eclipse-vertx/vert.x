@@ -20,7 +20,6 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.Future;
-import io.vertx.core.http.SendFileOptions;
 import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
@@ -58,6 +57,11 @@ public class VertxConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(VertxConnection.class);
 
   private static final int MAX_REGION_SIZE = 1024 * 1024;
+
+  /**
+   * The default chunk size used when a file is sent without the zero-copy (file region) mechanism.
+   */
+  public static final int DEFAULT_SEND_FILE_CHUNK_SIZE = 8192;
 
   public final VoidChannelPromise voidPromise;
   private final OutboundWriteQueue outboundMessageQueue;
@@ -548,7 +552,7 @@ public class VertxConnection extends ConnectionBase {
   }
 
   public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
-    return sendFile(fc, offset, length, SendFileOptions.DEFAULT_CHUNK_SIZE);
+    return sendFile(fc, offset, length, DEFAULT_SEND_FILE_CHUNK_SIZE);
   }
 
   public ChannelFuture sendFile(FileChannel fc, long offset, long length, int chunkSize) {

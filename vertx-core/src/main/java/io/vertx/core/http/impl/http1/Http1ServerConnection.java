@@ -82,6 +82,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private final int maxFormBufferedBytes;
   private final QueryParamDecoder queryParamDecoder;
   private final Http1ServerConfig serverConfig;
+  private final int sendFileChunkSize;
   private final boolean registerWebSocketWriteHandlers;
   private final WebSocketServerConfig webSocketConfig;
   private final ServerSSLOptions sslOptions;
@@ -109,6 +110,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
                                int maxFormBufferedBytes,
                                QueryParamDecoderConfig queryParamDecoderConfig,
                                Http1ServerConfig serverConfig,
+                               int sendFileChunkSize,
                                boolean registerWebSocketWriteHandlers,
                                WebSocketServerConfig webSocketConfig,
                                ChannelHandlerContext chctx,
@@ -125,6 +127,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.queryParamDecoder = new QueryParamDecoder(queryParamDecoderConfig);
     this.serverConfig = serverConfig;
+    this.sendFileChunkSize = sendFileChunkSize;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
     this.sslContextManager = sslContextManager;
@@ -170,6 +173,11 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   @Override
   public boolean supportsSendFile() {
     return true;
+  }
+
+  @Override
+  public int sendFileChunkSize() {
+    return sendFileChunkSize;
   }
 
   TracingPolicy tracingPolicy() {

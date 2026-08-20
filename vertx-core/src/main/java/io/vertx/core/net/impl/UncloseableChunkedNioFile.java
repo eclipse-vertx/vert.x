@@ -11,7 +11,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.stream.ChunkedNioFile;
-import io.vertx.core.http.SendFileOptions;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;

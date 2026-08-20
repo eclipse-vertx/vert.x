@@ -17,9 +17,13 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerConfig;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.SendFileOptions;
+import io.vertx.core.http.impl.HttpServerConnection;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.FileDescriptorLeakDetectorRule;
@@ -37,6 +41,9 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -68,6 +75,56 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
     sendFile(checkpoint, "test-send-file.html", content, true, () -> client.request(requestOptions));
   }
 
+  /**
+   * @return whether the file is streamed to the client instead of being transferred with the zero-copy mechanism, in
+   *         which case the size of the chunks the client receives is bounded by the configured chunk size
+   */
+  protected boolean isSendFileChunked() {
+    return false;
+  }
+
+  /**
+   * Create a server from {@link #createBaseServerOptions()} with the opportunity to amend the derived config.
+   */
+  protected HttpServer createHttpServer(Consumer<HttpServerConfig> configurator) {
+    HttpServerOptions options = createBaseServerOptions();
+    HttpServerConfig config = new HttpServerConfig(options);
+    configurator.accept(config);
+    ServerSSLOptions sslOptions;
+    if (options.isSsl()) {
+      sslOptions = options.getSslOptions() != null ? options.getSslOptions().copy() : new ServerSSLOptions();
+    } else {
+      sslOptions = null;
+    }
+    return vertx.createHttpServer(config, sslOptions);
+  }
+
+  @Test
+  public void testSendFileChunkSize() throws Exception {
+    int chunkSize = 1024;
+    File file = TestUtils.tmpFile(".dat", 256 * 1024);
+    server = createHttpServer(config -> config.setSendFileChunkSize(chunkSize));
+    server.requestHandler(req -> {
+      // The setting is carried by the connection, whatever the protocol
+      assertEquals(chunkSize, ((HttpServerConnection) req.connection()).sendFileChunkSize());
+      req.response().sendFile(file.getAbsolutePath());
+    });
+    startServer(testAddress, server);
+    List<Integer> sizes = Collections.synchronizedList(new ArrayList<>());
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req.send().compose(resp -> {
+        resp.handler(buff -> sizes.add(buff.length()));
+        return resp.body();
+      }))
+      .await();
+    assertEquals(file.length(), body.length());
+    if (isSendFileChunked()) {
+      // The file is pumped chunk per chunk, no chunk can be larger than the configured size, which is smaller than
+      // the default one - this would not hold if the setting was ignored
+      assertThat(sizes).isNotEmpty().allMatch(size -> size <= chunkSize);
+    }
+  }
+
   protected void sendFile(Checkpoint checkpoint, String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
     File fileToSend = setupFile(fileName, contentExpected);
     server.requestHandler(req -> {
@@ -89,50 +146,6 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
         }))
         .compose(HttpClientResponse::body))
       .await();
-  }
-
-  @Test
-  public void testSendFileWithOptions() throws Exception {
-    String content = TestUtils.randomUnicodeString(10000);
-    File file = setupFile("test-send-file-options.html", content);
-    SendFileOptions options = new SendFileOptions().setChunkSize(32 * 1024);
-
-    server.requestHandler(req -> req.response().sendFile(file.getAbsolutePath(), options));
-    startServer(testAddress);
-
-    Buffer body = client.request(requestOptions)
-      .compose(req -> req
-        .send()
-        .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals("text/html", resp.headers().get("Content-Type"));
-          assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
-        }))
-        .compose(HttpClientResponse::body))
-      .await();
-    assertEquals(content, body.toString());
-  }
-
-  @Test
-  public void testSendFileRangeWithOptions() throws Exception {
-    String content = "0123456789abcdefghijklmnopqrstuvwxyz";
-    File file = setupFile("test-send-file-options-range.html", content);
-    SendFileOptions options = new SendFileOptions().setChunkSize(4);
-
-    server.requestHandler(req -> req.response().sendFile(file.getAbsolutePath(), 10, 12, options));
-    startServer(testAddress);
-
-    Buffer body = client.request(requestOptions)
-      .compose(req -> req
-        .send()
-        .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals("text/html", resp.headers().get("Content-Type"));
-          assertEquals("12", resp.headers().get("content-length"));
-        }))
-        .compose(HttpClientResponse::body))
-      .await();
-    assertEquals("abcdefghijkl", body.toString());
   }
 
   @Test
@@ -320,17 +333,6 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
   public void testSendFileWithFileChannel() throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file.getChannel());
-    try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
-      assertTrue(raf.getChannel().isOpen());
-    }
-  }
-
-  @Test
-  public void testSendFileWithFileChannelAndOptions() throws Exception {
-    int fileLength = 64 * 1024;
-    SendFileOptions options = new SendFileOptions().setChunkSize(1024);
-    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) ->
-      response.sendFile(file.getChannel(), options);
     try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
       assertTrue(raf.getChannel().isOpen());
     }

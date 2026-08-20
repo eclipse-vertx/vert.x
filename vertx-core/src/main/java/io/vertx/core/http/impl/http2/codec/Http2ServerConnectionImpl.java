@@ -55,6 +55,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp2ConnectionHandler handler;
+  private final int sendFileChunkSize;
 
   private Handler<HttpServerStream> streamHandler;
   private int concurrentStreams;
@@ -67,7 +68,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     Function<String, String> encodingDetector,
     TracingPolicy tracingPolicy,
     HttpServerMetrics<?, ?> httpMetrics,
-    TransportMetrics<?> transportMetrics) {
+    TransportMetrics<?> transportMetrics,
+    int sendFileChunkSize) {
     super(context, connHandler);
 
     this.tracingPolicy = tracingPolicy;
@@ -76,6 +78,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     this.httpMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
     this.handler = connHandler;
+    this.sendFileChunkSize = sendFileChunkSize;
   }
 
   @Override
@@ -273,5 +276,10 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   public boolean supportsSendFile() {
     return false;
+  }
+
+  @Override
+  public int sendFileChunkSize() {
+    return sendFileChunkSize;
   }
 }
