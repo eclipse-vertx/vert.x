@@ -44,8 +44,7 @@ public class HttpServerConfig {
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 3L;
 
   /**
-   * Default chunk size, in bytes, used to send a file when the zero-copy (file region) transfer cannot be
-   * used = 8192
+   * Default chunk size used to send a file = 8192
    */
   public static final int DEFAULT_SEND_FILE_CHUNK_SIZE = 8192;
 

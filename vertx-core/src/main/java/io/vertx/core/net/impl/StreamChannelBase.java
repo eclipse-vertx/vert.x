@@ -52,9 +52,16 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
   private Handler<Void> readCompletionHandler;
   private Handler<Object> eventHandler;
   private Handler<Duration> shutdownHandler;
+  private final int sendFileChunkSize;
 
   public StreamChannelBase(ContextInternal context, ChannelHandlerContext channel) {
+    this(context, channel, DEFAULT_SEND_FILE_CHUNK_SIZE);
+  }
+
+  public StreamChannelBase(ContextInternal context, ChannelHandlerContext channel, int sendFileChunkSize) {
     super(context, channel);
+
+    this.sendFileChunkSize = sendFileChunkSize;
 
     EventLoopExecutor executor;
     if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == chctx.executor()) {
@@ -227,7 +234,7 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
     }
     long actualLength = Math.min(length, file.length() - offset);
     long actualOffset = Math.min(offset, file.length());
-    ChannelFuture fut = sendFile(raf.getChannel(), actualOffset, actualLength);
+    ChannelFuture fut = sendFile(raf.getChannel(), actualOffset, actualLength, sendFileChunkSize);
     fut.addListener(promise);
     return promise.future().andThen(ar -> {
       try {

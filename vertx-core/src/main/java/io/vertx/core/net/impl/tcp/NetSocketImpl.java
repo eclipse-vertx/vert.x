@@ -69,7 +69,18 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
                        SSLOptions sslOptions,
                        TransportMetrics<?> metrics,
                        boolean registerWriteHandler) {
-    super(context, channel);
+    this(context, channel, remoteAddress, sslContextManager, sslOptions, metrics, registerWriteHandler, DEFAULT_SEND_FILE_CHUNK_SIZE);
+  }
+
+  public NetSocketImpl(ContextInternal context,
+                       ChannelHandlerContext channel,
+                       SocketAddress remoteAddress,
+                       SslContextManager sslContextManager,
+                       SSLOptions sslOptions,
+                       TransportMetrics<?> metrics,
+                       boolean registerWriteHandler,
+                       int sendFileChunkSize) {
+    super(context, channel, sendFileChunkSize);
     this.sslContextManager = sslContextManager;
     this.sslOptions = sslOptions;
     this.writeHandlerID = registerWriteHandler ? "__vertx.net." + UUID.randomUUID() : null;

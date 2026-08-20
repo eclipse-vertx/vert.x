@@ -57,10 +57,6 @@ public class VertxConnection extends ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(VertxConnection.class);
 
   private static final int MAX_REGION_SIZE = 1024 * 1024;
-
-  /**
-   * The default chunk size used when a file is sent without the zero-copy (file region) mechanism.
-   */
   public static final int DEFAULT_SEND_FILE_CHUNK_SIZE = 8192;
 
   public final VoidChannelPromise voidPromise;
