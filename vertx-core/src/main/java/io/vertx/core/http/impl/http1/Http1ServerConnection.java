@@ -513,6 +513,14 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     if (responseInProgress != null) {
       responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
+    Http1ServerRequest requestInProgress = this.requestInProgress;
+    if (requestInProgress != null && requestInProgress != responseInProgress && !requestInProgress.isEnded()) {
+      // The request body was not fully received before the connection closed,
+      // report a request reset so metrics like active requests are not leaked
+      if (httpMetrics != null) {
+        httpMetrics.requestReset(requestInProgress.metric());
+      }
+    }
     super.handleClosed();
   }
 
