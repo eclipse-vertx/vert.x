@@ -2492,7 +2492,7 @@ public class NetTest {
     startServer(testAddress);
     client = vertx.createNetClient(new NetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("").setTrustAll(true));
     NetSocket so = client.connect(testAddress).await();
-    List<Integer> sizes = new ArrayList<>();
+    List<Integer> sizes = Collections.synchronizedList(new ArrayList<>());
     Promise<Void> received = Promise.promise();
     AtomicInteger length = new AtomicInteger();
     so.handler(buff -> {

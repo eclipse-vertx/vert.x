@@ -434,6 +434,25 @@ public class HttpServerConfig {
   }
 
   /**
+   * @return whether to use the strict thread mode.
+   */
+  public boolean getStrictThreadMode() {
+    return strictThreadMode;
+  }
+
+  /**
+   * Indicates the server that the HTTP request/response interactions will happen exclusively on the expected thread when
+   * the threading model is event-loop.
+   *
+   * @param strictThreadMode whether to use the strict thread mode
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setStrictThreadMode(boolean strictThreadMode) {
+    this.strictThreadMode = strictThreadMode;
+    return this;
+  }
+
+  /**
    * @return the chunk size, in bytes, used to send files
    */
   public int getSendFileChunkSize() {
@@ -454,25 +473,6 @@ public class HttpServerConfig {
   public HttpServerConfig setSendFileChunkSize(int sendFileChunkSize) {
     Arguments.require(sendFileChunkSize > 0, "sendFileChunkSize must be > 0");
     this.sendFileChunkSize = sendFileChunkSize;
-    return this;
-  }
-
-  /**
-   * @return whether to use the strict thread mode.
-   */
-  public boolean getStrictThreadMode() {
-    return strictThreadMode;
-  }
-
-  /**
-   * Indicates the server that the HTTP request/response interactions will happen exclusively on the expected thread when
-   * the threading model is event-loop.
-   *
-   * @param strictThreadMode whether to use the strict thread mode
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerConfig setStrictThreadMode(boolean strictThreadMode) {
-    this.strictThreadMode = strictThreadMode;
     return this;
   }
 

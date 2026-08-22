@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl.http1;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -47,6 +48,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.nio.channels.FileChannel;
 import java.time.Duration;
 import java.util.function.Supplier;
 
@@ -178,6 +180,11 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   @Override
   public int sendFileChunkSize() {
     return sendFileChunkSize;
+  }
+
+  @Override
+  public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
+    return sendFile(fc, offset, length, sendFileChunkSize);
   }
 
   TracingPolicy tracingPolicy() {

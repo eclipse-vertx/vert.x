@@ -516,7 +516,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         written = true;
         conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
         FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
-        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength, conn.sendFileChunkSize());
+        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
         PromiseInternal<Void> promise = context.promise();
         ret = promise.future();
         channelFuture.addListener(future -> {

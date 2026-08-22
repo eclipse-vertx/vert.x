@@ -40,10 +40,11 @@ import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.concurrent.TimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -103,10 +104,10 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
   public void testSendFileChunkSize() throws Exception {
     int chunkSize = 1024;
     File file = TestUtils.tmpFile(".dat", 256 * 1024);
+    AtomicInteger connectionChunkSize = new AtomicInteger();
     server = createHttpServer(config -> config.setSendFileChunkSize(chunkSize));
     server.requestHandler(req -> {
-      // The setting is carried by the connection, whatever the protocol
-      assertEquals(chunkSize, ((HttpServerConnection) req.connection()).sendFileChunkSize());
+      connectionChunkSize.set(((HttpServerConnection) req.connection()).sendFileChunkSize());
       req.response().sendFile(file.getAbsolutePath());
     });
     startServer(testAddress, server);
@@ -118,6 +119,8 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
       }))
       .await();
     assertEquals(file.length(), body.length());
+    // The setting is carried by the connection, whatever the protocol
+    assertEquals(chunkSize, connectionChunkSize.get());
     if (isSendFileChunked()) {
       // The file is pumped chunk per chunk, no chunk can be larger than the configured size, which is smaller than
       // the default one - this would not hold if the setting was ignored

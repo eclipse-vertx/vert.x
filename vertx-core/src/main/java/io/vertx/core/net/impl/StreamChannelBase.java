@@ -60,7 +60,6 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
 
   public StreamChannelBase(ContextInternal context, ChannelHandlerContext channel, int sendFileChunkSize) {
     super(context, channel);
-
     this.sendFileChunkSize = sendFileChunkSize;
 
     EventLoopExecutor executor;
