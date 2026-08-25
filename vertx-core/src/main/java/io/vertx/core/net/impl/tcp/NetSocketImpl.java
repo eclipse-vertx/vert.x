@@ -17,6 +17,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -168,6 +169,11 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
             } else {
               chctx.pipeline().addFirst("handshaker", handshaker);
               chctx.pipeline().addFirst("ssl", sslHandler);
+            }
+            if (chctx.pipeline().get("chunkedWriter") == null) {
+              // The connection can no longer use zero-copy, sendFile needs a ChunkedWriteHandler to consume the
+              // chunked file it writes - the pipeline was set up without one since the channel was not encrypted
+              chctx.pipeline().addBefore(chctx.name(), "chunkedWriter", new ChunkedWriteHandler());
             }
             channelPromise.addListener(p);
             doPause();
