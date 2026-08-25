@@ -2481,6 +2481,70 @@ public class NetTest {
   }
 
   @Test
+  public void testSendFileAfterTlsUpgrade() throws Exception {
+    File dir = testFolder.newFolder();
+    int size = 64 * 1024;
+    String content = String.valueOf('a').repeat(size);
+    File f = setupFile(dir.toString(), "upgraded.dat", content);
+    Promise<Void> sent = Promise.promise();
+    server.connectHandler(socket -> {
+      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .compose(v -> socket.sendFile(f.getAbsolutePath()))
+        .onComplete(sent);
+    });
+    server.listen(1234, "localhost").await();
+    NetSocket socket = client.connect(new ConnectOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setSslOptions(new ClientSSLOptions()
+        .setHostnameVerificationAlgorithm("")
+        .setTrustAll(true))).await();
+    Buffer received = Buffer.buffer();
+    Promise<Void> done = Promise.promise();
+    socket.handler(buff -> {
+      received.appendBuffer(buff);
+      if (received.length() == size) {
+        done.tryComplete();
+      }
+    });
+    sent.future().await();
+    done.future().await();
+    socket.close().await();
+    server.close().await();
+    assertEquals(content, received.toString());
+  }
+
+  @Test
+  public void testSendFileFromClientAfterTlsUpgrade() throws Exception {
+    File dir = testFolder.newFolder();
+    int size = 64 * 1024;
+    String content = String.valueOf('a').repeat(size);
+    File f = setupFile(dir.toString(), "upgraded-client.dat", content);
+    Buffer received = Buffer.buffer();
+    Promise<Void> done = Promise.promise();
+    server.connectHandler(socket -> {
+      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .onSuccess(v -> socket.handler(buff -> {
+          received.appendBuffer(buff);
+          if (received.length() == size) {
+            done.tryComplete();
+          }
+        }));
+    });
+    server.listen(1234, "localhost").await();
+    NetSocket socket = client.connect(1234, "localhost").await();
+    socket.upgradeToSsl(new ClientSSLOptions()
+      .setHostnameVerificationAlgorithm("")
+      .setTrustAll(true)).await();
+    socket.sendFile(f.getAbsolutePath()).await();
+    done.future().await();
+    socket.close().await();
+    server.close().await();
+    assertEquals(content, received.toString());
+  }
+
+  @Test
   public void testSendFileDirectory() throws Exception {
     File fDir = testFolder.newFolder();
     server.connectHandler(socket -> {
