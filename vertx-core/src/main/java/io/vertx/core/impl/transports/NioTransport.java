@@ -48,6 +48,9 @@ public class NioTransport implements Transport {
 
   @Override
   public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
+    if (address == null) {
+      return null;
+    }
     if (unixDomainSocketNioTransport != null && unixDomainSocketNioTransport.isUnixDomainSocketAddress(address)) {
       return unixDomainSocketNioTransport.convert(address);
     }
