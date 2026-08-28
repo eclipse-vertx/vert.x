@@ -3418,6 +3418,48 @@ public class NetTest {
     client.connect(1234, "localhost").await();
   }
 
+  private static int freeLocalPort() throws Exception {
+    try (java.net.ServerSocket ss = new java.net.ServerSocket(0)) {
+      return ss.getLocalPort();
+    }
+  }
+
+  @Test
+  public void testConnectOptionsLocalAddress(Checkpoint checkpoint) throws Exception {
+    String expectedAddress = TestUtils.loopbackAddress();
+    int expectedPort = freeLocalPort();
+    server.connectHandler(sock -> {
+      assertEquals(expectedAddress, sock.remoteAddress().host());
+      assertEquals(expectedPort, sock.remoteAddress().port());
+      checkpoint.succeed();
+    });
+    client = vertx.createNetClient();
+    server.listen(1234, "localhost").await();
+    NetSocket so = client.connect(new ConnectOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setLocalAddress(SocketAddress.inetSocketAddress(expectedPort, expectedAddress))).await();
+    assertEquals(expectedPort, so.localAddress().port());
+  }
+
+  @Test
+  public void testConnectOptionsLocalAddressOverridesClientLocalAddress(Checkpoint checkpoint) throws Exception {
+    String expectedAddress = TestUtils.loopbackAddress();
+    int expectedPort = freeLocalPort();
+    server.connectHandler(sock -> {
+      assertEquals(expectedAddress, sock.remoteAddress().host());
+      assertEquals(expectedPort, sock.remoteAddress().port());
+      checkpoint.succeed();
+    });
+    // The client default local address binds to an ephemeral port, the connect options must take precedence
+    client = vertx.createNetClient(new NetClientOptions().setLocalAddress(expectedAddress));
+    server.listen(1234, "localhost").await();
+    client.connect(new ConnectOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setLocalAddress(SocketAddress.inetSocketAddress(expectedPort, expectedAddress))).await();
+  }
+
   @Test
   public void testWorkerClient(Checkpoint checkpoint) throws Exception {
     String expected = TestUtils.randomAlphaString(2000);

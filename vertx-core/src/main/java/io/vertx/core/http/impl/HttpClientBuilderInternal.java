@@ -324,6 +324,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         .protocol("http")
         .sslOptions(sslOptions)
         .sslEngineOptions(sslEngineOptions)
+        // Legacy client options may define a default local address
+        .localAddress(clientOptions != null ? NetClientBuilder.localAddress(clientOptions) : null)
         .build();
       LogConfig logConfig = co.getTcpConfig().getLogConfig();
       ObservabilityConfig observabilityConfig = co.getObservabilityConfig();
