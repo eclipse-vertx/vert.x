@@ -299,7 +299,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
 
   @Override
   public SocketAddress localAddress() {
-    return context.owner().transport().convert(channel.localAddress());
+    InetSocketAddress localAddress = channel.localAddress();
+    return localAddress != null ? context.owner().transport().convert(localAddress) : null;
   }
 
   @Override
