@@ -213,10 +213,18 @@ public interface ContextInternal extends Context {
   <T> void execute(T argument, Handler<T> task);
 
   /**
+   * Whether the current thread is running on this context.
+   *
+   * <p> A duplicated context shares the concurrency model of the context it duplicates, therefore
+   * a context and its duplicates are considered the same context by this method: it returns {@code true}
+   * when the current context is this context, a duplicate of this context or the context this
+   * context duplicates.
+   *
    * @return whether the current thread is running on this context
    */
   default boolean isRunningOnContext() {
-    return current() == this && inThread();
+    ContextInternal current = current();
+    return current != null && current.unwrap() == unwrap() && inThread();
   }
 
   /**
