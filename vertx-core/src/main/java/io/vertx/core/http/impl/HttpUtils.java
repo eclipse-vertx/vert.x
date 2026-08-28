@@ -27,6 +27,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -379,6 +380,12 @@ public final class HttpUtils {
     if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
       nettySettings.maxHeaderListSize(vertxSettings.getMaxHeaderListSize());
     }
+    if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
+      nettySettings.maxHeaderListSize(vertxSettings.getMaxHeaderListSize());
+    }
+    if (vertxSettings.get(HttpSettings.ENABLE_CONNECT_PROTOCOL) == Boolean.TRUE) {
+      nettySettings.put((char)0x08, (Long)1L);
+    }
     Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
     if (extraSettings != null) {
       extraSettings.forEach((code, setting) -> {
@@ -429,8 +436,12 @@ public final class HttpUtils {
     if (headerTableSize != null) {
       converted.setHeaderTableSize(headerTableSize);
     }
+    Long enableConnectProtocol = settings.get((char)0x08);
+    if (enableConnectProtocol != null && enableConnectProtocol == 1L) {
+      converted.set(HttpSettings.ENABLE_CONNECT_PROTOCOL, true);
+    }
     settings.forEach((key, value) -> {
-      if (key > 6) {
+      if (key > 6 && key != 8) {
         converted.set(key, value);
       }
     });

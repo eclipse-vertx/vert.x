@@ -10,9 +10,13 @@
  */
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.impl.Arguments;
 
 import java.util.Arrays;
+import java.util.Set;
+import java.util.function.LongConsumer;
 
 /**
  * Base container for HTTP settings.
@@ -21,6 +25,19 @@ import java.util.Arrays;
  */
 @DataObject
 public abstract class HttpSettings {
+
+  /**
+   * HTTP {@code ENABLE_CONNECT_PROTOCOL} setting
+   */
+  public static final HttpSetting<Boolean> ENABLE_CONNECT_PROTOCOL;
+
+  static {
+    LongConsumer enableConnectProtocolValidator = value -> Arguments.require(value == 0L ||  value == 1L,
+      "enableConnectProtocol must be >= " + Http2CodecUtil.MIN_HEADER_LIST_SIZE);
+    ENABLE_CONNECT_PROTOCOL = new HttpSetting<>(0x08, "ENABLE_CONNECT_PROTOCOL", false,
+      val -> val ? 1L : 0L, val -> val == 1L, enableConnectProtocolValidator, Set.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3));
+
+  }
 
   private long presence; // Could be first element of values
   private final long[] values;

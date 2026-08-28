@@ -138,6 +138,11 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
   HostAndPort authority(boolean real);
 
   /**
+   * @return the {@code :protocol} pseudo header used by extended connect
+   */
+  String connectProtocol();
+
+  /**
    * @return the total number of bytes read for the body of the request.
    */
   long bytesRead();
