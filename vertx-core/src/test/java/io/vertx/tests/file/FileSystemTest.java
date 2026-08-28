@@ -21,6 +21,8 @@ import io.vertx.core.file.FileSystemException;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
@@ -38,6 +40,7 @@ import java.io.IOException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -2313,5 +2316,37 @@ public class FileSystemTest extends VertxTestBase {
     asyncFile.exceptionHandler(null);
     asyncFile.drainHandler(null);
     asyncFile.endHandler(null);
+  }
+
+  @Test
+  public void testAsyncFileHandlerFailuresAreReportedToContext() throws Exception {
+    String fileName = "file.txt";
+    createFileWithJunk(fileName, 100);
+    RuntimeException dataFailure = new RuntimeException("data");
+    RuntimeException endFailure = new RuntimeException("end");
+    List<Throwable> reported = new ArrayList<>();
+    AtomicInteger fileExceptions = new AtomicInteger();
+    AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+    CountDownLatch closed = new CountDownLatch(1);
+    ContextInternal context = ((VertxInternal) vertx).getOrCreateContext();
+    context.runOnContext(ignored -> {
+      AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
+      context.exceptionHandler(reported::add);
+      file.exceptionHandler(ignored2 -> fileExceptions.incrementAndGet());
+      file.endHandler(ignored2 -> {
+        file.close().onComplete(ar -> {
+          closeFailure.set(ar.cause());
+          closed.countDown();
+        });
+        throw endFailure;
+      });
+      file.handler(buffer -> {
+        throw dataFailure;
+      });
+    });
+    TestUtils.awaitLatch(closed);
+    Assert.assertNull(closeFailure.get());
+    Assert.assertEquals(List.of(dataFailure, endFailure), reported);
+    Assert.assertEquals(0, fileExceptions.get());
   }
 }
