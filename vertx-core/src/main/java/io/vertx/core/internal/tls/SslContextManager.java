@@ -19,6 +19,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -41,6 +43,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     return CLIENT_AUTH_MAPPING.get(auth);
   }
 
+  private static final Logger log = LoggerFactory.getLogger(SslContextManager.class);
   public static final int DEFAULT_SSL_CONTEXT_PROVIDER_CACHE_SIZE = 64;
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
   private static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
@@ -86,6 +89,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     }
     if (pqcPolicy == PqcEnforcementPolicy.STRICT || pqcPolicy == PqcEnforcementPolicy.CLIENT_NEGOTIATED) {
       if (engineOptions != null) {
+        // we check that the user provided a PQ compliant SSL Engine
         boolean pqcSupported;
         if (engineOptions instanceof JdkSSLEngineOptions) {
           pqcSupported = JdkSSLEngineOptions.isPqcAvailable();
@@ -93,15 +97,18 @@ public abstract class SslContextManager<P extends SslContextProvider> {
           pqcSupported = OpenSSLEngineOptions.isPqcAvailable();
         }
         if (!pqcSupported) {
-          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but the configured SSL engine does not support it");
+          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires PQ compliant named groups but the configured SSL engine does not support it");
         }
       } else {
+        // the user didn't specify any SSL engine, we pick one for them
         if (JdkSSLEngineOptions.isPqcAvailable()) {
+          log.warn("JdkSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new JdkSSLEngineOptions();
         } else if (OpenSSLEngineOptions.isPqcAvailable()) {
+          log.warn("OpenSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new OpenSSLEngineOptions();
         } else {
-          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but neither JDK nor OpenSSL support it");
+          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires PQ compliant named groups but neither JDK nor OpenSSL support it");
         }
       }
     }
