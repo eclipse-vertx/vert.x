@@ -63,7 +63,7 @@ public class SslEngineUtils {
           return PQ_COMPLIANT_GROUPS;
         }
         if (!groups.stream().allMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
-          log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
+          log.debug("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
           return PQ_COMPLIANT_GROUPS;
         }
         return groups;
@@ -111,7 +111,7 @@ public class SslEngineUtils {
       setNamedGroups.invoke(params, (Object) groups.toArray(new String[0]));
       engine.setSSLParameters(params);
     } catch (Exception e) {
-      log.warn("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+", e);
+      log.debug("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+", e);
     }
   }
 }

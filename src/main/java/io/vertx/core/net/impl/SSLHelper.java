@@ -102,10 +102,10 @@ public class SSLHelper {
         }
       } else {
         if (JdkSSLEngineOptions.isPqcAvailable()) {
-          log.warn("JdkSslEngine supports PQ compliant groups, it will be used for the application");
+          log.debug("JdkSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new JdkSSLEngineOptions();
         } else if (OpenSSLEngineOptions.isPqcAvailable()) {
-          log.warn("OpenSslEngine supports PQ compliant groups, it will be used for the application");
+          log.debug("OpenSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new OpenSSLEngineOptions();
         } else {
           throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but neither JDK nor OpenSSL support it");
