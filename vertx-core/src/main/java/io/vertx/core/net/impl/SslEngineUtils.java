@@ -55,7 +55,7 @@ public class SslEngineUtils {
         }
         // if they did, we check that the set they provided contains only PQ compliant groups
         if (!groups.stream().allMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
-          log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
+          log.debug("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
           return PQ_COMPLIANT_GROUPS;
         }
         // the user specified a set of PQ compliant groups, we can use it
