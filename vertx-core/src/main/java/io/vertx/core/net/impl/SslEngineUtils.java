@@ -49,7 +49,7 @@ public class SslEngineUtils {
       case STRICT:
         // we check if the user provided a set of named groups
         if (groups == null || groups.isEmpty()) {
-          log.warn("No key exchange groups list was specified, the default list "+PQ_COMPLIANT_GROUPS+" is used");
+          log.debug("No key exchange groups list was specified, the default list "+PQ_COMPLIANT_GROUPS+" is used");
           // if they didn't we return the default set of named groups
           return PQ_COMPLIANT_GROUPS;
         }
@@ -63,12 +63,12 @@ public class SslEngineUtils {
       case CLIENT_NEGOTIATED:
         // we check if the user provided a set of named groups
         if (groups == null || groups.isEmpty()) {
-          log.warn("No key exchange groups list was specified, the default list "+DEFAULT_KEY_EXCHANGE_GROUPS+" is used");
+          log.debug("No key exchange groups list was specified, the default list "+DEFAULT_KEY_EXCHANGE_GROUPS+" is used");
           return DEFAULT_KEY_EXCHANGE_GROUPS;
         }
         // if they did, we check that the set they provided contains at least one PQ compliant group
         if (groups.stream().noneMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
-          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
+          log.debug("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
           List<String> result = new ArrayList<>(groups.size() + 1);
           result.addAll(PQ_COMPLIANT_GROUPS);
           result.addAll(groups);
