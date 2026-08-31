@@ -22,6 +22,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
  */
 public class SSLHelper {
 
+  private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
   private static final AtomicLong seq = new AtomicLong();
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
@@ -99,8 +102,10 @@ public class SSLHelper {
         }
       } else {
         if (JdkSSLEngineOptions.isPqcAvailable()) {
+          log.debug("JdkSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new JdkSSLEngineOptions();
         } else if (OpenSSLEngineOptions.isPqcAvailable()) {
+          log.debug("OpenSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new OpenSSLEngineOptions();
         } else {
           throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but neither JDK nor OpenSSL support it");
