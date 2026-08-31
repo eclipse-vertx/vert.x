@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.CloseSequence;
+import io.vertx.core.internal.Closeable;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ProxyFilter;
@@ -27,7 +28,7 @@ import java.util.function.Predicate;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class HttpClientBase implements MetricsProvider {
+public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   protected final VertxInternal vertx;
   protected final ProxyOptions defaultProxyOptions;

@@ -23,13 +23,14 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
+import io.vertx.core.impl.ServiceResource;
+import io.vertx.core.internal.Closeable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -44,6 +45,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -51,25 +53,53 @@ import java.util.Objects;
  */
 public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Closeable {
 
-  public static DatagramSocketImpl create(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
-    DatagramSocketImpl socket = new DatagramSocketImpl(vertx, closeFuture, options);
-    // Make sure object is fully initiliased to avoid race with async registration
+  public static DatagramSocketImpl create(ContextInternal context, DatagramSocketOptions options) {
+    class CleanableDatagramSocket extends DatagramSocketImpl {
+
+      final ServiceResource<Void, Void> serviceResource = new ServiceResource<>() {
+        @Override
+        protected Future<Void> startImpl(ContextInternal context, Void args) {
+          CleanableDatagramSocket.super.init();
+          return context.succeededFuture();
+        }
+        @Override
+        protected Future<?> stopImpl(ContextInternal context, Void args, Duration timeout) {
+          return CleanableDatagramSocket.super.shutdown(timeout);
+        }
+      };
+
+      public CleanableDatagramSocket(ContextInternal context, DatagramSocketOptions options) {
+        super(context, options);
+      }
+
+      @Override
+      void init() {
+        serviceResource.start(context, null).await();
+      }
+
+      @Override
+      public Future<Void> shutdown(Duration timeout) {
+        return serviceResource.stop(context, timeout);
+      }
+    }
+
+    DatagramSocketImpl socket = new CleanableDatagramSocket(context, options);
+    // Make sure object is fully initialized to avoid race with async registration
     socket.init();
     return socket;
   }
 
   private final ContextInternal context;
   private final DatagramSocketMetrics metrics;
-  private DatagramChannel channel;
+  private final DatagramChannel channel;
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
   private Handler<Throwable> exceptionHandler;
-  private final CloseFuture closeFuture;
 
-  private DatagramSocketImpl(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
+  private DatagramSocketImpl(ContextInternal context, DatagramSocketOptions options) {
+    VertxInternal vertx = context.owner();
     Transport transport = vertx.transport();
     DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
     transport.configure(channel, new DatagramSocketOptions(options));
-    ContextInternal context = vertx.getOrCreateContext();
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
     bufAllocator.maxMessagesPerRead(1);
@@ -81,10 +111,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;
     this.channel = channel;
     this.context = context;
-    this.closeFuture = closeFuture;
   }
 
-  private void init() {
+  void init() {
     channel.pipeline().addLast("handler", VertxHandler.create(this::createConnection));
   }
 
@@ -299,26 +328,26 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
 
   @Override
   public SocketAddress localAddress() {
-    return context.owner().transport().convert(channel.localAddress());
+    InetSocketAddress localAddress = channel.localAddress();
+    return localAddress != null ? context.owner().transport().convert(localAddress) : null;
   }
 
   @Override
-  public synchronized Future<Void> close() {
-    ContextInternal closingCtx = context.owner().getOrCreateContext();
-    PromiseInternal<Void> promise = closingCtx.promise();
-    closeFuture.close(promise);
-    return promise.future();
+  public Future<Void> close() {
+    return Closeable.super.close();
   }
 
   @Override
-  public void close(Completable<Void> completion) {
+  public Future<Void> shutdown(Duration timeout) {
     if (!channel.isOpen()) {
-      completion.succeed();
+      return context.owner().succeededFuture();
     } else {
+      PromiseInternal<Void> result = context.owner().promise();
       // make sure everything is flushed out on close
       channel.flush();
       ChannelFuture future = channel.close();
-      future.addListener((PromiseInternal<Void>)completion);
+      future.addListener(result);
+      return result;
     }
   }
 

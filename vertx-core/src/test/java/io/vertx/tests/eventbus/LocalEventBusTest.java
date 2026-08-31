@@ -13,7 +13,7 @@ package io.vertx.tests.eventbus;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.eventbus.impl.EventBusInternal;
+import io.vertx.core.internal.eventbus.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;

@@ -922,6 +922,12 @@ You create an {@link io.vertx.core.http.HttpClient} instance with the default co
 
 By default, the client supports HTTP/1, HTTP/2 in plain text.
 
+IMPORTANT: Keep a reference to the client for as long as you use it. A client that is no longer referenced is
+shut down when it is garbage collected, as if {@link io.vertx.core.http.HttpClient#shutdown()} had been called: new
+requests are refused and connections are closed, which can surface as unexpected `Connection was closed` or
+`Client is closed` failures. Typically you store the client in a field of the verticle or of the component that uses it,
+instead of creating it inline in the code that performs a request.
+
 === Configuring an HTTP client
 
 If you want to configure the client, you create it as follows:
@@ -2310,23 +2316,27 @@ The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve 
 
 ==== WebSockets on the client
 
-e Vert.x {@link io.vertx.core.http.WebSocketClient} supports WebSockets.
+The Vert.x {@link io.vertx.core.http.WebSocketClient} supports WebSockets.
 
- You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.WebSocketClient#connect} operations.
+You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.WebSocketClient#connect} operations.
 
- The returned future will be completed with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
+The returned future will be completed with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
 [source,$lang]
 ----
 {@link examples.HttpExamples#clientWebSocketConnect}
 ----
 
-en connecting from a non Vert.x thread, you can create a {@link io.vertx.core.http.ClientWebSocket}, configure its handlers and
+IMPORTANT: Like the HTTP client, the WebSocket client is shut down when it is no longer referenced and garbage collected,
+which closes its WebSockets, including those with a handshake in progress. Keep a reference to the client for as long as
+its WebSockets are in use.
+
+When connecting from a non Vert.x thread, you can create a {@link io.vertx.core.http.ClientWebSocket}, configure its handlers and
 then connect to the server:
 
- [source,$lang]
- ----
- {@link examples.HttpExamples#clientWebSocketConfigurationAndConnect}
- ----
+[source,$lang]
+----
+{@link examples.HttpExamples#clientWebSocketConfigurationAndConnect}
+----
 
 By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse
 such request, you can configure the client to not set this header.

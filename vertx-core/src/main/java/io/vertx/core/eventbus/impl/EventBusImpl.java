@@ -17,6 +17,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
+import io.vertx.core.internal.eventbus.EventBusInternal;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -124,8 +125,13 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
+    return request(vertx.getOrCreateContext(), address, message, options);
+  }
+
+  @Override
+  public <T> Future<Message<T>> request(Context context, String address, Object message, DeliveryOptions options) {
     MessageImpl msg = createMessage(true, isLocalOnly(options), address, options.getHeaders(), message, options.getCodecName());
-    ReplyHandler<T> handler = createReplyHandler(msg, true, options);
+    ReplyHandler<T> handler = createReplyHandler((ContextInternal)context, msg, true, options);
     sendOrPubInternal(msg, options, handler);
     return handler.result();
   }
@@ -168,11 +174,16 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
-  public <T> MessageConsumer<T> consumer(MessageConsumerOptions options) {
+  public <T> MessageConsumer<T> consumer(Context context, MessageConsumerOptions options) {
     checkStarted();
     String address = options.getAddress();
     Arguments.require(options.getAddress() != null, "Consumer address must not be null");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, options.isLocalOnly(), options.getMaxBufferedMessages());
+    return new MessageConsumerImpl<>((ContextInternal)context, this, address, options.isLocalOnly(), options.getMaxBufferedMessages());
+  }
+
+  @Override
+  public <T> MessageConsumer<T> consumer(MessageConsumerOptions options) {
+    return consumer(vertx.getOrCreateContext(), options);
   }
 
   @Override
@@ -424,10 +435,17 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
                                          boolean src,
                                          DeliveryOptions options) {
+    return createReplyHandler(vertx.getOrCreateContext(), message, src,  options);
+  }
+
+  <T> ReplyHandler<T> createReplyHandler(ContextInternal context,
+                                         MessageImpl message,
+                                         boolean src,
+                                         DeliveryOptions options) {
     long timeout = options.getSendTimeout();
     String replyAddress = generateReplyAddress();
     message.setReplyAddress(replyAddress);
-    ReplyHandler<T> handler = new ReplyHandler<>(this, vertx.getOrCreateContext(), replyAddress, message.address, src, timeout);
+    ReplyHandler<T> handler = new ReplyHandler<>(this, context, replyAddress, message.address, src, timeout);
     handler.register();
     return handler;
   }

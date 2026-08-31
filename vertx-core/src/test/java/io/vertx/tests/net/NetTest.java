@@ -2525,9 +2525,9 @@ public class NetTest {
   }
 
   @Test
-  public void testListenWithNoHandler() {
+  public void testListenWithNoHandler() throws Exception {
     try {
-      server.listen(testAddress);
+      server.listen(testAddress).await(20, TimeUnit.SECONDS);
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       // OK

@@ -10,12 +10,14 @@
  */
 package io.vertx.core.internal.net;
 
-import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.internal.Closeable;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
+
+import java.time.Duration;
 
 /**
  * Net client internal API.
@@ -32,6 +34,19 @@ public interface NetClientInternal extends NetClient, MetricsProvider, Closeable
   void connectInternal(ConnectOptions connectOptions,
                        Promise<NetSocket> connectHandler,
                        ContextInternal context);
+
+  @Override
+  default Future<Void> close() {
+    return NetClient.super.close();
+  }
+
+  @Override
+  default Future<Void> shutdown() {
+    return NetClient.super.shutdown();
+  }
+
+  @Override
+  Future<Void> shutdown(Duration timeout);
 
   Future<Void> closeFuture();
 

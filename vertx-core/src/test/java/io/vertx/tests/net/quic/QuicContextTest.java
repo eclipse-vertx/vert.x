@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.quic.QuicConnectionInternal;
+import io.vertx.core.internal.net.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;

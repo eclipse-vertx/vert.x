@@ -73,6 +73,29 @@ Or you may choose to explicitly mention all contributors in the declaration, lik
 
 Check https://www.eclipse.org/projects/handbook/#legaldoc
 
+
+# Commit message
+
+Make sure your commit message contains enough contextual information so that anyone understands the intention of the changes. Unless the commit is trivial, please use the following form (by the courtesy of Steve Gury et al):
+
+```
+One line description of your change
+
+Motivation:
+
+Explain here the context, and why you're making that change.
+What is the problem you're trying to solve.
+
+Modifications:
+
+Describe the modifications you've done.
+
+Result:
+
+After your change, what will change, this can be omitted when the result is trivial such as fixing a simple bug.
+```
+
+
 # Becoming a Contributor
 
 Becoming a contributor to the project should be an easy step. In order to reduce that barrier new contributors should look for issues tagged as:

@@ -1,17 +1,17 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
-public class CleanableNetServer extends NetServerImpl implements Closeable {
+public class CleanableNetServer extends NetServerImpl {
 
   private final VertxInternal vertx;
-  private ContextInternal listenContext;
+  private final ServiceResource<SocketAddress, NetServer> serviceResource;
 
   public CleanableNetServer(VertxInternal vertx,
                             TcpServerConfig config,
@@ -22,48 +22,25 @@ public class CleanableNetServer extends NetServerImpl implements Closeable {
                             boolean registerWriteHandler) {
     super(vertx, config, protocol, sslOptions, sslEngineOptions, fileRegionEnabled, registerWriteHandler);
     this.vertx = vertx;
+    this.serviceResource = new ServiceResource<>() {
+      @Override
+      protected Future<NetServer> startImpl(ContextInternal context, SocketAddress localAddress) {
+        return CleanableNetServer.super.listen(context, localAddress).map(CleanableNetServer.this);
+      }
+      @Override
+      protected Future<Void> stopImpl(ContextInternal context, SocketAddress args, Duration timeout) {
+        return CleanableNetServer.super.shutdown(timeout);
+      }
+    };
   }
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    ContextInternal context;
-    synchronized (this) {
-      if (listenContext == null) {
-        return vertx.succeededFuture();
-      }
-      context = listenContext;
-      listenContext = null;
-    }
-    context.removeCloseHook(this);
-    return super.shutdown(timeout);
-  }
-
-  @Override
-  public void close(Completable<Void> completion) {
-    super.shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
+    return serviceResource.stop(vertx.getOrCreateContext(), timeout);
   }
 
   @Override
   public Future<NetServer> listen(ContextInternal context, SocketAddress localAddress) {
-    synchronized (this) {
-      if (listenContext != null) {
-        return context.failedFuture(new IllegalStateException());
-      }
-      listenContext = context;
-    }
-    context.addCloseHook(this);
-    return super
-      .listen(context, localAddress)
-      .andThen(ar -> {
-        if (ar.failed()) {
-          synchronized (CleanableNetServer.this) {
-            if (listenContext == null) {
-              return;
-            }
-            listenContext = null;
-          }
-          context.removeCloseHook(this);
-        }
-      });
+    return serviceResource.start(context, localAddress);
   }
 }

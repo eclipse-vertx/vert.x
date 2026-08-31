@@ -12,11 +12,12 @@ package io.vertx.core.internal;
 
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
+import io.vertx.core.Closeable;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.internal.eventbus.EventBusInternal;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
@@ -71,8 +72,13 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <C> CloseableResource<C> createSharedResource(String resourceKey, String resourceName, Supplier<CloseableResource<C>> supplier) {
-    return delegate.createSharedResource(resourceKey, resourceName, supplier);
+  public <C> CloseableResource<C> registerResource(CloseableResource<C> resource) {
+    return delegate.registerResource(resource);
+  }
+
+  @Override
+  public <C extends io.vertx.core.internal.Closeable> CloseableResource<C> createSharedResource(String resourceKey, String resourceName, Supplier<C> factory) {
+    return delegate.createSharedResource(resourceKey, resourceName, factory);
   }
 
   @Override
@@ -121,7 +127,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public EventBus eventBus() {
+  public EventBusInternal eventBus() {
     return delegate.eventBus();
   }
 
@@ -311,7 +317,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+  public CloseableResource<WorkerPool> createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     return delegate.createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
   }
 

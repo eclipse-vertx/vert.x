@@ -26,8 +26,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.quic.QuicConnectionInternal;
-import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.internal.net.QuicConnectionInternal;
+import io.vertx.core.internal.net.QuicStreamInternal;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLSession;

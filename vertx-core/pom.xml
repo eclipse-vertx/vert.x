@@ -422,7 +422,6 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.smallrye:smallrye-openssl</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
@@ -452,6 +451,18 @@
               <includes>
                 <include>io/vertx/it/HybridKeyExchangeTest.java</include>
               </includes>
+              <skip>${vertx.surefire.skipHybridKeyExchange}</skip>
+              <additionalClasspathDependencies>
+                <additionalClasspathDependency>
+                  <groupId>io.smallrye</groupId>
+                  <artifactId>smallrye-openssl</artifactId>
+                  <classifier>${vertx.surefire.nativeClassifier}</classifier>
+                  <version>${smallrye.openssl.version}</version>
+                </additionalClasspathDependency>
+              </additionalClasspathDependencies>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
@@ -1026,6 +1037,10 @@
           <arch>x86_64</arch>
         </os>
       </activation>
+      <properties>
+        <vertx.surefire.nativeClassifier>linux-x86_64</vertx.surefire.nativeClassifier>
+        <vertx.surefire.skipHybridKeyExchange>false</vertx.surefire.skipHybridKeyExchange>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
@@ -1046,10 +1061,9 @@
           <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>io.smallrye</groupId>
-          <artifactId>smallrye-openssl</artifactId>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -1063,6 +1077,10 @@
           <arch>amd64</arch>
         </os>
       </activation>
+      <properties>
+        <vertx.surefire.skipHybridKeyExchange>false</vertx.surefire.skipHybridKeyExchange>
+        <vertx.surefire.nativeClassifier>linux-x86_64</vertx.surefire.nativeClassifier>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
@@ -1083,10 +1101,9 @@
           <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>io.smallrye</groupId>
-          <artifactId>smallrye-openssl</artifactId>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -1100,6 +1117,10 @@
           <arch>aarch64</arch>
         </os>
       </activation>
+      <properties>
+        <vertx.surefire.skipHybridKeyExchange>false</vertx.surefire.skipHybridKeyExchange>
+        <vertx.surefire.nativeClassifier>linux-aarch_64</vertx.surefire.nativeClassifier>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
@@ -1120,10 +1141,9 @@
           <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>io.smallrye</groupId>
-          <artifactId>smallrye-openssl</artifactId>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
           <classifier>linux-aarch_64</classifier>
-          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -1137,6 +1157,10 @@
           <arch>x86_64</arch>
         </os>
       </activation>
+      <properties>
+        <vertx.surefire.skipHybridKeyExchange>true</vertx.surefire.skipHybridKeyExchange>
+        <vertx.surefire.nativeClassifier>osx-x86_64</vertx.surefire.nativeClassifier>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
@@ -1173,6 +1197,10 @@
           <arch>aarch64</arch>
         </os>
       </activation>
+      <properties>
+        <vertx.surefire.skipHybridKeyExchange>true</vertx.surefire.skipHybridKeyExchange>
+        <vertx.surefire.nativeClassifier>osx-aarch_64</vertx.surefire.nativeClassifier>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
@@ -1208,6 +1236,10 @@
           <family>windows</family>
         </os>
       </activation>
+      <properties>
+        <vertx.surefire.skipHybridKeyExchange>true</vertx.surefire.skipHybridKeyExchange>
+        <vertx.surefire.nativeClassifier>windows-x86_64</vertx.surefire.nativeClassifier>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
