@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -252,6 +253,11 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   @Override
   public ContextInternal context() {
     return context;
+  }
+
+  @Override
+  public ByteBufAllocator allocator() {
+    return stream.allocator();
   }
 
   @Override
