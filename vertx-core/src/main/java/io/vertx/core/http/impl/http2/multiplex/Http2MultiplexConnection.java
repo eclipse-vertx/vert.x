@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2.multiplex;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -183,6 +184,10 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
         channel.channelContext.channel().config().setAutoRead(true);
       }
     }
+  }
+
+  public ByteBufAllocator allocator() {
+    return channel.alloc();
   }
 
   public boolean supportsSendFile() {

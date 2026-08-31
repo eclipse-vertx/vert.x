@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Promise;
@@ -20,6 +21,8 @@ import io.vertx.core.internal.ContextInternal;
 public interface Http2Connection {
 
   ContextInternal context();
+
+  ByteBufAllocator allocator();
 
   boolean isSsl();
 
