@@ -101,10 +101,10 @@ public abstract class SslContextManager<P extends SslContextProvider> {
       } else {
         // the user didn't specify any SSL engine, we pick one for them
         if (JdkSSLEngineOptions.isPqcAvailable()) {
-          log.warn("JdkSslEngine supports PQ compliant groups, it will be used for the application");
+          log.debug("JdkSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new JdkSSLEngineOptions();
         } else if (OpenSSLEngineOptions.isPqcAvailable()) {
-          log.warn("OpenSslEngine supports PQ compliant groups, it will be used for the application");
+          log.debug("OpenSslEngine supports PQ compliant groups, it will be used for the application");
           engineOptions = new OpenSSLEngineOptions();
         } else {
           throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires PQ compliant named groups but neither JDK nor OpenSSL support it");
