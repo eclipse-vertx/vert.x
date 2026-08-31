@@ -59,7 +59,7 @@ public class SslEngineUtils {
     switch (pqcPolicy) {
       case STRICT:
         if (groups == null || groups.isEmpty()) {
-          log.warn("No key exchange groups list was specified, the default list " + PQ_COMPLIANT_GROUPS + " is used");
+          log.debug("No key exchange groups list was specified, the default list " + PQ_COMPLIANT_GROUPS + " is used");
           return PQ_COMPLIANT_GROUPS;
         }
         if (!groups.stream().allMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
@@ -69,11 +69,11 @@ public class SslEngineUtils {
         return groups;
       case CLIENT_NEGOTIATED:
         if (groups == null || groups.isEmpty()) {
-          log.warn("No key exchange groups list was specified, the default list " + DEFAULT_KEY_EXCHANGE_GROUPS + " is used");
+          log.debug("No key exchange groups list was specified, the default list " + DEFAULT_KEY_EXCHANGE_GROUPS + " is used");
           return DEFAULT_KEY_EXCHANGE_GROUPS;
         }
         if (groups.stream().noneMatch(g -> PQ_COMPLIANT_GROUPS_UPPER.contains(g.toUpperCase()))) {
-          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
+          log.debug("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
           List<String> result = new ArrayList<>(groups.size() + 1);
           result.addAll(PQ_COMPLIANT_GROUPS);
           result.addAll(groups);
