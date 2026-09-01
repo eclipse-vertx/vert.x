@@ -729,6 +729,17 @@ case you can just do:
 {@link examples.HttpExamples#serverResponseSendFileFromOffset}
 ----
 
+When the file cannot be transferred by the operating system, e.g. the connection is encrypted or the protocol is HTTP/2
+or HTTP/3, the file is read and written to the response chunk per chunk. The size of these chunks is set with
+{@link io.vertx.core.http.HttpServerConfig#setSendFileChunkSize} and applies to every file sent by the server. The
+default value is a conservative one, a larger value can achieve a better throughput at the cost of a larger memory
+footprint.
+
+[source,$lang]
+----
+{@link examples.HttpExamples#serverResponseSendFileChunkSize}
+----
+
 ==== Piping responses
 
 The server response is a {@link io.vertx.core.streams.WriteStream} so you can pipe to it from any

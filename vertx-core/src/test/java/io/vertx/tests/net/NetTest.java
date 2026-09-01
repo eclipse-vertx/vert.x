@@ -2481,6 +2481,36 @@ public class NetTest {
   }
 
   @Test
+  public void testSendFileChunkSize() throws Exception {
+    int chunkSize = 1024;
+    File file = tmpFile(".dat", 256 * 1024);
+    // The file cannot be transferred with the zero-copy mechanism over an encrypted connection, it is streamed instead
+    server = vertx.createNetServer(
+      new TcpServerConfig().setSsl(true).setSendFileChunkSize(chunkSize),
+      new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.connectHandler(so -> so.sendFile(file.getAbsolutePath()));
+    startServer(testAddress);
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("").setTrustAll(true));
+    NetSocket so = client.connect(testAddress).await();
+    List<Integer> sizes = Collections.synchronizedList(new ArrayList<>());
+    Promise<Void> received = Promise.promise();
+    AtomicInteger length = new AtomicInteger();
+    so.handler(buff -> {
+      sizes.add(buff.length());
+      if (length.addAndGet(buff.length()) == file.length()) {
+        received.tryComplete();
+      }
+    });
+    received.future().await();
+    so.close().await();
+    server.close().await();
+    // No chunk can be larger than the configured size, which is smaller than the default one - this would not hold
+    // if the setting was ignored
+    int max = sizes.stream().mapToInt(size -> size).max().orElse(0);
+    assertTrue("Expected chunks of at most " + chunkSize + " bytes, largest was " + max, max <= chunkSize);
+  }
+
+  @Test
   public void testSendFileDirectory() throws Exception {
     File fDir = testFolder.newFolder();
     server.connectHandler(socket -> {

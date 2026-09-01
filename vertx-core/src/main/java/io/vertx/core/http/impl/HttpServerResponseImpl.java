@@ -559,6 +559,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return HttpUtils
       .resolveFile(context, filename, offset, length)
       .compose(file -> {
+        file.setReadBufferSize(conn.sendFileChunkSize());
         long fileLength = file.getReadLength();
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
@@ -611,10 +612,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         if (file != null) {
           channel = file.getChannel();
         }
+        int chunkSize = conn.sendFileChunkSize();
         if (close) {
-          chunkedFile = new ChunkedNioFile(channel, actualOffset, actualLength, 8192);
+          chunkedFile = new ChunkedNioFile(channel, actualOffset, actualLength, chunkSize);
         } else {
-          chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength);
+          chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength, chunkSize);
         }
       } catch (IOException e) {
         return context.failedFuture(e);
