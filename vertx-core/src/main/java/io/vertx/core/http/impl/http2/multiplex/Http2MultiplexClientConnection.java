@@ -32,6 +32,7 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 
 public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
@@ -75,6 +76,11 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   @Override
   public MultiMap newHttpRequestHeaders() {
     return new HttpResponseHeaders(new DefaultHttp2Headers());
+  }
+
+  @Override
+  public MultiMap newHttpTrailers() {
+    return new HttpHeaders(new DefaultHttp2Headers());
   }
 
   @Override

@@ -44,6 +44,7 @@ public interface HttpStream {
   ByteBufAllocator allocator();
 
   Future<Void> writeChunk(Buffer buf, boolean end);
+  Future<Void> writeHeaders(MultiMap headers, boolean end);
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);
 

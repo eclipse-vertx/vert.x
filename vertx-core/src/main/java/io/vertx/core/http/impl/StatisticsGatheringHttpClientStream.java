@@ -83,6 +83,14 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public Future<Void> writeHeaders(MultiMap headers, boolean end) {
+    if (end) {
+      endpointRequest.reportRequestEnd();
+    }
+    return delegate.writeHeaders(headers, end);
+  }
+
+  @Override
   public Future<Void> writeChunk(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
