@@ -53,7 +53,7 @@ public class DNSTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    mockDnsServer = new MockDnsServer(vertx);
+    mockDnsServer = new MockDnsServer();
     mockDnsServer.start();
   }
 
