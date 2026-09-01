@@ -21,7 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.WritePromise;
 import io.vertx.core.net.impl.StreamChannelBase;
 import io.vertx.core.net.QuicConnection;
 import io.vertx.core.net.QuicStream;
@@ -110,8 +110,7 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
 
   @Override
   public Future<Void> end() {
-    PromiseInternal<Void> promise = context.promise();
-    writeToChannel(new MessageWrite() {
+    WritePromise write = new WritePromise(context) {
       @Override
       public void write() {
         ChannelFuture shutdownPromise;
@@ -122,14 +121,11 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
         } else {
           shutdownPromise = channel.shutdownOutput();
         }
-        shutdownPromise.addListener(promise);
+        shutdownPromise.addListener(this);
       }
-      @Override
-      public void cancel(Throwable cause) {
-        promise.fail(cause);
-      }
-    });
-    return promise.future();
+    };
+    writeToChannel(write);
+    return write;
   }
 
   @Override
