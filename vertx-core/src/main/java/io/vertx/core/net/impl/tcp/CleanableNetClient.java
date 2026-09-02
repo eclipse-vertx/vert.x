@@ -10,10 +10,12 @@
  */
 package io.vertx.core.net.impl.tcp;
 
+import io.vertx.core.Closeable;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.CleanableObject;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.NetClientInternal;
@@ -21,6 +23,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
+import java.time.Duration;
 
 /**
  * A lightweight proxy of Vert.x {@link NetClient} that can be collected by the garbage collector and release
@@ -88,4 +91,35 @@ public class CleanableNetClient extends CleanableObject<NetClientInternal> imple
     NetClientInternal delegate = get();
     return delegate == null ? null : delegate.getMetrics();
   }
+
+  public static class ClientCloseableResource implements CloseableResource<NetClientInternal>, Closeable {
+
+    private final CloseFuture owner;
+    private final CloseableResource<NetClientInternal> resource;
+
+    public ClientCloseableResource(CloseFuture owner, CloseableResource<NetClientInternal> resource) {
+      this.owner = owner;
+      this.resource = resource;
+    }
+
+    @Override
+    public void close(Completable<Void> completion) {
+      resource
+        .shutdown(Duration.ZERO)
+        .onComplete(completion);
+    }
+
+    @Override
+    public NetClientInternal get() {
+      return resource.get();
+    }
+
+    @Override
+    public Future<Void> shutdown(Duration duration) {
+      owner.remove(this);
+      return resource.shutdown(duration);
+    }
+  }
+
+
 }
