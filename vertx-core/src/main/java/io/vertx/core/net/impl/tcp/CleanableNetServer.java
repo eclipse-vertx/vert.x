@@ -1,7 +1,7 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.ServiceResource;
+import io.vertx.core.internal.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;

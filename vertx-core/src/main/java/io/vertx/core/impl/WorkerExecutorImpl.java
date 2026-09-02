@@ -24,7 +24,7 @@ import java.util.concurrent.Callable;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WorkerExecutorImpl extends CleanableObject<WorkerPool> implements MetricsProvider, WorkerExecutorInternal {
+class WorkerExecutorImpl extends CleanableResource<WorkerPool> implements MetricsProvider, WorkerExecutorInternal {
 
   private final VertxInternal vertx;
 

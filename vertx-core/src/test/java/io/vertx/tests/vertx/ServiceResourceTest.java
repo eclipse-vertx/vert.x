@@ -13,7 +13,7 @@ package io.vertx.tests.vertx;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.ServiceResource;
+import io.vertx.core.internal.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.*;
 import org.junit.Before;
@@ -28,6 +28,11 @@ import static org.junit.Assert.*;
 public class ServiceResourceTest extends VertxTestBase2 {
 
   static class TestResource extends ServiceResource<Void, Void> {
+
+    public boolean isDone() {
+      return !super.hasPendingTasks();
+    }
+
   }
 
   private ContextInternal context;
@@ -149,7 +154,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     } catch (IllegalStateException expected) {
     }
     assertEquals(1, stop.get());
-    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> resource.isDone());
   }
 
   @Test
@@ -172,7 +177,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     TestUtils.assertWaitUntil(() -> stop.get() == 1);
     continuation.succeed();
     stopped.await();
-    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> resource.isDone());
     assertEquals(timeout, timeoutRef.get());
   }
 
@@ -221,7 +226,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     stopContinuation.succeed();
     started.await();
     stopped.await();
-    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> resource.isDone());
   }
 
   @Repeat(times = 1000)
@@ -251,7 +256,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
     }
     stopped.await();
     assertEquals(0, stop.get());
-    TestUtils.assertWaitUntil(() -> !resource.hasPendingTasks());
+    TestUtils.assertWaitUntil(() -> resource.isDone());
   }
 
   @Repeat(times = 1000)

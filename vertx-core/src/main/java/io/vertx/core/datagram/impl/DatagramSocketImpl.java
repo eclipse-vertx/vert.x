@@ -23,7 +23,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.impl.ServiceResource;
+import io.vertx.core.internal.ServiceResource;
 import io.vertx.core.internal.Closeable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
