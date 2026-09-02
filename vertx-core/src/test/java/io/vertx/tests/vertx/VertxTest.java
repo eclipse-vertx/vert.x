@@ -254,11 +254,8 @@ public class VertxTest extends VertxTestBase {
   @Test
   public void testFinalizeHttpClientRegisteredWithCloseHook() {
     Vertx vertx = Vertx.vertx();
-
     try {
-
       AtomicReference<HttpClientInternal> ref = new AtomicReference<>();
-
       String id = vertx.deployVerticle(context -> {
         HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
         ref.set(client);
@@ -282,7 +279,49 @@ public class VertxTest extends VertxTestBase {
   }
 
   @Test
-  public void testCascadeCloseHttpClient() throws Exception {
+  public void testFinalizeNetClientRegisteredWithCloseHook() {
+    Vertx vertx = Vertx.vertx();
+    try {
+      AtomicReference<NetClient> ref = new AtomicReference<>();
+      String id = vertx.deployVerticle(context -> {
+        ref.set(vertx.createNetClient());
+        return Future.succeededFuture();
+      }).await();
+      NetClient proxy = ref.getAndSet(null);
+      Assert.assertNotNull(proxy);
+      NetClientInternal real = ((CleanableNetClient) proxy).unwrap();
+      WeakReference<NetClientInternal> realWeakRef = new WeakReference<>(real);
+      real = null;
+      proxy.close().await();
+      runGC();
+      Assert.assertNull(realWeakRef.get());
+      vertx.undeploy(id).await();
+      runGC();
+      Assert.assertNull(realWeakRef.get());
+    } finally {
+      vertx.close().await();
+    }
+  }
+
+  @Test
+  public void testFinalizeNetClientRegisteredWithVertxCloseHook() {
+    Vertx vertx = Vertx.vertx();
+    try {
+      NetClient proxy = vertx.createNetClient();
+      NetClientInternal real = ((CleanableNetClient) proxy).unwrap();
+      WeakReference<NetClientInternal> realWeakRef = new WeakReference<>(real);
+      real = null;
+      proxy.close().await();
+      proxy = null;
+      runGC();
+      Assert.assertNull(realWeakRef.get());
+    } finally {
+      vertx.close().await();
+    }
+  }
+
+  @Test
+  public void testCascadeCloseHttpClient() {
     Vertx vertx1 = vertx();
     try {
       HttpServer server = vertx1.createHttpServer();

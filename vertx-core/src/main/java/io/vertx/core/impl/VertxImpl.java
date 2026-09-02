@@ -362,19 +362,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public NetClient createNetClient(TcpClientConfig config, ClientSSLOptions sslOptions) {
-    NetClientImpl netClient = new NetClientBuilder(this, new TcpClientConfig(config))
+    return cleanableClient(new NetClientBuilder(this, new TcpClientConfig(config))
       .sslOptions(sslOptions != null ? sslOptions.copy() : null)
-      .build();
-    CloseFuture fut = resolveCloseFuture();
-    fut.add(netClient);
-    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), netClient);
+      .build());
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    NetClientImpl netClient = new NetClientBuilder(this, options).build();
+    return cleanableClient(new NetClientBuilder(this, options).build());
+  }
+
+  private NetClient cleanableClient(NetClientImpl netClient) {
     CloseFuture fut = resolveCloseFuture();
-    fut.add(netClient);
-    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), netClient);
+    CleanableNetClient.ClientCloseableResource ccr = new CleanableNetClient.ClientCloseableResource(fut, netClient);
+    fut.add(ccr);
+    return new CleanableNetClient(CleanerProvider.INSTANCE.get(), ccr);
   }
 
   @Override
