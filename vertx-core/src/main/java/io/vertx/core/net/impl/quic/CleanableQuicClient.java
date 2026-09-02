@@ -11,7 +11,7 @@
 package io.vertx.core.net.impl.quic;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.ServiceResource;
+import io.vertx.core.internal.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
