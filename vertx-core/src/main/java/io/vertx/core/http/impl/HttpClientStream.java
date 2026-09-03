@@ -35,7 +35,7 @@ public interface HttpClientStream extends HttpStream {
   HttpClientStream earlyHintsHandler(Handler<MultiMap> handler);
   HttpClientStream pushHandler(Handler<HttpClientPush> handler);
   HttpClientStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpClientStream dataHandler(Handler<Buffer> handler);
+  HttpClientStream handler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);
   HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpClientStream closeHandler(Handler<Void> handler);

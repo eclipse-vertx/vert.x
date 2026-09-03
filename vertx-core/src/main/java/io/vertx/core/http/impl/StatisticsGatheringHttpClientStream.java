@@ -83,11 +83,11 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeChunk(Buffer buf, boolean end) {
+  public Future<Void> writeData(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }
-    return delegate.writeChunk(buf, end);
+    return delegate.writeData(buf, end);
   }
 
   @Override
@@ -133,8 +133,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream dataHandler(Handler<Buffer> handler) {
-    delegate.dataHandler(handler);
+  public HttpClientStream handler(Handler<Buffer> handler) {
+    delegate.handler(handler);
     return this;
   }
 

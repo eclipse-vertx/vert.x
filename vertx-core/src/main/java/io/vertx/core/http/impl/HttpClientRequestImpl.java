@@ -593,7 +593,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      future = stream.writeChunk(buff, writeEnd);
+      future = stream.writeData(buff, writeEnd);
     }
     if (end) {
       tryComplete();

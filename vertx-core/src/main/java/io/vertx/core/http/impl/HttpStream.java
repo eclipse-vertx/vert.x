@@ -20,11 +20,13 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpStream {
+public interface HttpStream extends ReadStream<Buffer>, WriteStream<Buffer> {
 
   /**
    * @return the stream id, {@code 1} denotes the first stream, HTTP/1 is a simple sequence, HTTP/2
@@ -43,7 +45,16 @@ public interface HttpStream {
   ContextInternal context();
   ByteBufAllocator allocator();
 
-  Future<Void> writeChunk(Buffer buf, boolean end);
+  default Future<Void> write(Buffer buf) {
+    return writeData(buf, false);
+  }
+  default Future<Void> end(Buffer buf) {
+    return writeData(buf, true);
+  }
+  default Future<Void> end() {
+    return writeData(Buffer.buffer(), true);
+  }
+  Future<Void> writeData(Buffer buf, boolean end);
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);
 
@@ -52,13 +63,24 @@ public interface HttpStream {
   HttpStream resetHandler(Handler<Long> handler);
   HttpStream exceptionHandler(Handler<Throwable> handler);
   HttpStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpStream dataHandler(Handler<Buffer> handler);
+  HttpStream handler(Handler<Buffer> handler);
+  default HttpStream endHandler(Handler<Void> handler) {
+    throw new UnsupportedOperationException();
+  }
   HttpStream trailersHandler(Handler<MultiMap> handler);
   HttpStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpStream closeHandler(Handler<Void> handler);
   HttpStream drainHandler(Handler<Void> handler);
 
+  default boolean writeQueueFull() {
+    return !isWritable();
+  }
+
   boolean isWritable();
+
+  default HttpStream resume() {
+    return fetch(Long.MAX_VALUE);
+  }
 
   HttpStream setWriteQueueMaxSize(int maxSize);
   HttpStream pause();

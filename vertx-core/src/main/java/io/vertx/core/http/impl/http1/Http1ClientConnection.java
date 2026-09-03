@@ -670,7 +670,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public Future<Void> writeChunk(Buffer buff, boolean end) {
+    public Future<Void> writeData(Buffer buff, boolean end) {
       if (buff != null || end) {
         Promise<Void> listener = context.promise();
         conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);
@@ -724,7 +724,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
+    public HttpClientStream handler(Handler<Buffer> handler) {
       chunkHandler = handler;
       return this;
     }

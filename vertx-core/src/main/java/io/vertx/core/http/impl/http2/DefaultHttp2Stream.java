@@ -377,7 +377,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final Future<Void> writeChunk(Buffer chunk, boolean end) {
+  public final Future<Void> writeData(Buffer chunk, boolean end) {
     Promise<Void> promise = context.promise();
     writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end, promise);
     return promise.future();
@@ -473,7 +473,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
   }
 
-  public S dataHandler(Handler<Buffer> handler) {
+  public S handler(Handler<Buffer> handler) {
     dataHandler = handler;
     return (S)this;
   }

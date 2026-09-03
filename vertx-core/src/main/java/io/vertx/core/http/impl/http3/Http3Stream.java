@@ -225,7 +225,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return (S)this;
   }
 
-  public final S dataHandler(Handler<Buffer> handler) {
+  public final S handler(Handler<Buffer> handler) {
     this.dataHandler = handler;
     return (S)this;
   }
@@ -293,7 +293,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return fut;
   }
 
-  public Future<Void> writeChunk(Buffer chunk, boolean end) {
+  public Future<Void> writeData(Buffer chunk, boolean end) {
     if (outboundReceived) {
       throw new UnsupportedOperationException("handle me");
     }

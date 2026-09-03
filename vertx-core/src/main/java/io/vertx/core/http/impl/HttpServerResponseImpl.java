@@ -406,7 +406,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (sendHeaders) {
       return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, end);
     } else {
-      return stream.writeChunk(chunk, end);
+      return stream.writeData(chunk, end);
     }
   }
 
@@ -755,7 +755,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       stream.resetHandler(this::handleReset);
       stream.exceptionHandler(this::handleException);
       stream.closeHandler(response::handleClose);
-      stream.dataHandler(this::handleData);
+      stream.handler(this::handleData);
       stream.trailersHandler(this::handleTrailers);
       stream.customFrameHandler(this::handleCustomFrame);
       stream.priorityChangeHandler(this::handlePriorityChange);
