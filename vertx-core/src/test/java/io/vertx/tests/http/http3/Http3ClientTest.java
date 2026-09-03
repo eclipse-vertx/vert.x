@@ -6,8 +6,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
-import io.vertx.core.impl.transports.IoUringTransport;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.VertxTestBase;
@@ -15,7 +13,6 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -39,7 +36,6 @@ public class Http3ClientTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    Assume.assumeFalse(((VertxInternal)vertx).transport() instanceof IoUringTransport);
     serverOptions = new HttpServerConfig();
     serverOptions.setVersions(HttpVersion.HTTP_3);
     serverSslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
@@ -54,12 +50,8 @@ public class Http3ClientTest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    if (server != null) {
-      server.close().await();
-    }
-    if (client != null) {
-      client.close().await();
-    }
+    server.close().await();
+    client.close().await();
     super.tearDown();
   }
 
