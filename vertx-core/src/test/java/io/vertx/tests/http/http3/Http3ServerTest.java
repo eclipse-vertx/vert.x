@@ -19,7 +19,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.transports.IoUringTransport;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
@@ -72,19 +71,14 @@ public class Http3ServerTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    Assume.assumeFalse(((VertxInternal)vertx).transport() instanceof IoUringTransport);
     client = Http3TestClient.client(vertx);
     server = vertx.createHttpServer(serverConfig(), sslOptions());
   }
 
   @Override
   protected void tearDown() throws Exception {
-    if (server != null) {
-      server.close().await();
-    }
-    if (client != null) {
-      client.close();
-    }
+    server.close().await();
+    client.close();
     super.tearDown();
   }
 
