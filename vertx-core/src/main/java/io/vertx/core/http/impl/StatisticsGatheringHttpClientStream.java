@@ -54,6 +54,16 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public long bytesWritten() {
+    return delegate.bytesWritten();
+  }
+
+  @Override
+  public long bytesRead() {
+    return delegate.bytesRead();
+  }
+
+  @Override
   public HttpVersion version() {
     return delegate.version();
   }
@@ -222,8 +232,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public boolean isWritable() {
-    return delegate.isWritable();
+  public boolean writeQueueFull() {
+    return delegate.writeQueueFull();
   }
 
   @Override

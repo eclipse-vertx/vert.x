@@ -29,11 +29,12 @@ public interface HttpClientStream extends HttpStream {
   Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect);
 
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
-  HttpClientStream resetHandler(Handler<Long> handler);
-  HttpClientStream exceptionHandler(Handler<Throwable> handler);
   HttpClientStream continueHandler(Handler<Void> handler);
   HttpClientStream earlyHintsHandler(Handler<MultiMap> handler);
   HttpClientStream pushHandler(Handler<HttpClientPush> handler);
+
+  HttpClientStream resetHandler(Handler<Long> handler);
+  HttpClientStream exceptionHandler(Handler<Throwable> handler);
   HttpClientStream customFrameHandler(Handler<HttpFrame> handler);
   HttpClientStream handler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);

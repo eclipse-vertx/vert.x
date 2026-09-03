@@ -485,7 +485,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public boolean writeQueueFull() {
     synchronized (conn) {
       checkValid();
-      return !stream.isWritable();
+      return stream.writeQueueFull();
     }
   }
 

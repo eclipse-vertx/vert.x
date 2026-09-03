@@ -138,7 +138,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         }
         @Override
         public boolean writeQueueFull() {
-          return !stream.isWritable();
+          return stream.writeQueueFull();
         }
         @Override
         public WriteStream<Buffer> drainHandler(@Nullable Handler<Void> handler) {

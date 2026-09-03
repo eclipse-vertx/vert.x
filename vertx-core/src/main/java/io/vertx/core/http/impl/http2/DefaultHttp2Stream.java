@@ -27,6 +27,7 @@ import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.http2.codec.Http2ConnectionImpl;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -228,6 +229,13 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     context.execute(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
+  @Override
+  public void onData(ByteBuf data) {
+    data = Http2ConnectionImpl.safeBuffer(data);
+    Buffer buff = BufferInternal.buffer(data);
+    onData(buff);
+  }
+
   public void onData(Buffer data) {
     bytesRead += data.length();
     inboundQueue.write(data);
@@ -269,8 +277,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return bytesRead;
   }
 
-  public final boolean isWritable() {
-    return outboundQueue.isWritable();
+  @Override
+  public final boolean writeQueueFull() {
+    return !outboundQueue.isWritable();
   }
 
   public final void write(MessageWrite write) {

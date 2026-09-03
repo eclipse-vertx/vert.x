@@ -106,15 +106,12 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   void receiveData(ChannelHandlerContext chctx, int streamId, ByteBuf content, boolean ended, int initialWindowSize) {
     StreamChannel channel = channels.get(streamId);
-    ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(content.readableBytes());
-    buffer.writeBytes(content, content.readerIndex(), content.readableBytes());
-    Buffer buff = BufferInternal.buffer(buffer);
-    channel.bytesConsumed += buff.length();
+    channel.bytesConsumed += content.readableBytes();
     if (channel.bytesConsumed > initialWindowSize) {
       chctx.channel().config().setAutoRead(false);
     }
     S stream = channel.stream;
-    stream.onData(buff);
+    stream.onData(content);
     if (ended) {
       stream.onTrailers();
     }

@@ -508,8 +508,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
     }
 
-    void onChunk(Buffer buff) {
-      queue.write(buff);
+    void onChunk(ByteBuf chunk) {
+      queue.write(BufferInternal.safeBuffer(chunk));
     }
 
     abstract void handleEnd(MultiMap trailer);
@@ -588,8 +588,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public boolean isWritable() {
-      return !conn.writeQueueFull();
+    public boolean writeQueueFull() {
+      return conn.writeQueueFull();
     }
 
     @Override
@@ -640,6 +640,16 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     @Override
     public Object trace() {
       return super.trace();
+    }
+
+    @Override
+    public long bytesWritten() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long bytesRead() {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -965,11 +975,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.safeBuffer(chunk);
-    int len = buff.length();
-    stream.bytesRead += len;
+    stream.bytesRead += chunk.readableBytes();
     if (!stream.reset) {
-      stream.onChunk(buff);
+      stream.onChunk(chunk);
+    } else {
+      ReferenceCountUtil.release(chunk);
     }
   }
 

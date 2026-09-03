@@ -34,12 +34,14 @@ public interface HttpStream extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   long id();
 
+  long bytesWritten();
+  long bytesRead();
+  Object metric();
+
   /**
    * @return the stream version or null if it's not yet determined
    */
   HttpVersion version();
-
-  Object metric();
 
   HttpConnection connection();
   ContextInternal context();
@@ -71,12 +73,6 @@ public interface HttpStream extends ReadStream<Buffer>, WriteStream<Buffer> {
   HttpStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpStream closeHandler(Handler<Void> handler);
   HttpStream drainHandler(Handler<Void> handler);
-
-  default boolean writeQueueFull() {
-    return !isWritable();
-  }
-
-  boolean isWritable();
 
   default HttpStream resume() {
     return fetch(Long.MAX_VALUE);

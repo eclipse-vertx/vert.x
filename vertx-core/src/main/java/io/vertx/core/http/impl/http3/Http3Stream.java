@@ -245,8 +245,8 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return (S)this;
   }
 
-  public final boolean isWritable() {
-    return !stream.writeQueueFull();
+  public final boolean writeQueueFull() {
+    return stream.writeQueueFull();
   }
 
   public final S drainHandler(Handler<Void> handler) {

@@ -146,6 +146,16 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public long bytesWritten() {
+      return delegate.bytesWritten();
+    }
+
+    @Override
+    public long bytesRead() {
+      return delegate.bytesRead();
+    }
+
+    @Override
     public HttpVersion version() {
       return delegate.version();
     }
@@ -286,8 +296,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public boolean isWritable() {
-      return delegate.isWritable();
+    public boolean writeQueueFull() {
+      return delegate.writeQueueFull();
     }
 
     @Override
@@ -466,6 +476,16 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public long bytesWritten() {
+      return upgradingStream.bytesWritten();
+    }
+
+    @Override
+    public long bytesRead() {
+      return upgradingStream.bytesRead();
+    }
+
+    @Override
     public HttpVersion version() {
       HttpClientStream s = upgradedStream;
       if (s == null) {
@@ -627,11 +647,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public boolean isWritable() {
+    public boolean writeQueueFull() {
       if (upgradedStream != null) {
-        return upgradedStream.isWritable();
+        return upgradedStream.writeQueueFull();
       } else {
-        return upgradingStream.isWritable();
+        return upgradingStream.writeQueueFull();
       }
     }
 

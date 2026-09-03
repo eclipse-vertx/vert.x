@@ -231,7 +231,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       checkEnded();
     }
-    return !stream.isWritable();
+    return stream.writeQueueFull();
   }
 
   @Override
