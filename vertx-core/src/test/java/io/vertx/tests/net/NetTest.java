@@ -2271,7 +2271,7 @@ public class NetTest {
     int numServers = Math.max(2, VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1);
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
-    List<NetServer> servers = new ArrayList<>();
+    List<NetServer> servers = Collections.synchronizedList(new ArrayList<>());
     Set<NetServer> connectedServers = ConcurrentHashMap.newKeySet();
     Set<Thread> threads = ConcurrentHashMap.newKeySet();
 
