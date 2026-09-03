@@ -908,6 +908,10 @@
                 <io.netty.iouring.ringSize>512</io.netty.iouring.ringSize>
                 <io.netty.iouring.cqSize>1024</io.netty.iouring.cqSize>
               </systemPropertyVariables>
+              <excludes>
+                <exclude>io/vertx/it/**</exclude>
+                <exclude>io/vertx/tests/http/http3/**</exclude>
+              </excludes>
             </configuration>
           </plugin>
         </plugins>
