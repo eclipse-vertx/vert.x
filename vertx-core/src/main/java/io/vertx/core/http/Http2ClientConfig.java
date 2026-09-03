@@ -39,7 +39,8 @@ public class Http2ClientConfig {
     keepAliveTimeout = Duration.ofSeconds(HttpClientOptions.DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT);
     upgradeMaxContentLength = HttpClientOptions.DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH;
     multiplexImplementation = HttpClientOptions.DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
-    initialSettings = new Http2Settings();
+    initialSettings = new Http2Settings()
+      .setInitialWindowSize(HttpClientOptions.DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE);
     clearTextUpgrade = HttpClientOptions.DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     clearTextUpgradeWithPreflightRequest = HttpClientOptions.DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
   }
@@ -90,11 +91,11 @@ public class Http2ClientConfig {
   }
 
   /**
-   * Set the default HTTP/2 connection window size. It overrides the initial window
-   * size set by {@link Http2Settings#getInitialWindowSize}, so the connection window size
-   * is greater than for its streams, in order the data throughput.
+   * Set the default HTTP/2 connection window size. This window is shared by all streams
+   * on the connection and is independent from the per-stream window configured by
+   * {@link Http2Settings#setInitialWindowSize(int)}.
    * <p/>
-   * A value of {@code -1} reuses the initial window size setting.
+   * A value of {@code -1} uses the HTTP/2 protocol default connection window size.
    *
    * @param connectionWindowSize the window size applied to the connection
    * @return a reference to this, so the API can be used fluently

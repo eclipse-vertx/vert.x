@@ -42,9 +42,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_HTTP2_MULTIPLEXING_LIMIT = -1;
 
   /**
-   * The default connection window size for HTTP/2 = -1
+   * The default initial HTTP/2 stream window size = 1 MiB
    */
-  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
+  public static final int DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE = 1024 * 1024;
+
+  /**
+   * The default connection window size for HTTP/2 = 16 MiB
+   */
+  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = 16 * 1024 * 1024;
 
   /**
    * The default keep alive timeout for HTTP/2 connection can send = 60 seconds
@@ -508,11 +513,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the default HTTP/2 connection window size. It overrides the initial window
-   * size set by {@link Http2Settings#getInitialWindowSize}, so the connection window size
-   * is greater than for its streams, in order the data throughput.
+   * Set the default HTTP/2 connection window size. This window is shared by all streams
+   * on the connection and is independent from the per-stream window configured by
+   * {@link Http2Settings#setInitialWindowSize(int)}.
    * <p/>
-   * A value of {@code -1} reuses the initial window size setting.
+   * A value of {@code -1} uses the HTTP/2 protocol default connection window size.
    *
    * @param http2ConnectionWindowSize the window size applied to the connection
    * @return a reference to this, so the API can be used fluently
