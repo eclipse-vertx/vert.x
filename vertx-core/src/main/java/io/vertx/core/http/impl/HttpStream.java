@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -22,6 +23,8 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -46,6 +49,14 @@ public interface HttpStream extends ReadStream<Buffer>, WriteStream<Buffer> {
   HttpConnection connection();
   ContextInternal context();
   ByteBufAllocator allocator();
+
+  default <T> Future<Void> writeMessage(Function<T, ByteBuf> encoder, T message) {
+    throw new UnsupportedOperationException();
+  }
+
+  default <T> HttpStream messageHandler(Function<ByteBuf, T> decoder, Handler<T> handler) {
+    throw new UnsupportedOperationException();
+  }
 
   default Future<Void> write(Buffer buf) {
     return writeData(buf, false);
