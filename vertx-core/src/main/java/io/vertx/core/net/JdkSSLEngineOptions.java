@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
+import io.vertx.core.impl.JdkDependent;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -58,12 +59,11 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   /**
-   * @return if PQC key exchange (X25519MLKEM768) is available via the JDK SSL engine
-   * @implNote currently this returns {@code false} but implementation will change in the future when JDK support evolves
+   * @return if PQC key exchange is available via the JDK SSL engine, i.e. the JDK supports
+   * at least one of the PQ-compliant named groups (X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024)
    */
   public static synchronized boolean isPqcAvailable() {
-    // Todo: implement it when JDK add supports
-    return false;
+    return JdkDependent.isPqcAvailable();
   }
 
   public JdkSSLEngineOptions() {
