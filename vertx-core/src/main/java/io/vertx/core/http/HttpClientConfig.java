@@ -80,6 +80,7 @@ public class HttpClientConfig {
   private String defaultHost;
   private int defaultPort;
   private ClientRedirectConfig redirectConfig;
+  private ClientResolverConfig resolverConfig;
   private ObservabilityConfig observabilityConfig;
   private boolean shared;
   private String name;
@@ -98,6 +99,7 @@ public class HttpClientConfig {
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.redirectConfig = null;
+    this.resolverConfig = null;
     this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
@@ -117,6 +119,7 @@ public class HttpClientConfig {
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.redirectConfig = other.redirectConfig != null ? new ClientRedirectConfig(other.redirectConfig) : null;
+    this.resolverConfig = other.resolverConfig != null ? new ClientResolverConfig(other.resolverConfig) : null;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.shared = other.shared;
     this.name = other.name;
@@ -485,7 +488,7 @@ public class HttpClientConfig {
   }
 
   /**
-   * @return the client redirect config, it can be {@code null} in which case the default settings are used.
+   * @return the client redirect config, it can be {@code null} in which case the default config is used.
    */
   public ClientRedirectConfig getRedirectConfig() {
     return redirectConfig;
@@ -499,6 +502,24 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setRedirectConfig(ClientRedirectConfig redirectConfig) {
     this.redirectConfig = redirectConfig;
+    return this;
+  }
+
+  /**
+   * @return the client resolver config, it can be {@code null} in which case the default config is used.
+   */
+  public ClientResolverConfig getResolverConfig() {
+    return resolverConfig;
+  }
+
+  /**
+   * Set the client resolver config, set to {code null} to use the default config.
+   *
+   * @param resolverConfig the resolver config
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setResolverConfig(ClientResolverConfig resolverConfig) {
+    this.resolverConfig = resolverConfig;
     return this;
   }
 
