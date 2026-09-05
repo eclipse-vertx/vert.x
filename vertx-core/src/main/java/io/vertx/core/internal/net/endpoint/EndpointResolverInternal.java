@@ -18,13 +18,16 @@ import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 
+import java.time.Duration;
+
 public interface EndpointResolverInternal extends EndpointResolver {
 
   static EndpointResolverInternal create(VertxInternal vertx,
                                          io.vertx.core.spi.endpoint.EndpointResolver<?, ?, ?, ?> endpointResolver,
                                          LoadBalancer loadBalancer,
-                                         long expirationMillis) {
-    return new EndpointResolverImpl<>(vertx, endpointResolver, loadBalancer, expirationMillis);
+                                         Duration keepAlive,
+                                         Duration maxTtl) {
+    return new EndpointResolverImpl<>(vertx, endpointResolver, loadBalancer, keepAlive, maxTtl);
   }
 
   boolean resolves(Address address);

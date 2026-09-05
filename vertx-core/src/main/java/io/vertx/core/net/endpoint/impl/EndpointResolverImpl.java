@@ -22,6 +22,7 @@ import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,9 +42,11 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final LoadBalancer loadBalancer;
   private final EndpointResolver<A, N, S, ListOfServers> endpointResolver;
   private final ResourceManager<A, ManagedEndpoint> endpointManager;
-  private final long keepAliveMillis;
+  private final Duration keepAliveTimeout;
+  private final Duration maxKeepAlive;
 
-  public EndpointResolverImpl(VertxInternal vertx, EndpointResolver<A, N, S, ?> endpointResolver, LoadBalancer loadBalancer, long keepAliveMillis) {
+  public EndpointResolverImpl(VertxInternal vertx, EndpointResolver<A, N, S, ?> endpointResolver, LoadBalancer loadBalancer,
+                              Duration keepAliveTimeout, Duration maxKeepAlive) {
 
     if (loadBalancer == null) {
       loadBalancer = LoadBalancer.ROUND_ROBIN;
@@ -53,7 +56,8 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     this.loadBalancer = loadBalancer;
     this.endpointResolver = (EndpointResolver<A, N, S, ListOfServers>) endpointResolver;
     this.endpointManager = new ResourceManager<>();
-    this.keepAliveMillis = keepAliveMillis;
+    this.keepAliveTimeout = keepAliveTimeout;
+    this.maxKeepAlive = maxKeepAlive;
   }
 
   @Override
@@ -90,6 +94,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
   private class EndpointImpl implements io.vertx.core.net.endpoint.Endpoint {
 
+    private final long creationTimestamp;
     private final AtomicLong lastAccessed;
     private final A address;
     private final S state;
@@ -98,6 +103,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       this.state = state;
       this.address = address;
       this.lastAccessed = lastAccessed;
+      this.creationTimestamp = lastAccessed.get();
     }
 
     @Override
@@ -140,7 +146,10 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
     @Override
     protected void checkExpired() {
-      if (endpoint.succeeded() && keepAliveMillis > 0 && System.currentTimeMillis() - endpoint.result().lastAccessed.get() >= keepAliveMillis) {
+      long now = System.currentTimeMillis();
+      if (endpoint.succeeded()
+      && (((now - endpoint.result().creationTimestamp) >= maxKeepAlive.toMillis()) ||
+        (now - endpoint.result().lastAccessed.get() >= keepAliveTimeout.toMillis()))) {
         if (disposed.compareAndSet(false, true)) {
           decRefCount();
         }

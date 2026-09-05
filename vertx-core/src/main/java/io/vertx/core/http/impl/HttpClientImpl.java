@@ -85,7 +85,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  List<String> nonProxyHosts,
                  LoadBalancer loadBalancer,
                  boolean followAlternativeServices,
-                 Duration resolverIdeTimeout,
+                 Duration resolverKeepAliveTimeout,
+                 Duration resolverMaxKeepAlive,
                  boolean verifyHost,
                  boolean defaultSsl,
                  String defaultHost,
@@ -109,7 +110,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.quicTransport = quicTransport;
     this.originEndpoints = new OriginResolver<>(vertx, resolveAll, this);
     this.resolver = (EndpointResolverInternal) resolver;
-    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, resolverIdeTimeout.toMillis());
+    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, resolverKeepAliveTimeout, resolverMaxKeepAlive);
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());

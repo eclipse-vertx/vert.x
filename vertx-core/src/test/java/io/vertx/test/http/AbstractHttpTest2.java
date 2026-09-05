@@ -12,7 +12,6 @@
 package io.vertx.test.http;
 
 import io.vertx.core.*;
-import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.transport.Transport;
@@ -184,11 +183,11 @@ public abstract class AbstractHttpTest2 {
   public class VertxProviderWithResolver implements VertxProvider {
     @Override
     public Vertx call() {
-      VertxOptions options = new VertxOptions();
+      VertxOptions options;
       if (dnsServer.isStarted()) {
-        options
-          .setAddressResolverOptions(new AddressResolverOptions()
-            .addServer("127.0.0.1:" + dnsServer.port()));
+        options = dnsServer.vertxOptions();
+      } else {
+        options = new VertxOptions();
       }
       Transport transport = TRANSPORT;
       VertxBuilder builder = Vertx.builder();
