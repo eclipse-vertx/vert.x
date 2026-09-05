@@ -65,6 +65,19 @@ public class FakeAddressResolver<B> implements AddressResolver<FakeAddress>, End
   }
 
   @Override
+  public Future<FakeState<B>> refresh(FakeAddress address, FakeState<B> state) {
+    FakeRegistration registration = map.get(state.name);
+    if (registration == null) {
+      return null;
+    } else {
+      FakeState<B> refreshedState = new FakeState<>(state.name, registration, state.builder);
+      registration.state = state;
+      refreshedState.refresh();
+      return Future.succeededFuture(refreshedState);
+    }
+  }
+
+  @Override
   public SocketAddress addressOf(FakeServerEndpoint server) {
     return server.socketAddress;
   }

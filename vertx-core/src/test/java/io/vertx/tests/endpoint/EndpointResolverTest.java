@@ -20,6 +20,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.*;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -41,7 +42,8 @@ public class EndpointResolverTest extends VertxTestBase {
   @Test
   public void testFiltering() {
     fakeResolver.registerAddress("example.com", List.of(addr1, addr2, addr3, addr4));
-    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx, fakeResolver, LoadBalancer.ROUND_ROBIN, 5000);
+    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal)
+      vertx, fakeResolver, LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
     Endpoint endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
     Predicate<ServerEndpoint> even = s -> s.address().port() % 2 == 0;
     Predicate<ServerEndpoint> odd = s -> s.address().port() % 2 == 1;
@@ -59,7 +61,8 @@ public class EndpointResolverTest extends VertxTestBase {
   public void testFilterEmpty() {
     SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
     fakeResolver.registerAddress("example.com", List.of(addr1, addr2, addr3, addr4));
-    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx, fakeResolver, LoadBalancer.ROUND_ROBIN, 5000);
+    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx,
+      fakeResolver, LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
     Endpoint endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
     Predicate<ServerEndpoint> none = s -> false;
     assertEquals(null, endpoint.selectServer(none));
@@ -68,7 +71,8 @@ public class EndpointResolverTest extends VertxTestBase {
   @Test
   public void testRebuild() {
     FakeRegistration registration = fakeResolver.registerAddress("example.com", List.of(addr1));
-    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx, fakeResolver, LoadBalancer.ROUND_ROBIN, 5000);
+    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx,
+      fakeResolver, LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
     Endpoint endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
     Predicate<ServerEndpoint> even = s -> s.address().port() % 2 == 0;
     Predicate<ServerEndpoint> odd = s -> s.address().port() % 2 == 1;
@@ -84,5 +88,16 @@ public class EndpointResolverTest extends VertxTestBase {
     assertEquals(addr4, endpoint.selectServer(odd).address());
     assertEquals(addr2, endpoint.selectServer(odd).address());
     assertEquals(addr4, endpoint.selectServer(odd).address());
+  }
+
+  @Test
+  public void testRefresh() {
+    FakeRegistration registration = fakeResolver.registerAddress("example.com", List.of(addr1));
+    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx,
+      fakeResolver, LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
+    Endpoint endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
+    registration = fakeResolver.registerAddress("example.com", List.of(addr1, addr2));
+    endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
+    assertEquals(2, endpoint.servers().size());
   }
 }

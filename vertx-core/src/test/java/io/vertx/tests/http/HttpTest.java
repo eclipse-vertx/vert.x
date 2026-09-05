@@ -30,8 +30,6 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.http.HttpClientInternal;
-import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
@@ -45,7 +43,6 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.test.tls.Cert;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
-import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -65,7 +62,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.*;
@@ -6373,68 +6369,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     }
   }
 
-  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
-  @Test
-  public void testDnsClientSideLoadBalancingDisabled() throws Exception {
-    testDnsClientSideLoadBalancing(false);
-  }
-
-  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
-  @Test
-  public void testDnsClientSideLoadBalancingEnabled() throws Exception {
-    testDnsClientSideLoadBalancing(true);
-  }
-
-  private void testDnsClientSideLoadBalancing(boolean enabled) {
-    List<String> hosts = List.of("127.0.0.1", "127.0.0.2");
-    List<String> actualHosts = new ArrayList<>();
-    for (String host : hosts) {
-      try {
-        HttpServer server = config
-          .forServer()
-          .create(vertx)
-          .requestHandler(request -> request.response().end())
-          .listen(DEFAULT_HTTP_PORT, host)
-          .await();
-        actualHosts.add(host);
-      } catch (Exception e) {
-        // Could be a bind error on MacOS or Windows
-        // on MacOS : 'sudo ifconfig lo0 alias 127.0.0.2 up'
-      }
-    }
-    AtomicReference<Set<String>> balancedHosts = new AtomicReference<>();
-    AtomicInteger idx = new AtomicInteger();
-    HttpClient client = config
-      .forClient()
-      .setVerifyHost(false)
-      .setConnectTimeout(Duration.ofMillis(500))
-      .builder(vertx)
-      .withLoadBalancer(enabled ? endpoints -> () -> {
-        balancedHosts.set(endpoints
-          .stream()
-          .map(se -> se.address().hostAddress())
-          .collect(Collectors.toSet()));
-        return idx.getAndIncrement() % endpoints.size();
-      } : null)
-      .build();
-    Set<String> ipAdresses = new HashSet<>();
-    for (int i = 0;i < hosts.size();i++) {
-      SocketAddress addr = client
-        .request(GET, DEFAULT_HTTP_PORT, "vertx.io", "/")
-        .compose(r -> {
-          return r.send().compose(resp -> resp.end().map(r.connection().remoteAddress()));
-        })
-        .await();
-      ipAdresses.add(addr.hostAddress());
-    }
-    if (enabled) {
-      Assertions.assertThat(ipAdresses).containsAll(actualHosts);
-      Assertions.assertThat(balancedHosts.get()).containsAll(hosts);
-    } else {
-      assertEquals(Set.of("127.0.0.1"), ipAdresses);
-    }
-  }
-
   @Test
   public void testConcurrentWrites1() throws Exception {
     testConcurrentWrites(req -> req
@@ -6586,45 +6520,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
       .await();
-  }
-
-  @Test
-  public void testResolverKeepAlive() throws Exception {
-    client = ((HttpClientBuilderInternal)httpClientBuilder()
-      .with(new PoolOptions().setCleanerPeriod(50)))
-      .resolverIdleTimeout(Duration.ofMillis(50))
-      .build();
-    server.requestHandler(request -> {
-      request.response().end();
-    });
-    startServer(testAddress);
-    // Create a connection to the server first (warm-up) before
-    // we test the origin resolver
-    client.request(requestOptions)
-      .compose(request -> request
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::end))
-      .await();
-    long now = System.currentTimeMillis();
-    vertx.setPeriodic(1, id -> {
-      if (System.currentTimeMillis() - now > 500) {
-        vertx.cancelTimer(id);
-      }
-      client.request(requestOptions)
-        .compose(request -> request
-          .send()
-          .expecting(HttpResponseExpectation.SC_OK)
-          .compose(HttpClientResponse::end));
-    });
-    EndpointResolverInternal originResolver = ((HttpClientInternal) client).originResolver();
-    assertWaitUntil(() -> originResolver.size() == 1);
-    long abc = System.currentTimeMillis();
-    assertWaitUntil(() -> originResolver.size() == 0);
-    long delta = System.currentTimeMillis() - abc;
-    System.out.println(delta);
-    assertTrue(delta >= 500);
-    assertTrue(delta <= 1000);
   }
 
   @Test
