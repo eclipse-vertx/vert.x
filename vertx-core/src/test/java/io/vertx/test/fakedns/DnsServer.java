@@ -2,6 +2,8 @@ package io.vertx.test.fakedns;
 
 import io.netty.handler.codec.dns.DnsQuestion;
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.dns.AddressResolverOptions;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -30,6 +32,12 @@ public class DnsServer implements TestRule {
 
   public boolean isStarted() {
     return STARTED.get() == Boolean.TRUE;
+  }
+
+  public VertxOptions vertxOptions() {
+    return new VertxOptions()
+      .setAddressResolverOptions(new AddressResolverOptions()
+        .addServer("127.0.0.1:" + port()));
   }
 
   @Override
@@ -86,5 +94,4 @@ public class DnsServer implements TestRule {
       }
     }
   }
-
 }

@@ -4,7 +4,6 @@ import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.endpoint.LoadBalancer;
@@ -541,7 +540,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     )).toString();
     assertEquals("1", res);
     assertNotNull(registration2.state());
-    assertNotSame(registration1.state(), registration2.state());
+    assertSame(registration1.state(), registration2.state());
   }
 
   @Test
@@ -585,9 +584,9 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     FakeAddressResolver resolver = new FakeAddressResolver();
     SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     FakeRegistration registration = resolver.registerAddress("example.com", Arrays.asList(addr1));
-    HttpClientInternal client = ((HttpClientBuilderInternal) vertx.httpClientBuilder())
+    HttpClient client = vertx.httpClientBuilder()
+    .with(new HttpClientConfig().setResolverConfig(new ClientResolverConfig().setKeepAliveTimeout(Duration.ofSeconds(1))))
       .withAddressResolver(resolver)
-      .resolverIdleTimeout(Duration.ofSeconds(1))
       .build();
     String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
