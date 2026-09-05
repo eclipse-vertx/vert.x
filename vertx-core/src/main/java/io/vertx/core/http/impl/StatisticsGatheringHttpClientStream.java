@@ -54,6 +54,16 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public long bytesWritten() {
+    return delegate.bytesWritten();
+  }
+
+  @Override
+  public long bytesRead() {
+    return delegate.bytesRead();
+  }
+
+  @Override
   public HttpVersion version() {
     return delegate.version();
   }
@@ -83,11 +93,11 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeChunk(Buffer buf, boolean end) {
+  public Future<Void> writeData(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }
-    return delegate.writeChunk(buf, end);
+    return delegate.writeData(buf, end);
   }
 
   @Override
@@ -133,8 +143,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream dataHandler(Handler<Buffer> handler) {
-    delegate.dataHandler(handler);
+  public HttpClientStream handler(Handler<Buffer> handler) {
+    delegate.handler(handler);
     return this;
   }
 
@@ -222,8 +232,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public boolean isWritable() {
-    return delegate.isWritable();
+  public boolean writeQueueFull() {
+    return delegate.writeQueueFull();
   }
 
   @Override

@@ -121,15 +121,15 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         }
         @Override
         public Future<Void> write(Buffer data) {
-          return stream.writeChunk(data, false);
+          return stream.writeData(data, false);
         }
         @Override
         public Future<Void> end(Buffer data) {
-          return stream.writeChunk(data, true);
+          return stream.writeData(data, true);
         }
         @Override
         public Future<Void> end() {
-          return stream.writeChunk(BufferInternal.buffer(Unpooled.EMPTY_BUFFER), true);
+          return stream.writeData(BufferInternal.buffer(Unpooled.EMPTY_BUFFER), true);
         }
         @Override
         public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
@@ -138,7 +138,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         }
         @Override
         public boolean writeQueueFull() {
-          return !stream.isWritable();
+          return stream.writeQueueFull();
         }
         @Override
         public WriteStream<Buffer> drainHandler(@Nullable Handler<Void> handler) {
