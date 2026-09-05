@@ -22,6 +22,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.FakeAddress;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -39,7 +40,7 @@ public class MappingResolverTest extends VertxTestBase {
       return m != null ? m.apply(addr) : null;
     });
     endpointResolver = EndpointResolverInternal.create(
-      (VertxInternal) vertx, ar.endpointResolver(vertx), LoadBalancer.ROUND_ROBIN, 5000);
+      (VertxInternal) vertx, ar.endpointResolver(vertx), LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
   }
 
   @Test
