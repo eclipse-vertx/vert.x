@@ -52,7 +52,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   };
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
-  private final InboundMessageQueue<Object> inboundQueue;
+  private final InboundMessageQueue<ByteBuf> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -64,6 +64,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private boolean headersSent;
   private boolean trailersSent;
   private boolean writable;
+
+  // Written from event-loop / read from client context
+  // with an happens-before (last empty buffer write)
+  private MultiMap trailers;
 
   // Client context
   private StreamPriority priority;
@@ -97,11 +101,11 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.id = id_;
     this.inboundQueue = new InboundMessageQueue<>(connection.context().eventLoop(), context.executor()) {
       @Override
-      protected void handleMessage(Object item) {
-        if (item instanceof MultiMap) {
-          handleTrailers((MultiMap) item);
+      protected void handleMessage(ByteBuf buf) {
+        if (buf == Unpooled.EMPTY_BUFFER) {
+          MultiMap item = trailers;
+          handleTrailers(item);
         } else {
-          ByteBuf buf = (ByteBuf) item;
           try {
             int len = buf.readableBytes();
             connection.context().execute(len, v -> connection.consumeCredits(DefaultHttp2Stream.this.id, v));
@@ -112,6 +116,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
             ReferenceCountUtil.release(buf);
           }
         }
+      }
+      @Override
+      protected void handleDispose(ByteBuf msg) {
+        ReferenceCountUtil.release(msg);
       }
     };
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
@@ -207,6 +215,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.flushBytesWritten();
     context.execute(v -> handleClose());
     outboundQueue.close();
+    inboundQueue.close();
   }
 
   public void onReset(long code) {
@@ -248,9 +257,12 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   @Override
   public void onData(ByteBuf data) {
-    data.retain();
-    bytesRead += data.readableBytes();
-    inboundQueue.write(data);
+    int len = data.readableBytes();
+    if (len > 0) {
+      data.retain();
+      bytesRead += len;
+      inboundQueue.write(data);
+    }
   }
 
   public void onWritabilityChanged() {
@@ -274,7 +286,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       observer.observeInboundTrailers(bytesRead);
     }
     connection.flushBytesRead();
-    inboundQueue.write(trailers);
+    this.trailers = trailers;
+    inboundQueue.write(Unpooled.EMPTY_BUFFER);
   }
 
   public final long id() {
