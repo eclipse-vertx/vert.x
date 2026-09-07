@@ -65,14 +65,14 @@ public class ClientRedirectConfig {
   }
 
   /**
-   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
+   * @return the maximum size in bytes of the request body buffered in case a redirection keeps the request method
    */
   public int getMaxBufferedSize() {
     return maxBufferedSize;
   }
 
   /**
-   * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
+   * Set the maximum size in bytes of the request body buffered in case a redirection keeps the request method, e.g. a {@code 307} or {@code 308} redirection of a {@code POST} or {@code QUERY} request.
    *
    * @param maxBufferedSize the maximum buffer size
    * @return a reference to this, so the API can be used fluently
