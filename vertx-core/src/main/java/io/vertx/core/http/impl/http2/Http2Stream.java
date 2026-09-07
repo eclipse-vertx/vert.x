@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.http2;
 
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.StreamPriority;
@@ -36,7 +37,7 @@ public interface Http2Stream {
 
   void onPriorityChange(StreamPriority streamPriority);
   void onHeaders(HttpHeaders headers);
-  void onData(Buffer buffer);
+  void onData(ByteBuf data);
   void onCustomFrame(int type, int flags, Buffer payload);
   void onTrailers();
   void onTrailers(HttpHeaders trailers);

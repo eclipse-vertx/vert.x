@@ -59,7 +59,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
     stream.pushHandler(this::handlePush);
     stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.dataHandler(chunk -> {
+      stream.handler(chunk -> {
         dataReceived();
         response.handleChunk(chunk);
       });

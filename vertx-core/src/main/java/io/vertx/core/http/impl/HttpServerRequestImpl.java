@@ -94,7 +94,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
     stream.resetHandler(this::handleReset);
     stream.exceptionHandler(this::handleException);
     stream.closeHandler(this::handleClosed);
-    stream.dataHandler(this::handleData);
+    stream.handler(this::handleData);
     stream.trailersHandler(this::handleTrailers);
     stream.drainHandler(response::handleWriteQueueDrained);
   }

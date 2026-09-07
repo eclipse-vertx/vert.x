@@ -146,6 +146,16 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public long bytesWritten() {
+      return delegate.bytesWritten();
+    }
+
+    @Override
+    public long bytesRead() {
+      return delegate.bytesRead();
+    }
+
+    @Override
     public HttpVersion version() {
       return delegate.version();
     }
@@ -171,8 +181,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public Future<Void> writeChunk(Buffer buf, boolean end) {
-      return delegate.writeChunk(buf, end);
+    public Future<Void> writeData(Buffer buf, boolean end) {
+      return delegate.writeData(buf, end);
     }
 
     @Override
@@ -211,8 +221,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
-      delegate.dataHandler(handler);
+    public HttpClientStream handler(Handler<Buffer> handler) {
+      delegate.handler(handler);
       return this;
     }
 
@@ -286,8 +296,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public boolean isWritable() {
-      return delegate.isWritable();
+    public boolean writeQueueFull() {
+      return delegate.writeQueueFull();
     }
 
     @Override
@@ -306,7 +316,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     void handleUpgrade(io.vertx.core.http.impl.HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
       upgradedStream.headHandler(headHandler);
-      upgradedStream.dataHandler(chunkHandler);
+      upgradedStream.handler(chunkHandler);
       upgradedStream.trailersHandler(trailersHandler);
       upgradedStream.priorityChangeHandler(priorityHandler);
       upgradedStream.exceptionHandler(exceptionHandler);
@@ -318,7 +328,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradedStream.customFrameHandler(unknownFrameHandler);
       upgradedStream.closeHandler(closeHandler);
       upgradingStream.headHandler(null);
-      upgradingStream.dataHandler(null);
+      upgradingStream.handler(null);
       upgradingStream.trailersHandler(null);
       upgradingStream.priorityChangeHandler(null);
       upgradingStream.exceptionHandler(null);
@@ -466,6 +476,16 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public long bytesWritten() {
+      return upgradingStream.bytesWritten();
+    }
+
+    @Override
+    public long bytesRead() {
+      return upgradingStream.bytesRead();
+    }
+
+    @Override
     public HttpVersion version() {
       HttpClientStream s = upgradedStream;
       if (s == null) {
@@ -573,11 +593,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
+    public HttpClientStream handler(Handler<Buffer> handler) {
       if (upgradedStream != null) {
-        upgradedStream.dataHandler(handler);
+        upgradedStream.handler(handler);
       } else {
-        upgradingStream.dataHandler(handler);
+        upgradingStream.handler(handler);
         chunkHandler = handler;
       }
       return this;
@@ -627,19 +647,19 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public boolean isWritable() {
+    public boolean writeQueueFull() {
       if (upgradedStream != null) {
-        return upgradedStream.isWritable();
+        return upgradedStream.writeQueueFull();
       } else {
-        return upgradingStream.isWritable();
+        return upgradingStream.writeQueueFull();
       }
     }
 
     @Override
-    public Future<Void> writeChunk(Buffer buf, boolean end) {
+    public Future<Void> writeData(Buffer buf, boolean end) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        Future<Void> future = upgradingStream.writeChunk(buf, end);
+        Future<Void> future = upgradingStream.writeData(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           future = future.andThen(ar -> {
@@ -652,7 +672,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       } else {
         Promise<Void> promise = upgradingStream.context().promise();
         exec.execute(() -> {
-          Future<Void> future = writeChunk(buf, end);
+          Future<Void> future = writeData(buf, end);
           future.onComplete(promise);
         });
         return promise.future();

@@ -28,8 +28,6 @@ import io.vertx.core.net.HostAndPort;
 public interface HttpServerStream extends HttpStream {
 
   void routed(String route);
-  long bytesWritten();
-  long bytesRead();
 
   HttpServerConnection connection();
 
@@ -42,7 +40,7 @@ public interface HttpServerStream extends HttpStream {
   HttpServerStream resetHandler(Handler<Long> handler);
   HttpServerStream exceptionHandler(Handler<Throwable> handler);
   HttpServerStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpServerStream dataHandler(Handler<Buffer> handler);
+  HttpServerStream handler(Handler<Buffer> handler);
   HttpServerStream trailersHandler(Handler<MultiMap> handler);
   HttpServerStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpServerStream closeHandler(Handler<Void> handler);

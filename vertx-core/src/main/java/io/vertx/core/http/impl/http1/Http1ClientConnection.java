@@ -508,8 +508,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
     }
 
-    void onChunk(Buffer buff) {
-      queue.write(buff);
+    void onChunk(ByteBuf chunk) {
+      queue.write(BufferInternal.safeBuffer(chunk));
     }
 
     abstract void handleEnd(MultiMap trailer);
@@ -588,8 +588,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public boolean isWritable() {
-      return !conn.writeQueueFull();
+    public boolean writeQueueFull() {
+      return conn.writeQueueFull();
     }
 
     @Override
@@ -643,6 +643,16 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
+    public long bytesWritten() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long bytesRead() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public HttpVersion version() {
       return conn.version;
     }
@@ -670,7 +680,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public Future<Void> writeChunk(Buffer buff, boolean end) {
+    public Future<Void> writeData(Buffer buff, boolean end) {
       if (buff != null || end) {
         Promise<Void> listener = context.promise();
         conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);
@@ -724,7 +734,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
+    public HttpClientStream handler(Handler<Buffer> handler) {
       chunkHandler = handler;
       return this;
     }
@@ -965,11 +975,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.safeBuffer(chunk);
-    int len = buff.length();
-    stream.bytesRead += len;
+    stream.bytesRead += chunk.readableBytes();
     if (!stream.reset) {
-      stream.onChunk(buff);
+      stream.onChunk(chunk);
+    } else {
+      ReferenceCountUtil.release(chunk);
     }
   }
 
