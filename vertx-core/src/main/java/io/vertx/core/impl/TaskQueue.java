@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A task queue that always run all tasks in order. The executor to run the tasks is passed
@@ -241,7 +242,7 @@ public class TaskQueue {
 
   private class ContinuationTask extends CountDownLatch implements Task, WorkerExecutor.Execution {
 
-    private static final int ST_CREATED = 0, ST_SUSPENDED = 1, ST_RESUMED = 2;
+    private static final int ST_CREATED = 0, ST_SUSPENDED = 1, ST_DONE = 2;
 
     private final ExecuteTask task;
     private final Thread thread;
@@ -258,27 +259,30 @@ public class TaskQueue {
     }
 
     @Override
-    public void resume() {
-      resume(() -> {});
+    public boolean resume() {
+      return resume(() -> {});
     }
 
     @Override
-    public void resume(Runnable callback) {
+    public boolean resume(Runnable callback) {
       synchronized (tasks) {
         if (closed) {
-          return;
+          return false;
         }
         switch (status) {
           case ST_SUSPENDED:
             boolean removed = continuations.remove(this);
             assert removed;
             latch = () -> {
-              callback.run();
-              countDown();
+              try {
+                callback.run();
+              } finally {
+                countDown();
+              }
             };
             if (currentExecutor != null) {
               tasks.addFirst(this);
-              return;
+              return true;
             }
             currentExecutor = executor;
             currentThread = thread;
@@ -291,12 +295,44 @@ public class TaskQueue {
             assert currentTask == task;
             latch = callback;
             break;
+          case ST_DONE:
+            return false;
           default:
             throw new IllegalStateException();
         }
-        status = ST_RESUMED;
+        status = ST_DONE;
       }
       latch.run();
+      return true;
+    }
+
+    @Override
+    public void await() throws InterruptedException {
+      try {
+        super.await();
+      } catch (InterruptedException e) {
+        interrupted();
+        throw e;
+      }
+    }
+
+    @Override
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+      try {
+        return super.await(timeout, unit);
+      } catch (InterruptedException e) {
+        interrupted();
+        throw e;
+      }
+    }
+
+    private void interrupted() {
+      synchronized (tasks) {
+        if (status == ST_SUSPENDED) {
+          continuations.remove(this);
+          status = ST_DONE;
+        }
+      }
     }
 
     @Override
@@ -320,7 +356,7 @@ public class TaskQueue {
           throw new IllegalStateException();
         }
         switch (status) {
-          case ST_RESUMED:
+          case ST_DONE:
             countDown();
             return false;
           case ST_SUSPENDED:
