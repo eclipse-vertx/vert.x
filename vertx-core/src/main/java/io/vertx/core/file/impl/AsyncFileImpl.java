@@ -103,6 +103,7 @@ public class AsyncFileImpl implements AsyncFile {
     }
     this.context = context;
     this.queue = new InboundBuffer<>(context, 0);
+    queue.exceptionHandler(context::reportException);
     queue.handler(buff -> {
       if (buff.length() > 0) {
         handleBuffer(buff);
