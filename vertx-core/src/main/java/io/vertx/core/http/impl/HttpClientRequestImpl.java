@@ -56,6 +56,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private int maxRedirects;
   private int numberOfRedirections;
   private final MultiMap headers;
+  private MultiMap trailers;
   private boolean trailersSent;
   private boolean headersSent;
   private StreamPriority priority;
@@ -203,6 +204,42 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public MultiMap headers() {
     return headers;
+  }
+
+  @Override
+  public synchronized MultiMap trailers() {
+    if (trailers == null) {
+      trailers = stream.connection().newHttpTrailers();
+    }
+    return trailers;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(String name, String value) {
+    checkEnded();
+    trailers().set(name, value);
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(CharSequence name, CharSequence value) {
+    checkEnded();
+    trailers().set(name, value);
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(String name, Iterable<String> values) {
+    checkEnded();
+    trailers().set(name, values);
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> value) {
+    checkEnded();
+    trailers().set(name, value);
+    return this;
   }
 
   @Override
@@ -531,6 +568,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     boolean writeHead;
     boolean writeEnd;
     boolean chunked;
+    MultiMap trailersToSend;
     synchronized (this) {
       if (reset != null) {
         return context.failedFuture(reset);
@@ -557,16 +595,31 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
         }
       }
+      // Trailers ride on the terminating chunk, so the request must be chunked: Netty
+      // silently drops trailing headers when a Content-Length framing is used.
+      // Captured under the lock, like every other value used after it, so the reference is
+      // safely published to whichever thread performs the write.
+      trailersToSend = end && !connect && !isConnect && trailers != null && !trailers.isEmpty()
+        ? trailers
+        : null;
       if (!headersSent) {
         if (!connect) {
-          boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
-          if (end) {
-            if (buff != null && requiresContentLength) {
-              headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
+          if (trailersToSend != null) {
+            if (!this.chunked) {
+              headers.remove(CONTENT_LENGTH);
+              headers.set(TRANSFER_ENCODING, CHUNKED);
+              this.chunked = true;
             }
-          } else if (requiresContentLength) {
-            headers.set(TRANSFER_ENCODING, CHUNKED);
-            this.chunked = true;
+          } else {
+            boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
+            if (end) {
+              if (buff != null && requiresContentLength) {
+                headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
+              }
+            } else if (requiresContentLength) {
+              headers.set(TRANSFER_ENCODING, CHUNKED);
+              this.chunked = true;
+            }
           }
         }
         headersSent = true;
@@ -576,7 +629,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         writeHead = false;
       }
       chunked = this.chunked;
-      writeEnd = !isConnect && end;
+      // Suppress the body's end marker so the trailers can carry it instead.
+      writeEnd = !isConnect && end && trailersToSend == null;
       trailersSent = end;
     }
 
@@ -594,6 +648,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         throw new IllegalArgumentException();
       }
       future = stream.writeChunk(buff, writeEnd);
+    }
+    if (trailersToSend != null) {
+      MultiMap t = trailersToSend;
+      // Composed rather than fired-and-forgotten: the request is only complete once the
+      // trailers are written, and a failed body write must not emit them.
+      future = future.compose(v -> stream.writeHeaders(t, true));
     }
     if (end) {
       tryComplete();

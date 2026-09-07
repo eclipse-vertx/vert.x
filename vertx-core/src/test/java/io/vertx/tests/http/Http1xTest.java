@@ -3417,6 +3417,50 @@ public class Http1xTest extends HttpTest {
       .await();
   }
   @Test
+  public void testRequestTrailers(Checkpoint checkpoint) throws Exception {
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        assertEquals("chunky", req.getTrailer("X-Trailer"));
+        assertEquals("other", req.getTrailer("X-Other"));
+        assertEquals(2, req.trailers().size());
+        checkpoint.succeed();
+      });
+      req.response().end();
+    });
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    NetSocket so = client.connect(testAddress).await();
+    so.write("POST / HTTP/1.1\r\n" +
+      "Host: localhost\r\n" +
+      "Transfer-Encoding: chunked\r\n" +
+      "Trailer: X-Trailer\r\n" +
+      "\r\n" +
+      "5\r\nhello\r\n" +
+      "0\r\n" +
+      "X-Trailer: chunky\r\n" +
+      "X-Other: other\r\n" +
+      "\r\n");
+    checkpoint.awaitSuccess();
+  }
+
+  @Test
+  public void testRequestNoTrailers(Checkpoint checkpoint) throws Exception {
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        assertTrue(req.trailers().isEmpty());
+        assertNull(req.getTrailer("X-Trailer"));
+        checkpoint.succeed();
+      });
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> req.send(Buffer.buffer("hello")))
+      .await();
+    checkpoint.awaitSuccess();
+  }
+
+  @Test
   public void testInvalidTrailerInHttpServerRequest(Checkpoint checkpoint) throws Exception {
     testHttpServerRequestDecodeError(checkpoint, so -> {
       so.write("0\r\n"); // Empty chunk
