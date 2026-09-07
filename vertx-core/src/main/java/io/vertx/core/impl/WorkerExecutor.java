@@ -105,15 +105,16 @@ public class WorkerExecutor implements EventExecutor {
     /**
      * Like {@link #resume(Runnable)}.
      */
-    void resume();
+    boolean resume();
 
     /**
      * Resume the task, the {@code callback} will be executed when the task is resumed, before the task thread
      * is un-parked.
      *
      * @param callback called after the task is resumed
+     * @return whether the continuation was actually resumed
      */
-    void resume(Runnable callback);
+    boolean resume(Runnable callback);
 
   }
 }
