@@ -35,6 +35,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   // Accessed by consumer thread
   private boolean draining;
   private boolean needsDrain;
+  private long value;
   private boolean consumerClosed;
 
   // Any thread
@@ -75,16 +76,30 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     if (consumerClosed) {
       return false;
     } else {
+      long v = value;
       while (true) {
         long d = DEMAND_UPDATER.get(this);
         if (d == 0L) {
           return false;
-        } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
-          break;
+        } else {
+          if (v == 0) {
+            v = evalMessage(msg);
+          }
+          if (d == Long.MAX_VALUE) {
+            handleMessage(msg, v);
+            value = 0;
+            return true;
+          } else {
+            long m = Math.min(v, d);
+            if (DEMAND_UPDATER.compareAndSet(this, d, d - m)) {
+              long r = v - m;
+              handleMessage(msg, m);
+              value = r;
+              return r == 0;
+            }
+          }
         }
       }
-      handleMessage(msg);
-      return true;
     }
   }
 
@@ -255,6 +270,10 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
   }
 
+  public long demand() {
+    return DEMAND_UPDATER.get(this);
+  }
+
   private void releaseMessages() {
     List<M> messages = mqp.clear();
     for (M elt : messages) {
@@ -275,10 +294,33 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
+   * Handle the message and return an evaluation of its cost, the return cost
+   * will be substracted to the queue demand.
+   *
+   * The returned value cab be any value greater or equals to zero, it is fine to be zero
+   * in case the message is not sufficient to be processed and a follow up message is necessary.
+   *
+   * @param msg the message
+   * @return the cost
+   * @implNote the default implementation returns {@code 1}
+   */
+  protected long evalMessage(M msg) {
+    return 1;
+  }
+
+  /**
+   *
+   */
+  protected void handleMessage(M msg, long amount) {
+    handleMessage(msg);
+  }
+
+  /**
    * Handle a message, executed on a consumer thread.
    *
    * @param msg the message
    */
+  @Deprecated
   protected void handleMessage(M msg) {
   }
 
