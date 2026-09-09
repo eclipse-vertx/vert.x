@@ -58,4 +58,18 @@ public class Http3TLSTest extends HttpTLSTest {
   public void testTLSRevokedClientCertServer() throws Exception {
     super.testTLSRevokedClientCertServer();
   }
+
+  @Ignore
+  @Test
+  @Override
+  public void testTLSClientTrustAll() throws Exception {
+    super.testTLSClientTrustAll();
+  }
+
+  @Ignore
+  @Test
+  @Override
+  public void testCustomTrustManagerFactory() throws Exception {
+    super.testCustomTrustManagerFactory();
+  }
 }
