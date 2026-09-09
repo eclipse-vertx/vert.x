@@ -11,7 +11,6 @@
 
 package io.vertx.core.internal;
 
-
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.Closeable;
@@ -32,13 +31,11 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.lang.ref.Cleaner;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -141,41 +138,6 @@ public interface VertxInternal extends Vertx {
   Transport transport();
 
   Cleaner cleaner();
-
-  /**
-   * @deprecated instead use {@link #createSharedResource(String, String, Supplier)}
-   */
-  @Deprecated(forRemoval = true)
-  default <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-
-    class Shared<R> implements io.vertx.core.internal.Closeable {
-
-      private final CloseFuture closeFuture;
-      private final R resource;
-
-      public Shared(CloseFuture closeFuture, R resource) {
-        this.closeFuture = closeFuture;
-        this.resource= resource;
-      }
-
-      @Override
-      public Future<Void> shutdown(Duration timeout) {
-        return closeFuture.close();
-      }
-    }
-
-    CloseableResource<Shared<C>> shared = createSharedResource(resourceKey, resourceName, () -> {
-      CloseFuture owner = new CloseFuture();
-      C resource = supplier.apply(owner);
-      return new Shared<>(owner, resource);
-    });
-
-    closeFuture.add(completion -> shared
-      .shutdown(Duration.ZERO)
-      .onComplete(completion));
-
-    return shared.get().resource;
-  }
 
   /**
    * Register the {@code resource} against the current context or this vertx instance. When the owner closes,
