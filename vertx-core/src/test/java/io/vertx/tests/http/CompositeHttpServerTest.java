@@ -84,7 +84,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
       .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)
       .setSsl(true);
 
-    HttpClient client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustAll(true));
+    HttpClient client = vertx.createHttpClient(clientConfig.setVerifyHost(false), new ClientSSLOptions().setTrustAll(true));
 
     for (HttpVersion version : List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)) {
       RequestOptions o = new RequestOptions().setHost("localhost").setPort(4043).setProtocolVersion(version);

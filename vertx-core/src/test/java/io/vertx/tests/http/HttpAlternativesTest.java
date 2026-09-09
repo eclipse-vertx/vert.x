@@ -236,6 +236,7 @@ public class HttpAlternativesTest extends VertxTestBase {
       .with(new HttpClientConfig()
         .setFollowAlternativeServices(true)
         .setSsl(true)
+        .setVerifyHost(false)
         .setVersions(initialProtocol, upgradedProtocol))
       .with(new ClientSSLOptions().setTrustAll(true))
       .withConnectHandler(conn -> {
