@@ -53,7 +53,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   private static final Logger log = LoggerFactory.getLogger(Http2ConnectionImpl.class);
 
-  private static ByteBuf safeBuffer(ByteBuf buf) {
+  public static ByteBuf safeBuffer(ByteBuf buf) {
     ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
     buffer.writeBytes(buf);
     return buffer;
@@ -300,9 +300,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
     Http2Stream stream = stream(streamId);
     if (stream != null) {
-      data = safeBuffer(data);
-      Buffer buff = BufferInternal.buffer(data);
-      stream.onData(buff);
+      stream.onData(data);
       if (endOfStream) {
         stream.onTrailers();
       }

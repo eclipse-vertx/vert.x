@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -28,22 +27,24 @@ import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
+import io.vertx.core.http.impl.HttpBodyDecoder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.VertxHandler;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream {
 
-  private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
+  private static final ByteBuf EMPTY = Unpooled.wrappedBuffer(new byte[1]);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
-  private final InboundMessageQueue<Object> inboundQueue;
+  private final InboundMessageQueue<ByteBuf> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -55,6 +56,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private boolean headersSent;
   private boolean trailersSent;
   private boolean writable;
+
+  // Written by event-loop - read by context with happens-before relationship
+  private MultiMap trailers;
 
   // Client context
   private StreamPriority priority;
@@ -74,6 +78,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private Handler<StreamPriority> priorityChangeHandler;
   private Handler<Void> drainHandler;
 
+  //
+  private HttpBodyDecoder decoder;
+
   DefaultHttp2Stream(Http2Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
   }
@@ -85,14 +92,23 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.id = id_;
     this.inboundQueue = new InboundMessageQueue<>(connection.context().eventLoop(), context.executor()) {
       @Override
-      protected void handleMessage(Object item) {
-        if (item instanceof MultiMap) {
-          handleTrailers((MultiMap) item);
+      protected long evalMessage(ByteBuf data) {
+        if (data == EMPTY) {
+          return 1;
         } else {
-          Buffer data = (Buffer) item;
-          int len = data.length();
+          int len = data.readableBytes();
           connection.context().execute(len, v -> connection.consumeCredits(DefaultHttp2Stream.this.id, v));
-          handleData(data);
+          return decoder.handle(data);
+        }
+      }
+      @Override
+      protected void handleMessage(ByteBuf data, long amount) {
+        if (data == EMPTY) {
+          handleTrailers(trailers);
+        } else {
+          for (int i = 0;i < amount;i++) {
+            decoder.next();
+          }
         }
       }
     };
@@ -132,6 +148,26 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         this.trailersReceived = true;
       }
     }
+    this.decoder = new HttpBodyDecoder() {
+      private Buffer buffer;
+      @Override
+      public int handle(ByteBuf content) {
+        buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content));
+        return 1;
+      }
+      @Override
+      public void next() {
+        Buffer item = buffer;
+        buffer = null;
+        Handler<Buffer> handler = dataHandler;
+        if (handler != null) {
+          context.dispatch(item, handler);
+        }
+      }
+      @Override
+      public void end() {
+      }
+    };
   }
 
   public final HttpVersion version() {
@@ -228,8 +264,12 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     context.execute(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
-  public void onData(Buffer data) {
-    bytesRead += data.length();
+  public void onData(ByteBuf data) {
+    // Warning : we retain the buffer and we don't release it on close
+    // when close happens we should flush the queue and cumulate the result
+    // for later delivery
+    data.retain();
+    bytesRead += data.readableBytes();
     inboundQueue.write(data);
   }
 
@@ -241,20 +281,21 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public final void onTrailers() {
-    onTrailers(EMPTY);
+    onTrailers(null);
   }
 
-  public final void onTrailers(HttpHeaders trailers) {
+  public final void onTrailers(HttpHeaders t) {
     if (trailersReceived) {
       throw new IllegalStateException();
     }
     trailersReceived = true;
+    trailers = t;
     StreamObserver observer = observer();
     if (observer != null) {
       observer.observeInboundTrailers(bytesRead);
     }
     connection.flushBytesRead();
-    inboundQueue.write(trailers);
+    inboundQueue.write(EMPTY);
   }
 
   public final long id() {
@@ -424,6 +465,12 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   @Override
+  public S bodyDecoder(HttpBodyDecoder decoder) {
+    this.decoder = decoder;
+    return (S)this;
+  }
+
+  @Override
   public Future<Boolean> cancel() {
     return writeReset(0x08L).map(true);
   }
@@ -478,13 +525,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return (S)this;
   }
 
-  private void handleData(Buffer buf) {
-    Handler<Buffer> handler = dataHandler;
-    if (handler != null) {
-      context.dispatch(buf, handler);
-    }
-  }
-
   public S customFrameHandler(Handler<HttpFrame> handler) {
     customFrameHandler = handler;
     return (S)this;
@@ -507,6 +547,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     if (handler != null) {
       context.dispatch(trailers, handler);
     }
+    decoder.end();
   }
 
   public S resetHandler(Handler<Long> handler) {

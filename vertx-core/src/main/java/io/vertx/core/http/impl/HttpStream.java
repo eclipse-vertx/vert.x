@@ -15,10 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 
 /**
@@ -48,6 +45,10 @@ public interface HttpStream {
   Future<Void> writeReset(long code);
 
   Future<Boolean> cancel();
+
+  default HttpStream bodyDecoder(HttpBodyDecoder decoder) {
+    throw new UnsupportedOperationException();
+  }
 
   HttpStream resetHandler(Handler<Long> handler);
   HttpStream exceptionHandler(Handler<Throwable> handler);

@@ -54,7 +54,9 @@ public interface HttpServerStream extends HttpStream {
 
   void sendFile(ChunkedInput<ByteBuf> file, Promise<Void> promise);
 
-
   HttpServerStream updatePriority(StreamPriority streamPriority);
-
+  @Override
+  default HttpServerStream bodyDecoder(HttpBodyDecoder decoder) {
+    return (HttpServerStream)HttpStream.super.bodyDecoder(decoder);
+  }
 }

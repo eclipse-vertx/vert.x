@@ -46,5 +46,8 @@ public interface HttpClientStream extends HttpStream {
   HttpClientStream fetch(long amount);
 
   HttpClientStream updatePriority(StreamPriority streamPriority);
-
+  @Override
+  default HttpClientStream bodyDecoder(HttpBodyDecoder decoder) {
+    return (HttpClientStream)HttpStream.super.bodyDecoder(decoder);
+  }
 }

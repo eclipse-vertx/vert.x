@@ -13,16 +13,15 @@ package io.vertx.tests.concurrent;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
@@ -530,5 +529,144 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  class TestChannel2 extends InboundMessageQueue<Integer> {
+    public TestChannel2() {
+      super(((ContextInternal) context).eventLoop(), ((ContextInternal) context).executor());
+    }
+    List<Integer> cumulation = new ArrayList<>();
+    @Override
+    protected long evalMessage(Integer msg) {
+      return msg;
+    }
+    @Override
+    protected void handleMessage(Integer msg) {
+      cumulation.add(msg);
+    }
+  }
+
+  @Test
+  public void testPartialEval() {
+    TestChannel2 queue = new TestChannel2();
+    producerTask(() -> {
+      queue.pause();
+      queue.write(5);
+      consumerTask(() -> {
+        assertEquals(0, queue.cumulation.size());
+        queue.fetch(3);
+        consumerTask(() -> {
+          assertEquals(List.of(5), queue.cumulation);
+          queue.fetch(3);
+          consumerTask(() -> {
+            assertEquals(List.of(5), queue.cumulation);
+            assertEquals(1, queue.demand());
+            testComplete();
+          });
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testZeroEvalIsNotGreedy() {
+    TestChannel2 queue = new TestChannel2();
+    producerTask(() -> {
+      queue.pause();
+      queue.write(0);
+      consumerTask(() -> {
+        assertEquals(0, queue.cumulation.size());
+        queue.fetch(1);
+        consumerTask(() -> {
+          assertEquals(1, queue.cumulation.size());
+          assertEquals(1, queue.demand());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void deframingTest() {
+    for (int i = 0;i <= 8;i++) {
+      deframingTest(1 + i);
+    }
+  }
+
+  // Check we can implement a deframer
+  public void deframingTest(int times) {
+    List<Buffer> collected = Collections.synchronizedList(new ArrayList<>());
+    InboundMessageQueue<Buffer> queue = new InboundMessageQueue<>(((ContextInternal) context).eventLoop(), ((ContextInternal) context).executor()) {
+      final ArrayDeque<Buffer> pending = new ArrayDeque<>();
+      Buffer cumlation = Buffer.buffer();
+      @Override
+      protected long evalMessage(Buffer msg) {
+        cumlation.appendBuffer(msg);
+        int prev = 0;
+        int next;
+        while (prev + 4 < cumlation.length() && (next = prev + 4 + cumlation.getInt(prev)) <= cumlation.length()) {
+          Buffer buffer = cumlation.getBuffer(prev + 4, next);
+          pending.add(buffer);
+          prev = next;
+        }
+        if (prev > 0) {
+          cumlation = cumlation.getBuffer(prev, cumlation.length());
+        }
+        return pending.size();
+      }
+      @Override
+      protected void handleMessage(Buffer msg, long amount) {
+        while (amount-- > 0) {
+          collected.add(pending.poll());
+        }
+      }
+    };
+    Buffer[] buffers = {
+      Buffer.buffer(TestUtils.randomAlphaString(1024)),
+      Buffer.buffer(TestUtils.randomAlphaString(256)),
+      Buffer.buffer(TestUtils.randomAlphaString(512)),
+      Buffer.buffer(TestUtils.randomAlphaString(128))
+    };
+    Buffer payload = Buffer.buffer();
+    for (Buffer buffer : buffers) {
+      payload.appendInt(buffer.length());
+      payload.appendBuffer(buffer);
+    }
+    // Split payload for testing
+    int delta = payload.length() / times;
+    List<Buffer> parts = new ArrayList<>();
+    int idx = 0;
+    for (int i = 0;i < times - 1;i++) {
+      parts.add(payload.getBuffer(idx, idx + delta));
+      idx += delta;
+    }
+    parts.add(payload.getBuffer(idx, payload.length()));
+    io.vertx.core.Promise<Void> latch = io.vertx.core.Promise.promise();
+    producerTask(() -> {
+      queue.pause();
+      for (Buffer part : parts) {
+        queue.write(part);
+      }
+      consumerTask(() -> {
+        queue.fetch(2);
+        consumerTask(() -> {
+          assertEquals(2, collected.size());
+          queue.fetch(1);
+          consumerTask(() -> {
+            assertEquals(3, collected.size());
+            queue.fetch(1);
+            consumerTask(() -> {
+              assertEquals(4, collected.size());
+              latch.succeed();
+            });
+          });
+        });
+      });
+    });
+    latch
+      .future()
+      .await();
   }
 }
