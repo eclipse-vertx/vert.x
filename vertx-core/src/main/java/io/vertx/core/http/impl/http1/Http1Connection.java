@@ -29,17 +29,20 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http1Connection extends VertxConnection implements io.vertx.core.http.HttpConnection {
+abstract class Http1Connection extends VertxConnection implements HttpConnection {
 
   protected boolean closeInitiated;
   protected Duration shutdownInitiated;
   protected ChannelPromise closePromise;
 
   private Handler<Void> shutdownHandler;
+  private Map<Object, Object> attachments;
 
   Http1Connection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
@@ -140,6 +143,26 @@ abstract class Http1Connection extends VertxConnection implements io.vertx.core.
   @Override
   public Future<Buffer> ping(Buffer data) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  protected void handleClosed() {
+    synchronized (this) {
+      attachments = null;
+    }
+    super.handleClosed();
+  }
+
+  @SuppressWarnings("unchecked")
+  public synchronized <T> T attachment(Object key) {
+    return attachments != null ? (T) attachments.get(key) : null;
+  }
+
+  public synchronized void attach(Object key, Object value) {
+    if (attachments == null) {
+      attachments = new HashMap<>();
+    }
+    attachments.put(key, value);
   }
 
   @Override

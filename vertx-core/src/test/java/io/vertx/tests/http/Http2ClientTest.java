@@ -30,6 +30,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.net.NetServer;
@@ -1727,6 +1728,41 @@ public class Http2ClientTest extends Http2TestBase {
   public void testClearTextUpgrade() throws Exception {
     List<String> requests = testClearText(true, false);
     Assert.assertEquals(Arrays.asList("GET", "GET"), requests);
+  }
+
+  @Test
+  public void testClearTextUpgradePreservesConnectionAttachment() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
+    Object key = new Object();
+    Object value = new Object();
+    ServerBootstrap bootstrap = createH2CServer((dec, enc) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
+        ctx.flush();
+      }
+    }, upgrade -> {
+    }, true);
+    ChannelFuture channel = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    try {
+      client.close();
+      client = vertx.createHttpClient(clientOptions
+        .setUseAlpn(false)
+        .setSsl(false)
+        .setHttp2ClearTextUpgrade(true));
+      client.request(requestOptions).onComplete(TestUtils.onSuccess(request -> {
+        HttpConnectionInternal connection = (HttpConnectionInternal) request.connection();
+        connection.attach(key, value);
+        request.send().onComplete(TestUtils.onSuccess(response -> {
+          Assert.assertSame(connection, response.request().connection());
+          Assert.assertSame(value, connection.attachment(key));
+          testComplete();
+        }));
+      }));
+      await();
+    } finally {
+      channel.channel().close().sync();
+    }
   }
 
   @Test

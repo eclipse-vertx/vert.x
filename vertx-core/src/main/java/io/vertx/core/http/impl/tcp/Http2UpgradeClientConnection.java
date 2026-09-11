@@ -39,6 +39,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private final ClientMetrics<?, ?, ?> clientMetrics;
   private io.vertx.core.http.impl.HttpClientConnection current;
   private boolean upgradeProcessed;
+  private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
 
   private Handler<Void> closeHandler;
   private Handler<Void> shutdownHandler;
@@ -74,6 +76,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     this.current = connection;
     this.upgrade = upgrade;
     this.clientMetrics = clientMetrics;
+    connection.closeHandler(this::handleClosed);
   }
 
   public io.vertx.core.http.impl.HttpClientConnection unwrap() {
@@ -340,7 +343,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       pushHandler = null;
       closeHandler = null;
       upgradedConnection.current = conn;
-      conn.closeHandler(upgradedConnection.closeHandler);
+      conn.closeHandler(upgradedConnection::handleClosed);
       conn.exceptionHandler(upgradedConnection.exceptionHandler);
       conn.pingHandler(upgradedConnection.pingHandler);
       conn.goAwayHandler(upgradedConnection.goAwayHandler);
@@ -787,11 +790,20 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
 
   @Override
   public HttpConnection closeHandler(Handler<Void> handler) {
-    if (current instanceof Http1ClientConnection) {
-      closeHandler = handler;
-    }
-    current.closeHandler(handler);
+    closeHandler = handler;
+    current.closeHandler(this::handleClosed);
     return this;
+  }
+
+  private void handleClosed(Void event) {
+    attachments.clear();
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = closeHandler;
+    }
+    if (handler != null) {
+      handler.handle(event);
+    }
   }
 
   @Override
@@ -922,6 +934,17 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   @Override
   public String toString() {
     return getClass().getSimpleName() + "[current=" + current.getClass().getSimpleName() + "]";
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T attachment(Object key) {
+    return (T) attachments.get(key);
+  }
+
+  @Override
+  public void attach(Object key, Object value) {
+    attachments.put(key, value);
   }
 
   /**
