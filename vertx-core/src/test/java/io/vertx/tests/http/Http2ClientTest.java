@@ -2070,6 +2070,41 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testDefaultFlowControlWindows() throws Exception {
+    waitFor(2);
+    AtomicInteger connectionWindowSizeIncrement = new AtomicInteger();
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onSettingsRead(ChannelHandlerContext ctx, io.netty.handler.codec.http2.Http2Settings settings) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          Assert.assertEquals(
+            Integer.valueOf(HttpClientOptions.DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE),
+            settings.initialWindowSize());
+          complete();
+        });
+      }
+
+      @Override
+      public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+        if (streamId == 0) {
+          int total = connectionWindowSizeIncrement.addAndGet(windowSizeIncrement);
+          vertx.runOnContext(v -> {
+            int expected = HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE -
+              io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE;
+            Assert.assertTrue(total <= expected);
+            if (total == expected) {
+              complete();
+            }
+          });
+        }
+      }
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(HttpClientRequest::send));
+    await();
+  }
+
+  @Test
   public void testConnectionWindowSize() throws Exception {
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
@@ -2082,7 +2117,9 @@ public class Http2ClientTest extends Http2TestBase {
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).setHttp2ConnectionWindowSize(65535 * 2));
+    client = vertx.createHttpClient(new HttpClientOptions(clientOptions)
+      .setInitialSettings(new io.vertx.core.http.Http2Settings())
+      .setHttp2ConnectionWindowSize(65535 * 2));
     HttpClientRequest request = client.request(requestOptions).await();
     request.send();
     await();
@@ -2102,7 +2139,9 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     client.close();
     client = vertx.httpClientBuilder()
-      .with(clientOptions)
+      .with(new HttpClientOptions(clientOptions)
+        .setInitialSettings(new io.vertx.core.http.Http2Settings())
+        .setHttp2ConnectionWindowSize(-1))
       .withConnectHandler(conn -> {
         Assert.assertEquals(65535, conn.getWindowSize());
         conn.setWindowSize(65535 + 10000);
