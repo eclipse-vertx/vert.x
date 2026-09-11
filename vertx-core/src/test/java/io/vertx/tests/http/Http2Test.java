@@ -62,6 +62,34 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
+  public void testConcurrentResponsesAfterChannelBecomesWritable(Checkpoint checkpoint) throws Exception {
+    int numRequests = 16;
+    CountDownLatch latch = checkpoint.asLatch(numRequests * 2);
+    Buffer body = Buffer.buffer(TestUtils.randomAlphaString(512 * 1024));
+    AtomicInteger requests = new AtomicInteger();
+    server.connectionHandler(conn -> {
+      Channel channel = ((ConnectionBase) conn).channelHandlerContext().channel();
+      channel.unsafe().outboundBuffer().setUserDefinedWritability(1, false);
+    });
+    server.requestHandler(req -> {
+      req.response().end(body).onComplete(onSuccess(v -> latch.countDown()));
+      if (requests.incrementAndGet() == numRequests) {
+        Channel channel = ((ConnectionBase) req.connection()).channelHandlerContext().channel();
+        channel.eventLoop().execute(() -> channel.unsafe().outboundBuffer().setUserDefinedWritability(1, true));
+      }
+    });
+    startServer(testAddress);
+    for (int i = 0; i < numRequests; i++) {
+      client.request(requestOptions)
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .onComplete(onSuccess(received -> {
+          assertEquals(body, received);
+          latch.countDown();
+        }));
+    }
+  }
+
+  @Test
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(checkpoint, 1);
   }

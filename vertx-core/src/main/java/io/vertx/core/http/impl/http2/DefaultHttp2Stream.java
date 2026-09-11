@@ -236,7 +236,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   public void onWritabilityChanged() {
     writable = !writable;
     if (writable) {
-      outboundQueue.tryDrain();
+      // Let the flow controller finish notifying streams before writes can change writability again.
+      connection.context().eventLoop().execute(outboundQueue::tryDrain);
     }
   }
 
