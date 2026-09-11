@@ -19,6 +19,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
@@ -52,6 +53,8 @@ import static org.junit.Assert.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2Test extends HttpTest {
+
+  private NetClient netClient;
 
   public Http2Test() {
     this(false);
@@ -735,7 +738,10 @@ public class Http2Test extends HttpTest {
         }
       });
     startServer();
-    NetSocket so = vertx.createNetClient().connect(config.port(), config.host()).await();
+    // Keep a reference to the client: an unreferenced client is closed when it is garbage collected, which
+    // would close the connection before the handshake timeout happens
+    netClient = vertx.createNetClient();
+    netClient.connect(config.port(), config.host()).await();
   }
 
   @Test

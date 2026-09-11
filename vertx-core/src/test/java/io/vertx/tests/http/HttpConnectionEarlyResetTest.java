@@ -14,6 +14,7 @@ package io.vertx.tests.http;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
@@ -34,6 +35,7 @@ import org.assertj.core.api.Assertions;
 public class HttpConnectionEarlyResetTest extends VertxTestBase {
 
   private HttpServer httpServer;
+  private NetClient client;
   private AtomicReference<Throwable> caught = new AtomicReference<>();
   private CountDownLatch resetLatch = new CountDownLatch(1);
 
@@ -57,7 +59,10 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
 
   @Test
   public void testExceptionCaught() throws Exception {
-    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(socket -> {
+    // Keep a reference to the client: an unreferenced client is closed when it is garbage collected, which
+    // would close the connection gracefully before the reset
+    client = vertx.createNetClient(new NetClientOptions().setSoLinger(0));
+    client.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(socket -> {
       vertx.setTimer(2000, id -> {
         socket.close();
       });
