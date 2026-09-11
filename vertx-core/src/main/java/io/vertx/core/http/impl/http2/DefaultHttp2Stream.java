@@ -41,9 +41,10 @@ import io.vertx.core.net.impl.MessageWrite;
 abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream {
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
+  private static final Buffer END_OF_STREAM = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
-  private final InboundMessageQueue<Object> inboundQueue;
+  private final InboundMessageQueue<Buffer> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -55,6 +56,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private boolean headersSent;
   private boolean trailersSent;
   private boolean writable;
+
+  // Written by event-loop and read by context thread with an happens-before
+  private HttpHeaders trailers;
 
   // Client context
   private StreamPriority priority;
@@ -85,11 +89,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.id = id_;
     this.inboundQueue = new InboundMessageQueue<>(connection.context().eventLoop(), context.executor()) {
       @Override
-      protected void handleMessage(Object item) {
-        if (item instanceof MultiMap) {
-          handleTrailers((MultiMap) item);
+      protected void handleMessage(Buffer data) {
+        if (data == END_OF_STREAM) {
+          handleTrailers(trailers);
         } else {
-          Buffer data = (Buffer) item;
           int len = data.length();
           connection.context().execute(len, v -> connection.consumeCredits(DefaultHttp2Stream.this.id, v));
           handleData(data);
@@ -244,7 +247,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     onTrailers(EMPTY);
   }
 
-  public final void onTrailers(HttpHeaders trailers) {
+  public final void onTrailers(HttpHeaders received) {
     if (trailersReceived) {
       throw new IllegalStateException();
     }
@@ -254,7 +257,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       observer.observeInboundTrailers(bytesRead);
     }
     connection.flushBytesRead();
-    inboundQueue.write(trailers);
+    trailers = received;
+    inboundQueue.write(END_OF_STREAM);
   }
 
   public final long id() {
