@@ -44,7 +44,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * The default connection window size for HTTP/2 = -1
    */
-  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
+  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = 1024 * 1024;
 
   /**
    * The default keep alive timeout for HTTP/2 connection can send = 60 seconds
