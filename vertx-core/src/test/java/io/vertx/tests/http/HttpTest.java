@@ -3515,6 +3515,165 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testFollowRedirectPostWithBodyOn307() throws Exception {
+    testFollowRedirectWithBodyKeepingMethod(HttpMethod.POST, 307, 2048);
+  }
+
+  @Test
+  public void testFollowRedirectPutWithBodyOn308() throws Exception {
+    testFollowRedirectWithBodyKeepingMethod(HttpMethod.PUT, 308, 2048);
+  }
+
+  @Test
+  public void testFollowRedirectPostWithMultipleBuffersOn307() throws Exception {
+    Buffer chunk1 = TestUtils.randomBuffer(1024);
+    Buffer chunk2 = TestUtils.randomBuffer(1024);
+    Buffer expected = Buffer.buffer().appendBuffer(chunk1).appendBuffer(chunk2);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.POST, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          // Fail with a status code instead of an assertion so that a missing body does not hang the test
+          req.response().setStatusCode(req.method() == HttpMethod.POST && expected.equals(body) ? 200 : 400).end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    client = keepMethodRedirectClient();
+    RequestOptions opts = new RequestOptions()
+      .setMethod(POST)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> {
+        req.setFollowRedirects(true);
+        req.setChunked(true);
+        req.write(chunk1);
+        return req.end(chunk2).compose(v -> req.response()).expecting(HttpResponseExpectation.SC_OK);
+      })
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectPostWithBodyExceedingLimitOn307() throws Exception {
+    // The redirection keeps the method and the body could not be buffered: the redirection is not followed
+    Buffer expected = TestUtils.randomBuffer(4 * 1024 + 1);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.POST, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else {
+        // Fail with a status code instead of an assertion so that a wrongly followed redirection does not hang the test
+        req.response().setStatusCode(500).end();
+      }
+    });
+    startServer(testAddress);
+    client = keepMethodRedirectClient();
+    RequestOptions opts = new RequestOptions()
+      .setMethod(POST)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.status(307)))
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectPostWithBodyExceedingLimitOn303() throws Exception {
+    // The redirection changes the method to GET and does not need the body: the redirection is followed
+    Buffer expected = TestUtils.randomBuffer(4 * 1024 + 1);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.POST, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        assertEquals(HttpMethod.GET, req.method());
+        assertNull(req.getHeader(HttpHeaders.CONTENT_LENGTH));
+        req.response().end();
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(POST)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.SC_OK))
+      .await();
+  }
+
+  private void testFollowRedirectWithBodyKeepingMethod(HttpMethod method, int statusCode, int bodySize) throws Exception {
+    Buffer expected = TestUtils.randomBuffer(bodySize);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(method, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(statusCode).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          // Fail with a status code instead of an assertion so that a missing body does not hang the test
+          req.response().setStatusCode(req.method() == method && expected.equals(body) ? 200 : 400).end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    client = keepMethodRedirectClient();
+    RequestOptions opts = new RequestOptions()
+      .setMethod(method)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.SC_OK))
+      .await();
+  }
+
+  /**
+   * A client following 307 and 308 redirections with the same method, like an HTTP client compliant with RFC 9110 would do.
+   */
+  private HttpClientAgent keepMethodRedirectClient() {
+    return httpClientBuilder()
+      .withRedirectHandler(resp -> {
+        int status = resp.statusCode();
+        String location = resp.getHeader(HttpHeaders.LOCATION);
+        if ((status == 307 || status == 308) && location != null) {
+          return Future.succeededFuture(new RequestOptions()
+            .setMethod(resp.request().getMethod())
+            .setAbsoluteURI(location));
+        }
+        return null;
+      })
+      .build();
+  }
+
+  @Test
   public void testFollowRedirectQueryWithMultipleBuffers() throws Exception {
     Buffer chunk1 = TestUtils.randomBuffer(1024);
     Buffer chunk2 = TestUtils.randomBuffer(1024);
