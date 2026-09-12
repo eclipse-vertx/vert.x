@@ -2481,16 +2481,16 @@ public class NetTest {
   }
 
   @Test
-  public void testSendFileAfterTlsUpgrade() throws Exception {
+  public void testSendFileAfterTlsUpgrade(Checkpoint sent, Checkpoint received) throws Exception {
     File dir = testFolder.newFolder();
     int size = 64 * 1024;
-    String content = String.valueOf('a').repeat(size);
+    String content = randomAlphaString(size);
     File f = setupFile(dir.toString(), "upgraded.dat", content);
-    Promise<Void> sent = Promise.promise();
     server.connectHandler(socket -> {
       socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
-        .compose(v -> socket.sendFile(f.getAbsolutePath()))
-        .onComplete(sent);
+        .onComplete(onSuccess(v -> socket.handler(ping -> socket
+          .sendFile(f.getAbsolutePath())
+          .onComplete(sent))));
     });
     server.listen(1234, "localhost").await();
     NetSocket socket = client.connect(new ConnectOptions()
@@ -2500,37 +2500,36 @@ public class NetTest {
       .setSslOptions(new ClientSSLOptions()
         .setHostnameVerificationAlgorithm("")
         .setTrustAll(true))).await();
-    Buffer received = Buffer.buffer();
-    Promise<Void> done = Promise.promise();
+    Buffer body = Buffer.buffer();
     socket.handler(buff -> {
-      received.appendBuffer(buff);
-      if (received.length() == size) {
-        done.tryComplete();
+      body.appendBuffer(buff);
+      if (body.length() == size) {
+        assertEquals(content, body.toString());
+        received.succeed();
       }
     });
-    sent.future().await();
-    done.future().await();
-    socket.close().await();
-    server.close().await();
-    assertEquals(content, received.toString());
+    // The server sends the file when it gets this, so that the handler above is set before any data is written
+    socket.write("ping");
   }
 
   @Test
-  public void testSendFileFromClientAfterTlsUpgrade() throws Exception {
+  public void testSendFileFromClientAfterTlsUpgrade(Checkpoint received) throws Exception {
     File dir = testFolder.newFolder();
     int size = 64 * 1024;
-    String content = String.valueOf('a').repeat(size);
+    String content = randomAlphaString(size);
     File f = setupFile(dir.toString(), "upgraded-client.dat", content);
-    Buffer received = Buffer.buffer();
-    Promise<Void> done = Promise.promise();
+    Buffer body = Buffer.buffer();
     server.connectHandler(socket -> {
+      // The handler is set before the upgrade, so that no data can be missed when the handshake completes
+      socket.handler(buff -> {
+        body.appendBuffer(buff);
+        if (body.length() == size) {
+          assertEquals(content, body.toString());
+          received.succeed();
+        }
+      });
       socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
-        .onSuccess(v -> socket.handler(buff -> {
-          received.appendBuffer(buff);
-          if (received.length() == size) {
-            done.tryComplete();
-          }
-        }));
+        .onFailure(received::fail);
     });
     server.listen(1234, "localhost").await();
     NetSocket socket = client.connect(1234, "localhost").await();
@@ -2538,10 +2537,6 @@ public class NetTest {
       .setHostnameVerificationAlgorithm("")
       .setTrustAll(true)).await();
     socket.sendFile(f.getAbsolutePath()).await();
-    done.future().await();
-    socket.close().await();
-    server.close().await();
-    assertEquals(content, received.toString());
   }
 
   @Test
