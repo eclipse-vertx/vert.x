@@ -112,6 +112,10 @@ public class KeyStoreHelper {
             // It's a private key
             continue;
           }
+          if (key.getFormat() == null) {
+            // Hardware security module key, not extractable
+            continue;
+          }
           X509KeyManager mgr = new X509KeyManager() {
             @Override
             public String[] getClientAliases(String s, Principal[] principals) {
@@ -254,10 +258,14 @@ public class KeyStoreHelper {
       if (!ks.containsAlias(alias)) {
         throw new IllegalArgumentException("alias does not exist in the keystore: " + alias);
       }
-      List<String> ksAliases = Collections.list(ks.aliases());
-      for (String ksAlias : ksAliases) {
-        if (!alias.equals(ksAlias)) {
-          ks.deleteEntry(ksAlias);
+      // HSM keys are not extractable to memory. Deleting an entry from the HSM-KeyStore removes the actual entry from the store
+      // This PKCS11 check prevents it
+      if (!type.equalsIgnoreCase("PKCS11")) {
+        List<String> ksAliases = Collections.list(ks.aliases());
+        for (String ksAlias : ksAliases) {
+          if (!alias.equals(ksAlias)) {
+            ks.deleteEntry(ksAlias);
+          }
         }
       }
     }
