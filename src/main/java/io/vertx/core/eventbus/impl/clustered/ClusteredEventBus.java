@@ -44,6 +44,7 @@ import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.UUID;
@@ -242,17 +243,19 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected HandlerHolder nextHandler(ConcurrentCyclicSequence<HandlerHolder> handlers, boolean messageLocal) {
+  protected HandlerHolder nextHandler(ConcurrentCyclicSequence<HandlerHolder> handlers, boolean messageLocal, Collection<HandlerHolder> blacklistedHandlers) {
     HandlerHolder handlerHolder = null;
     if (messageLocal) {
-      handlerHolder = handlers.next();
+      handlerHolder = nextHandlerMessageLocal(handlers, blacklistedHandlers);
     } else {
       Iterator<HandlerHolder> iterator = handlers.iterator(false);
       while (iterator.hasNext()) {
         HandlerHolder next = iterator.next();
         if (next.isReplyHandler() || !next.isLocalOnly()) {
-          handlerHolder = next;
-          break;
+          if(blacklistedHandlers == null || !blacklistedHandlers.contains(next)) {
+            handlerHolder = next;
+            break;
+          }
         }
       }
     }
