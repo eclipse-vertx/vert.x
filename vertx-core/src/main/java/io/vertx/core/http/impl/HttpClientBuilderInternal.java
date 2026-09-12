@@ -45,11 +45,9 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private AddressResolver<?> addressResolver;
   private LoadBalancer loadBalancer;
-  private Duration resolverIdleTimeout;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
     this.vertx = vertx;
-    this.resolverIdleTimeout = Duration.ofSeconds(10);
   }
 
   public HttpClientBuilderInternal with(HttpClientConfig config) {
@@ -118,32 +116,26 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return this;
   }
 
-  public HttpClientBuilderInternal resolverIdleTimeout(Duration timeout) {
-    if (timeout.isNegative() || timeout.isZero()) {
-      throw new IllegalArgumentException("Invalid resolver idle timeout");
-    }
-    this.resolverIdleTimeout = timeout;
-    return this;
-  }
-
   private CloseFuture resolveCloseFuture() {
     ContextInternal context = vertx.getContext();
     return context != null ? context.closeFuture() : vertx.closeFuture();
   }
 
-  private EndpointResolver endpointResolver(HttpClientConfig co) {
+  private EndpointResolver endpointResolver(ClientResolverConfig config) {
     LoadBalancer _loadBalancer = loadBalancer;
     AddressResolver<?> _addressResolver = addressResolver;
     if (_addressResolver != null) {
       if (_loadBalancer == null) {
         _loadBalancer = LoadBalancer.ROUND_ROBIN;
       }
-      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer, resolverIdleTimeout.toMillis());
+      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer,
+        config.getKeepAliveTimeout(), config.getMaxKeepAlive());
     }
     return null;
   }
 
   private HttpClientImpl createHttpClientImpl(HttpClientConfig config,
+                                              ClientResolverConfig resolverConfig,
                                               ClientSSLOptions sslOptions,
                                               HttpClientMetrics<?, ?> httpMetrics,
                                               EndpointResolver resolver,
@@ -187,7 +179,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       nonProxyHosts,
       loadBalancer,
       followAlternativeServices,
-      resolverIdleTimeout,
+      resolverConfig.getKeepAliveTimeout(),
+      resolverConfig.getMaxKeepAlive(),
       config.isVerifyHost(),
       config.isSsl(),
       config.getDefaultHost(),
@@ -215,7 +208,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       List<String> nonProxyHosts,
       LoadBalancer loadBalancer,
       boolean followAlternativeServices,
-      Duration resolverIdeTimeout,
+      Duration resolverKeepAlive,
+      Duration resolverMaxTtl,
       boolean verifyHost,
       boolean defaultSsl,
       String defaultHost,
@@ -229,7 +223,9 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       HttpClientTransport quicTransport,
       HttpClientConfig config,
       HttpClientOptions options) {
-      super(vertx, resolver, redirectHandler, httpMetrics, poolOptions, defaultProxyOptions, nonProxyHosts, loadBalancer, followAlternativeServices, resolverIdeTimeout, verifyHost, defaultSsl, defaultHost, defaultPort, maxRedirects, maxRedirectBufferSize, versions, sslOptions, connectHandler, tcpTransport, quicTransport);
+      super(vertx, resolver, redirectHandler, httpMetrics, poolOptions, defaultProxyOptions, nonProxyHosts, loadBalancer,
+        followAlternativeServices, resolverKeepAlive, resolverMaxTtl, verifyHost, defaultSsl, defaultHost, defaultPort,
+        maxRedirects, maxRedirectBufferSize, versions, sslOptions, connectHandler, tcpTransport, quicTransport);
       this.config = config;
       this.options = options;
     }
@@ -311,12 +307,19 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       quicTransport = null;
     }
 
+    ClientResolverConfig resolverConfig;
+    if (co.getResolverConfig() == null) {
+      resolverConfig = new ClientResolverConfig();
+    } else {
+      resolverConfig = co.getResolverConfig();
+    }
+
     HttpClientTransport transport;
     String shared;
     EndpointResolver resolver;
     List<HttpVersion> supportedVersions = co.getVersions();
     if (supportedVersions.contains(HttpVersion.HTTP_1_0) || supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_2)) {
-      resolver = endpointResolver(co);
+      resolver = endpointResolver(resolverConfig);
       shared = co.isShared() ? co.getName() : null;
       TcpClientConfig clientConfig = netClientConfig(co)
         .setProxyOptions(null);
@@ -353,9 +356,9 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       resource = vertx.createSharedResource(
         "__vertx.shared.httpClients",
         co.getName(),
-        () -> createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
+        () -> createHttpClientImpl(co2, resolverConfig, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
     } else {
-      resource = CloseableResource.of(createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
+      resource = CloseableResource.of(createHttpClientImpl(co2, resolverConfig, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
     }
     CloseableResource<HttpClientImpl> ccr = vertx.registerResource(resource);
     return new CleanableHttpClient(vertx.cleaner(), ccr);

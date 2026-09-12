@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -65,6 +66,11 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   @Override
   public ContextInternal context() {
     return delegate.context();
+  }
+
+  @Override
+  public ByteBufAllocator allocator() {
+    return delegate.allocator();
   }
 
   @Override

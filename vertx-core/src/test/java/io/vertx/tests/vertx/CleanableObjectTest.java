@@ -12,7 +12,7 @@ package io.vertx.tests.vertx;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.CleanableObject;
+import io.vertx.core.internal.CleanableResource;
 import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
@@ -102,7 +102,7 @@ public class CleanableObjectTest extends VertxTestBase {
         return Future.succeededFuture();
       }
     };
-    CleanableObject<Object> object = new CleanableObject<>(cleaner, resource);
+    CleanableResource<Object> object = new CleanableResource<>(cleaner, resource);
     WeakReference<CloseableResource<Object>> reference = new WeakReference<>(resource);
     resource = null;
     runGC(() -> reference.get() == null);
@@ -128,7 +128,7 @@ public class CleanableObjectTest extends VertxTestBase {
     }
   }
 
-  private static class CleanableTest extends CleanableObject<TestResource> {
+  private static class CleanableTest extends CleanableResource<TestResource> {
     public CleanableTest(Cleaner cleaner, TestResource resource) {
       super(cleaner, resource);
     }

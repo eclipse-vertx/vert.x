@@ -10,6 +10,7 @@
  */
 package io.vertx.core.internal.http;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -25,6 +26,11 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
    * @return the Vert.x context associated with this server request
    */
   public abstract ContextInternal context();
+
+  /**
+   * @return the stream allocator
+   */
+  public abstract ByteBufAllocator allocator();
 
   /**
    * @return the metric object returned by the {@link io.vertx.core.spi.metrics.HttpServerMetrics#requestBegin(io.vertx.core.net.SocketAddress, HttpRequest)} call

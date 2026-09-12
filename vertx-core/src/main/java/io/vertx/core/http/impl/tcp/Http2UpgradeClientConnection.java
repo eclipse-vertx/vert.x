@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.tcp;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -157,6 +158,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     @Override
     public ContextInternal context() {
       return delegate.context();
+    }
+
+    @Override
+    public ByteBufAllocator allocator() {
+      return delegate.allocator();
     }
 
     @Override
@@ -471,6 +477,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     @Override
     public ContextInternal context() {
       return upgradingStream.context();
+    }
+
+    @Override
+    public ByteBufAllocator allocator() {
+      return upgradingStream.allocator();
     }
 
     @Override

@@ -155,13 +155,21 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
+   * Returns the HTTP trailers of this response, the map is created on the first call.
+   *
+   * <p> Calling this method commits the response to sending trailers when it ends: for HTTP/2 and HTTP/3 the
+   * stream is ended by a trailers frame instead of the last data frame, even when no trailer has been added.
+   * Do not call this method unless trailers are actually written.
+   *
    * @return The HTTP trailers
    */
   @CacheReturn
   MultiMap trailers();
 
   /**
-   * Put an HTTP trailer
+   * Put an HTTP trailer.
+   *
+   * <p> Like {@link #trailers()}, this commits the response to sending trailers when it ends.
    *
    * @param name  the trailer name
    * @param value  the trailer value

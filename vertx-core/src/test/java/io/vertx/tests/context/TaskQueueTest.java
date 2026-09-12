@@ -152,6 +152,32 @@ public class TaskQueueTest extends AsyncTestBase {
     await();
   }
 
+  @Test
+  public void testInterruptSuspended() {
+    disableThreadChecks();
+    taskQueue.execute(() -> {
+      WorkerExecutor.Execution execution = taskQueue.current();
+      CountDownLatch latch = execution.trySuspend();
+      Thread current = Thread.currentThread();
+      new Thread(() -> {
+        while (current.getState() != Thread.State.WAITING) {
+          Thread.yield();
+        }
+        current.interrupt();
+        while (current.getState() != Thread.State.TERMINATED) {
+          Thread.yield();
+        }
+        assertFalse(execution.resume());
+        taskQueue.execute(this::testComplete, executor);
+      }).start();
+      try {
+        latch.await();
+      } catch (InterruptedException expected) {
+      }
+    }, executor);
+    await();
+  }
+
   // Need to do unschedule when nested test!
 
   @Test

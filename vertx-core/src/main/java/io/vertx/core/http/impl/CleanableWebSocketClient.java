@@ -12,7 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CleanableObject;
+import io.vertx.core.internal.CleanableResource;
 import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.spi.metrics.Metrics;
@@ -26,7 +26,7 @@ import java.lang.ref.Cleaner;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableWebSocketClient extends CleanableObject<WebSocketClient> implements WebSocketClient, MetricsProvider {
+public class CleanableWebSocketClient extends CleanableResource<WebSocketClient> implements WebSocketClient, MetricsProvider {
 
   public CleanableWebSocketClient(Cleaner cleaner, CloseableResource<? extends WebSocketClient> resource) {
     super(cleaner, resource);

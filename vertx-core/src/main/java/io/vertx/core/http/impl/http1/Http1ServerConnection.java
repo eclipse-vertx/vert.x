@@ -513,6 +513,10 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     if (responseInProgress != null) {
       responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
+    Http1ServerRequest requestInProgress = this.requestInProgress;
+    if (requestInProgress != null && requestInProgress != responseInProgress && requestInProgress.response() != null) {
+      requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+    }
     super.handleClosed();
   }
 
@@ -521,7 +525,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     boolean ret = super.handleException(t);
     Http1ServerRequest responseInProgress = this.responseInProgress;
     Http1ServerRequest requestInProgress = this.requestInProgress;
-    if (requestInProgress != null) {
+    if (requestInProgress != null && requestInProgress.response() != null) {
       requestInProgress.reportMetricsFailed = true;
       requestInProgress.handleException(t);
     }

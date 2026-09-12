@@ -13,7 +13,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ServiceResource;
+import io.vertx.core.internal.ServiceResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpServerInternal;

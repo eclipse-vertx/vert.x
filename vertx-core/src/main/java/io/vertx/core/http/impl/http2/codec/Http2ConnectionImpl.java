@@ -513,4 +513,9 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   public void writeReset(int streamId, long code, Promise<Void> promise) {
     handler.writeReset(streamId, code, (FutureListener<Void>) promise);
   }
+
+  @Override
+  public ByteBufAllocator allocator() {
+    return channel.alloc();
+  }
 }

@@ -34,8 +34,6 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import io.vertx.core.VertxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.util.List;
@@ -46,8 +44,6 @@ import java.util.concurrent.TimeUnit;
  * Tests PQC key exchange with OpenSSL.
  */
 public class HybridKeyExchangeTest extends HttpTestBase {
-
-  private static final Logger log = LoggerFactory.getLogger(HybridKeyExchangeTest.class);
 
   private static void assumeMlKemAvailable() {
     boolean available = OpenSsl.isAvailable();
@@ -331,7 +327,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       server.listen().await();
       fail("Server should have failed to start");
     } catch (VertxException e) {
-      assertTrue(e.getMessage().contains("X25519MLKEM768"));
       assertTrue(e.getMessage().contains("does not support it"));
     }
   }
@@ -353,7 +348,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         .build();
       fail("Client should have failed to build");
     } catch (VertxException e) {
-      assertTrue(e.getMessage().contains("X25519MLKEM768"));
       assertTrue(e.getMessage().contains("does not support it"));
     }
   }

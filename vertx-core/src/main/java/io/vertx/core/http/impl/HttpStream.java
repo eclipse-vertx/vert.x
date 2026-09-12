@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -40,6 +41,7 @@ public interface HttpStream {
 
   HttpConnection connection();
   ContextInternal context();
+  ByteBufAllocator allocator();
 
   Future<Void> writeChunk(Buffer buf, boolean end);
   Future<Void> writeFrame(int type, int flags, Buffer payload);

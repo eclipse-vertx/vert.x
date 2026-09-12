@@ -535,4 +535,14 @@ public class DatagramTest extends VertxTestBase {
       }));
     await();
   }
+
+  @Test
+  public void shouldNotThrowWhenReadingLocalAddressBeforeBind() {
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    try {
+      peer1.localAddress();
+    } catch (Exception e) {
+      fail(e);
+    }
+  }
 }

@@ -8,19 +8,21 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.core.internal;
 
 import io.vertx.core.Future;
-import io.vertx.core.internal.CloseableResource;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.time.Duration;
 
 /**
- * Base object for cleanable proxies.
+ * Base object for cleanable resource proxies, that means proxies that can be collected and if they do will release
+ * the actual underlying resource.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableObject<T> {
+public class CleanableResource<R> {
 
   public static final Duration DEFAULT_CLEAN_TIMEOUT = Duration.ofSeconds(30);
 
@@ -45,21 +47,27 @@ public class CleanableObject<T> {
   }
 
   private Cleaner.Cleanable cleanable;
-  private Action<T> action;
+  private Action<R> action;
 
-  public CleanableObject(Cleaner cleaner, CloseableResource<? extends T> dispose) {
+  public CleanableResource(Cleaner cleaner, CloseableResource<? extends R> dispose) {
     this.action = new Action<>(dispose);
     this.cleanable = cleaner.register(this, action);
   }
 
-  protected final T get() {
-    Action<T> action = this.action;
-    CloseableResource<? extends T> resource;
+  /**
+   * @return the actual resource or {@code null} when not available
+   */
+  protected final R get() {
+    Action<R> action = this.action;
+    CloseableResource<? extends R> resource;
     return action != null && (resource = action.get()) != null ? resource.get() : null;
   }
 
-  protected final T getOrDie() {
-    T resource = get();
+  /**
+   * @return the actual resource or throws an {@link IllegalStateException} when not available
+   */
+  protected final R getOrDie() {
+    R resource = get();
     if (resource == null) {
       throw new IllegalStateException();
     } else {
@@ -71,7 +79,7 @@ public class CleanableObject<T> {
     if (timeout.isNegative()) {
       throw new IllegalArgumentException();
     }
-    Action<T> action;
+    Action<R> action;
     Cleaner.Cleanable cleanable;
     synchronized (this) {
       action = this.action;

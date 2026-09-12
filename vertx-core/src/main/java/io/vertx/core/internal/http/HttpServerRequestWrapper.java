@@ -1,5 +1,6 @@
 package io.vertx.core.internal.http;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -268,6 +269,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   @Override
   public ContextInternal context() {
     return delegate.context();
+  }
+
+  @Override
+  public ByteBufAllocator allocator() {
+    return delegate.allocator();
   }
 
   @Override

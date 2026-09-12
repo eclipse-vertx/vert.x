@@ -8,12 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.core.internal;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.internal.CloseableResource;
-import io.vertx.core.internal.ContextInternal;
 
 import java.time.Duration;
 import java.util.concurrent.locks.Lock;
@@ -24,11 +22,14 @@ import java.util.concurrent.locks.ReentrantLock;
  * a bindable service interacting with a Vert.x context for cleanup purpose. This class makes this
  * reusable and testable independently.</p>
  *
+ * <p>This class aims to be subclassed and implementors should implement {@link #startImpl(ContextInternal, Object)} and
+ * {@link #stopImpl(ContextInternal, Object, Duration)}.</p>
+ *
  * <p>The implementation serializes service operations.</p>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ServiceResource<A, R> {
+public abstract class ServiceResource<A, R> {
 
   private boolean started;
   private CloseableResource<?> hook;
@@ -44,7 +45,7 @@ public class ServiceResource<A, R> {
   }
 
   // Testing purpose
-  public boolean hasPendingTasks() {
+  protected final boolean hasPendingTasks() {
     lock.lock();
     try {
       return tail != null;
