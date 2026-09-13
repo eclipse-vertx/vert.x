@@ -52,6 +52,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
                                                 int rstFloodMaxRstFramePerWindow,
                                                 int rstFloodWindowDuration,
                                                 int maxSmallContinuationFrames,
+                                                int sendFileChunkSize,
                                                 boolean logEnabled) {
     Http2MultiplexConnectionFactory connectionFactory = (handler, chctx) -> {
       Http2MultiplexServerConnection connection = new Http2MultiplexServerConnection(
@@ -62,7 +63,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
         chctx,
         context,
         streamContextSupplier,
-        connectionHandler);
+        connectionHandler,
+        sendFileChunkSize);
       connection.metric(connectionMetric);
       return connection;
     };

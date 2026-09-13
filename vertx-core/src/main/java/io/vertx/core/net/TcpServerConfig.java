@@ -26,12 +26,18 @@ import io.vertx.codegen.annotations.Unstable;
 @Unstable
 public class TcpServerConfig extends TcpEndpointConfig {
 
+  /**
+   * Default chunk size used to send a file = 8192
+   */
+  public static final int DEFAULT_SEND_FILE_CHUNK_SIZE = 8192;
+
   private int port;
   private String host;
   private int acceptBacklog;
   private boolean useProxyProtocol;
   private Duration proxyProtocolTimeout;
   private TrafficShapingOptions trafficShapingOptions;
+  private int sendFileChunkSize;
 
   public TcpServerConfig() {
     init();
@@ -46,6 +52,7 @@ public class TcpServerConfig extends TcpEndpointConfig {
     this.useProxyProtocol = other.isUseProxyProtocol();
     this.proxyProtocolTimeout = other.proxyProtocolTimeout;
     this.trafficShapingOptions = other.getTrafficShapingOptions() != null ? new TrafficShapingOptions(other.getTrafficShapingOptions()) : null;
+    this.sendFileChunkSize = other.sendFileChunkSize;
   }
 
   public TcpServerConfig(NetServerOptions options) {
@@ -57,6 +64,7 @@ public class TcpServerConfig extends TcpEndpointConfig {
     this.useProxyProtocol = options.isUseProxyProtocol();
     this.proxyProtocolTimeout = Duration.of(options.getProxyProtocolTimeout(), options.getProxyProtocolTimeoutUnit().toChronoUnit());
     this.trafficShapingOptions = options.getTrafficShapingOptions() != null ? new TrafficShapingOptions(options.getTrafficShapingOptions()) : null;
+    this.sendFileChunkSize = DEFAULT_SEND_FILE_CHUNK_SIZE;
   }
 
 
@@ -67,6 +75,7 @@ public class TcpServerConfig extends TcpEndpointConfig {
     this.useProxyProtocol = DEFAULT_USE_PROXY_PROTOCOL;
     this.proxyProtocolTimeout = Duration.of(DEFAULT_PROXY_PROTOCOL_TIMEOUT, DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT.toChronoUnit());
     this.trafficShapingOptions = null;
+    this.sendFileChunkSize = DEFAULT_SEND_FILE_CHUNK_SIZE;
   }
 
   public TcpServerConfig setIdleTimeout(Duration idleTimeout) {
@@ -199,6 +208,31 @@ public class TcpServerConfig extends TcpEndpointConfig {
    */
   public TcpServerConfig setTrafficShapingOptions(TrafficShapingOptions trafficShapingOptions) {
     this.trafficShapingOptions = trafficShapingOptions;
+    return this;
+  }
+
+  /**
+   * @return the chunk size, in bytes, used to send files
+   */
+  public int getSendFileChunkSize() {
+    return sendFileChunkSize;
+  }
+
+  /**
+   * <p>Set the chunk size, in bytes, used by {@link NetSocket#sendFile} to read the file and write it to the socket.</p>
+   *
+   * <p>This setting only applies when the file cannot be transferred with the zero-copy (file region) mechanism, e.g.
+   * when the connection is encrypted. The default value is a conservative one, a larger value can achieve a better
+   * throughput at the cost of a larger memory footprint.</p>
+   *
+   * @param sendFileChunkSize the chunk size in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpServerConfig setSendFileChunkSize(int sendFileChunkSize) {
+    if (sendFileChunkSize <= 0) {
+      throw new IllegalArgumentException("sendFileChunkSize must be > 0");
+    }
+    this.sendFileChunkSize = sendFileChunkSize;
     return this;
   }
 }

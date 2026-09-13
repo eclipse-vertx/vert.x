@@ -267,7 +267,8 @@ public class NetServerImpl implements NetServerInternal {
     private void connected(Channel ch, SslContextManager sslContextManager, SSLOptions sslOptions) {
       initChannel(ch.pipeline(), config.isSsl());
       TransportMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, registerWriteHandler));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, null,
+        sslContextManager, sslOptions, metrics, registerWriteHandler, config.getSendFileChunkSize()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {

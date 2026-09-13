@@ -58,6 +58,8 @@ public class VertxConnection extends ConnectionBase {
 
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
+  public static final int DEFAULT_SEND_FILE_CHUNK_SIZE = 8192;
+
   public final VoidChannelPromise voidPromise;
   private final OutboundWriteQueue outboundMessageQueue;
 
@@ -547,12 +549,16 @@ public class VertxConnection extends ConnectionBase {
   }
 
   public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
+    return sendFile(fc, offset, length, DEFAULT_SEND_FILE_CHUNK_SIZE);
+  }
+
+  public ChannelFuture sendFile(FileChannel fc, long offset, long length, int chunkSize) {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
       try {
-        writeToChannel(new UncloseableChunkedNioFile(fc, offset, length), writeFuture);
+        writeToChannel(new UncloseableChunkedNioFile(fc, offset, length, chunkSize), writeFuture);
       } catch (IOException e) {
         return chctx.newFailedFuture(e);
       }
