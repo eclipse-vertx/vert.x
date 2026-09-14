@@ -62,6 +62,38 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
+  public void testFlowControlReentrancyWithLargeWindows(Checkpoint checkpoint) throws Exception {
+    int numReq = 16;
+    CountDownLatch latch = checkpoint.asLatch(numReq);
+    Buffer body = Buffer.buffer(TestUtils.randomAlphaString(512 * 1024));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions());
+    server.requestHandler(req -> req.response().end(body));
+    startServer(testAddress);
+    HttpClientOptions clientOptions = Http2TestBase.createHttp2ClientOptions()
+      .setInitialSettings(new Http2Settings().setInitialWindowSize(1024 * 1024))
+      .setHttp2ConnectionWindowSize(16 * 1024 * 1024);
+    vertx.deployVerticle(new VerticleBase() {
+      HttpClientAgent client;
+      @Override
+      public Future<?> start() throws Exception {
+        client = vertx.httpClientBuilder().with(clientOptions).build();
+        for (int i = 0; i < numReq; i++) {
+          client.request(requestOptions)
+            .compose(req -> req
+              .send()
+              .compose(resp -> {
+                resp.pause();
+                vertx.setTimer(250, id -> resp.resume());
+                return resp.end();
+              }))
+            .onComplete(TestUtils.onSuccess(v -> latch.countDown()));
+        }
+        return super.start();
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+  }
+
+  @Test
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(checkpoint, 1);
   }
