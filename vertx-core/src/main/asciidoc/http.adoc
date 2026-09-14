@@ -1612,8 +1612,8 @@ The client can be configured to follow HTTP redirections provided by the `Locati
 * a `301`, `302`, `307` or `308` status code along with an HTTP GET, HEAD, or QUERY method
 * a `303` status code, in addition the directed request perform an HTTP GET method
 
-When redirecting a `QUERY` request, the request body is buffered in memory and resent to the redirected location.
-By default, the maximum size of this buffer is limited to `4KB` (configured via {@link io.vertx.core.http.ClientRedirectConfig#setMaxBufferedSize(int)}). If the body size exceeds this limit, the redirection is not followed.
+When a redirection keeps the request method, e.g. a `307` or `308` redirection of a `QUERY` request or of a `POST` request followed by a custom redirect handler, the request body is buffered in memory and sent again to the redirected location.
+By default, the maximum size of this buffer is limited to `4KB` (configured via {@link io.vertx.core.http.ClientRedirectConfig#setMaxBufferedSize(int)}). If the body size exceeds this limit, redirections other than `303` are not followed.
 
 Here's an example:
 
