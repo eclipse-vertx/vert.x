@@ -2075,6 +2075,63 @@ public class Http1xTest extends HttpTest {
     thread.join(20_000);
   }
 
+  private static int freeLocalPort() throws Exception {
+    try (java.net.ServerSocket ss = new java.net.ServerSocket(0)) {
+      return ss.getLocalPort();
+    }
+  }
+
+  /**
+   * @return a loopback address distinct from the default one, or {@code null} when the platform does not provide one
+   */
+  private static String alternativeLoopbackAddress() {
+    try (java.net.ServerSocket ss = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.2"))) {
+      return "127.0.0.2";
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  @Test
+  public void testClientOptionsLocalAddress() throws Exception {
+    // Legacy HttpClientOptions#setLocalAddress must be honoured by the HTTP client, use a loopback address
+    // distinct from the default one so that the assertion is meaningful
+    String expectedAddress = alternativeLoopbackAddress();
+    Assume.assumeNotNull(expectedAddress);
+    AtomicReference<SocketAddress> remote = new AtomicReference<>();
+    client = vertx.createHttpClient(new HttpClientOptions().setLocalAddress(expectedAddress));
+    server.requestHandler(req -> {
+      remote.set(req.remoteAddress());
+      req.response().end();
+    });
+    startServer(testAddress);
+    io.vertx.core.http.HttpClientConnection conn = client.connect(new HttpConnectOptions().setHost(config.host()).setPort(config.port())).await();
+    conn.request().compose(req -> req.send().map(HttpClientResponse::statusCode)).await();
+    assertEquals(expectedAddress, remote.get().host());
+    assertEquals(expectedAddress, conn.localAddress().host());
+  }
+
+  @Test
+  public void testConnectOptionsLocalAddress() throws Exception {
+    String expectedAddress = TestUtils.loopbackAddress();
+    int expectedPort = freeLocalPort();
+    AtomicReference<SocketAddress> remote = new AtomicReference<>();
+    client = vertx.createHttpClient();
+    server.requestHandler(req -> {
+      remote.set(req.remoteAddress());
+      req.response().end();
+    });
+    startServer(testAddress);
+    io.vertx.core.http.HttpClientConnection conn = client.connect(new HttpConnectOptions()
+      .setHost(config.host())
+      .setPort(config.port())
+      .setLocalAddress(SocketAddress.inetSocketAddress(expectedPort, expectedAddress))).await();
+    conn.request().compose(req -> req.send().map(HttpClientResponse::statusCode)).await();
+    assertEquals(expectedAddress, remote.get().host());
+    assertEquals(expectedPort, remote.get().port());
+    assertEquals(expectedPort, conn.localAddress().port());
+  }
+
   @Test
   public void testRequestHandlerNotCalledInvalidRequest(Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
