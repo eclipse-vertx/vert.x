@@ -148,6 +148,31 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public MultiMap trailers() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest putTrailer(String name, String value) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest putTrailer(CharSequence name, CharSequence value) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest putTrailer(String name, Iterable<String> values) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> value) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public HttpClientRequest traceOperation(String op) {
     throw new IllegalStateException();
   }

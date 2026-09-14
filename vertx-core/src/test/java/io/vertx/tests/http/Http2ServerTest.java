@@ -884,6 +884,55 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testRequestTrailers() throws Exception {
+    server.requestHandler(req -> {
+      req.handler(buff -> {});
+      req.endHandler(v -> {
+        Assert.assertEquals("chunky", req.getTrailer("x-trailer"));
+        Assert.assertEquals("other", req.getTrailer("x-other"));
+        Assert.assertEquals(2, req.trailers().size());
+        req.response().end();
+        testComplete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/").set("content-type", "text/plain"), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, ((BufferInternal) Buffer.buffer("hello")).getByteBuf(), 0, false, request.context.newPromise());
+      Http2Headers trailers = new DefaultHttp2Headers();
+      trailers.set("x-trailer", "chunky");
+      trailers.set("x-other", "other");
+      request.encoder.writeHeaders(request.context, id, trailers, 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    await();
+  }
+
+  @Test
+  public void testRequestNoTrailers() throws Exception {
+    server.requestHandler(req -> {
+      req.handler(buff -> {});
+      req.endHandler(v -> {
+        Assert.assertTrue(req.trailers().isEmpty());
+        Assert.assertNull(req.getTrailer("x-trailer"));
+        req.response().end();
+        testComplete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, POST("/").set("content-type", "text/plain"), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, ((BufferInternal) Buffer.buffer("hello")).getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    await();
+  }
+
+  @Test
   public void testTrailers() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
