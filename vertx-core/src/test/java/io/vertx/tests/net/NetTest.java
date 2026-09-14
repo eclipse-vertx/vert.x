@@ -2481,6 +2481,65 @@ public class NetTest {
   }
 
   @Test
+  public void testSendFileAfterTlsUpgrade(Checkpoint sent, Checkpoint received) throws Exception {
+    File dir = testFolder.newFolder();
+    int size = 64 * 1024;
+    String content = randomAlphaString(size);
+    File f = setupFile(dir.toString(), "upgraded.dat", content);
+    server.connectHandler(socket -> {
+      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .onComplete(onSuccess(v -> socket.handler(ping -> socket
+          .sendFile(f.getAbsolutePath())
+          .onComplete(sent))));
+    });
+    server.listen(1234, "localhost").await();
+    NetSocket socket = client.connect(new ConnectOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setSslOptions(new ClientSSLOptions()
+        .setHostnameVerificationAlgorithm("")
+        .setTrustAll(true))).await();
+    Buffer body = Buffer.buffer();
+    socket.handler(buff -> {
+      body.appendBuffer(buff);
+      if (body.length() == size) {
+        assertEquals(content, body.toString());
+        received.succeed();
+      }
+    });
+    // The server sends the file when it gets this, so that the handler above is set before any data is written
+    socket.write("ping");
+  }
+
+  @Test
+  public void testSendFileFromClientAfterTlsUpgrade(Checkpoint received) throws Exception {
+    File dir = testFolder.newFolder();
+    int size = 64 * 1024;
+    String content = randomAlphaString(size);
+    File f = setupFile(dir.toString(), "upgraded-client.dat", content);
+    Buffer body = Buffer.buffer();
+    server.connectHandler(socket -> {
+      // The handler is set before the upgrade, so that no data can be missed when the handshake completes
+      socket.handler(buff -> {
+        body.appendBuffer(buff);
+        if (body.length() == size) {
+          assertEquals(content, body.toString());
+          received.succeed();
+        }
+      });
+      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .onFailure(received::fail);
+    });
+    server.listen(1234, "localhost").await();
+    NetSocket socket = client.connect(1234, "localhost").await();
+    socket.upgradeToSsl(new ClientSSLOptions()
+      .setHostnameVerificationAlgorithm("")
+      .setTrustAll(true)).await();
+    socket.sendFile(f.getAbsolutePath()).await();
+  }
+
+  @Test
   public void testSendFileDirectory() throws Exception {
     File fDir = testFolder.newFolder();
     server.connectHandler(socket -> {
