@@ -17,6 +17,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.tracing.TracingPolicy;
 
 /**
  * Created by tim on 09/01/15.
@@ -173,6 +174,25 @@ public class EventBusExamples {
 
   class MyPOJO {
 
+  }
+
+  public void example15(EventBus eventBus) {
+    DeliveryOptions options = new DeliveryOptions()
+      .setTracingPolicy(TracingPolicy.IGNORE);
+
+    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
+  }
+
+  public void example16(Vertx vertx) {
+    EventBus eb = vertx.eventBus();
+
+    MessageConsumerOptions options = new MessageConsumerOptions()
+      .setAddress("news.uk.sport")
+      .setTracingPolicy(TracingPolicy.IGNORE);
+
+    eb.consumer(options, message -> {
+      System.out.println("I have received a message: " + message.body());
+    });
   }
 
   public void example13(Vertx vertx) {

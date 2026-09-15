@@ -259,6 +259,31 @@ The future returned by the processor signals the completion of message processin
 
 IMPORTANT: When a processor is used, the returned future completion defines the end of processing for all event bus messaging paradigms except request/reply.
 
+==== Tracing Policy
+
+When Vert.x has tracing enabled, the tracing behavior of event bus messaging can be controlled independently on both
+the producer and consumer sides with a {@link io.vertx.core.tracing.TracingPolicy}:
+
+- {@link io.vertx.core.tracing.TracingPolicy#PROPAGATE}: propagate an existing trace (default)
+- {@link io.vertx.core.tracing.TracingPolicy#ALWAYS}: propagate an existing trace or create a new trace when none exists
+- {@link io.vertx.core.tracing.TracingPolicy#IGNORE}: disable tracing
+
+The *producer* tracing policy is set on {@link io.vertx.core.eventbus.DeliveryOptions} when sending or publishing a message.
+It controls whether the producer creates or propagates a trace span.
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example15}
+----
+
+The *consumer* tracing policy is set on {@link io.vertx.core.eventbus.MessageConsumerOptions} when registering a consumer.
+It controls whether the consumer creates a receive span for incoming messages.
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example16}
+----
+
 ==== Sending with timeouts
 
 When sending a message with a reply handler, you can specify a timeout in the {@link io.vertx.core.eventbus.DeliveryOptions}.

@@ -14,6 +14,9 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.tracing.TracingPolicy;
+
+import java.util.Objects;
 
 /**
  * Options configuring the behavior of a event-bus message consumer.
@@ -34,9 +37,15 @@ public class MessageConsumerOptions {
    */
   public static final boolean DEFAULT_LOCAL_ONLY = false;
 
+  /**
+   * The default consumer locality = {@code false}
+   */
+  public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
+
   private String address;
   private boolean localOnly;
   private int maxBufferedMessages;
+  private TracingPolicy tracingPolicy;
 
   /**
    * Default constructor
@@ -44,6 +53,7 @@ public class MessageConsumerOptions {
   public MessageConsumerOptions() {
     maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
     localOnly = DEFAULT_LOCAL_ONLY;
+    tracingPolicy = DEFAULT_TRACING_POLICY;
   }
 
   /**
@@ -56,6 +66,7 @@ public class MessageConsumerOptions {
     maxBufferedMessages = other.getMaxBufferedMessages();
     localOnly = other.isLocalOnly();
     address = other.getAddress();
+    tracingPolicy = other.getTracingPolicy();
   }
 
   /**
@@ -124,6 +135,24 @@ public class MessageConsumerOptions {
   public MessageConsumerOptions setMaxBufferedMessages(int maxBufferedMessages) {
     Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
     this.maxBufferedMessages = maxBufferedMessages;
+    return this;
+  }
+
+  /**
+   * @return the tracing policy
+   */
+  public TracingPolicy getTracingPolicy() {
+    return tracingPolicy;
+  }
+
+  /**
+   * Set the tracing policy for the consumer behavior when Vert.x has tracing enabled.
+   *
+   * @param tracingPolicy the tracing policy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public MessageConsumerOptions setTracingPolicy(TracingPolicy tracingPolicy) {
+    this.tracingPolicy = Objects.requireNonNull(tracingPolicy);
     return this;
   }
 
