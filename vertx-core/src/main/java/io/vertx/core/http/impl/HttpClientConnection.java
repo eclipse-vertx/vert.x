@@ -15,8 +15,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
@@ -24,7 +24,7 @@ import io.vertx.core.net.HostAndPort;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnection extends HttpConnectionInternal {
 
   Logger log = LoggerFactory.getLogger(HttpClientConnection.class);
 
