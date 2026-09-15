@@ -19,6 +19,7 @@ import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.Function;
 
@@ -38,8 +39,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private boolean registered;
   private boolean full;
 
-  MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages) {
-    super(context, eventBus, address, false);
+  MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages, TracingPolicy tracingPolicy) {
+    super(context, eventBus, address, false, tracingPolicy);
     this.localOnly = localOnly;
     this.result = context.promise();
     this.maxBufferedMessages = maxBufferedMessages;

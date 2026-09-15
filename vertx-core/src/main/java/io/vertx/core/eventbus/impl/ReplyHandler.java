@@ -21,6 +21,7 @@ import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.Function;
 
@@ -35,7 +36,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   Object trace;
 
   ReplyHandler(EventBusImpl eventBus, ContextInternal context, String address, String repliedAddress, boolean src, long timeout) {
-    super(context, eventBus, address, src);
+    super(context, eventBus, address, src, TracingPolicy.PROPAGATE);
     this.result = context.promise();
     this.repliedAddress = repliedAddress;
     this.timeoutID = context.setTimer(timeout, this);

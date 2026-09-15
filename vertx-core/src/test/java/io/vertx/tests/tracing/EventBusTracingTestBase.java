@@ -13,6 +13,7 @@ package io.vertx.tests.tracing;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.MessageConsumerOptions;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.VertxTestBase;
@@ -43,23 +44,49 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusSendPropagate() throws Exception {
-    testSend(TracingPolicy.PROPAGATE, true, 2);
+  public void testEventBusSendProducerPropagate() throws Exception {
+    testEventBusySendProducerPolicy(TracingPolicy.PROPAGATE, true, 2);
   }
 
   @Test
-  public void testEventBusSendIgnore() throws Exception {
-    testSend(TracingPolicy.IGNORE, true, 0);
+  public void testEventBusSendProducerIgnore() throws Exception {
+    testEventBusySendProducerPolicy(TracingPolicy.IGNORE, true, 0);
   }
 
   @Test
-  public void testEventBusSendAlways() throws Exception {
-    testSend(TracingPolicy.ALWAYS, false, 2);
+  public void testEventBusSendProducerAlways() throws Exception {
+    testEventBusySendProducerPolicy(TracingPolicy.ALWAYS, false, 2);
   }
 
-  private void testSend(TracingPolicy policy, boolean create, int expected) throws Exception {
+  private void testEventBusySendProducerPolicy(TracingPolicy policy, boolean create, int expected) throws Exception {
+    testEventBusySend(policy, TracingPolicy.PROPAGATE, create, expected);
+  }
+
+  @Test
+  public void testEventBusSendConsumerPropagate() throws Exception {
+    testEventBusySendConsumerPolicy(TracingPolicy.PROPAGATE, true, 2);
+  }
+
+  @Test
+  public void testEventBusSendConsumerIgnore() throws Exception {
+    testEventBusySendConsumerPolicy(TracingPolicy.IGNORE, true, 1);
+  }
+
+  @Test
+  public void testEventBusSendConsumerAlways() throws Exception {
+    testEventBusySendConsumerPolicy(TracingPolicy.ALWAYS, false, 1);
+  }
+
+  private void testEventBusySendConsumerPolicy(TracingPolicy policy, boolean create, int expected) throws Exception {
+    testEventBusySend(TracingPolicy.PROPAGATE, policy, create, expected);
+  }
+
+  private void testEventBusySend(TracingPolicy producerPolicy, TracingPolicy consumerPolicy, boolean create, int expected) throws Exception {
     AtomicInteger received = new AtomicInteger();
-    vertx2.eventBus().consumer("the-address", msg -> {
+    MessageConsumerOptions consumerOptions = new MessageConsumerOptions()
+      .setAddress("the-address")
+      .setTracingPolicy(consumerPolicy);
+    vertx2.eventBus().consumer(consumerOptions, msg -> {
       received.incrementAndGet();
     });
     Context ctx = vertx1.getOrCreateContext();
@@ -67,10 +94,10 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
       if (create) {
         tracer.activate(tracer.newTrace());
       }
-      vertx1.eventBus().send("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy));
+      vertx1.eventBus().send("the-address", "ping", new DeliveryOptions().setTracingPolicy(producerPolicy));
     });
-    assertWaitUntil(() -> tracer.getFinishedSpans().size() == expected);
     assertWaitUntil(() -> received.get() == 1);
+    assertWaitUntil(() -> tracer.getFinishedSpans().size() == expected);
     List<Span> finishedSpans = tracer.getFinishedSpans();
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
@@ -79,32 +106,62 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusPublishProgagate() throws Exception {
-    testPublish(TracingPolicy.PROPAGATE, true, 3, true);
+  public void testEventBusPublishProducerProgagate() throws Exception {
+    testEventBusPublishProducerPolicy(TracingPolicy.PROPAGATE, true, 3, true);
   }
 
   @Test
-  public void testEventBusPublishIgnore() throws Exception {
-    testPublish(TracingPolicy.IGNORE, true, 0, false);
+  public void testEventBusPublishProducerIgnore() throws Exception {
+    testEventBusPublishProducerPolicy(TracingPolicy.IGNORE, true, 0, false);
   }
 
   @Test
-  public void testEventBusPublishAlways() throws Exception {
-    testPublish(TracingPolicy.ALWAYS, false, 3, true);
+  public void testEventBusPublishProducerAlways() throws Exception {
+    testEventBusPublishProducerPolicy(TracingPolicy.ALWAYS, false, 3, true);
   }
 
-  private void testPublish(TracingPolicy policy, boolean create, int expected, boolean singleTrace) throws Exception {
-    vertx2.eventBus().consumer("the-address", msg -> {
+  private void testEventBusPublishProducerPolicy(TracingPolicy producerPolicy, boolean create, int expected, boolean singleTrace) throws Exception {
+    testEventBusPublish(producerPolicy, TracingPolicy.PROPAGATE, create, expected, singleTrace);
+  }
+
+  @Test
+  public void testEventBusPublishConsumerProgagate() throws Exception {
+    testEventBusPublishConsumerPolicy(TracingPolicy.PROPAGATE, true, 3, true);
+  }
+
+  @Test
+  public void testEventBusPublishConsumerIgnore() throws Exception {
+    testEventBusPublishConsumerPolicy(TracingPolicy.IGNORE, true, 1, false);
+  }
+
+  @Test
+  public void testEventBusPublishConsumerAlways() throws Exception {
+    testEventBusPublishConsumerPolicy(TracingPolicy.ALWAYS, false, 2, false);
+  }
+
+  private void testEventBusPublishConsumerPolicy(TracingPolicy policy, boolean create, int expected, boolean singleTrace) throws Exception {
+    testEventBusPublish(TracingPolicy.PROPAGATE, policy, create, expected, singleTrace);
+  }
+
+  private void testEventBusPublish(TracingPolicy producerPolicy, TracingPolicy consumerPolicy, boolean create, int expected, boolean singleTrace) throws Exception {
+    MessageConsumerOptions consumerOptions = new MessageConsumerOptions()
+      .setAddress("the-address")
+      .setTracingPolicy(consumerPolicy);
+    AtomicInteger received = new AtomicInteger();
+    vertx2.eventBus().consumer(consumerOptions, msg -> {
+      received.incrementAndGet();
     });
-    vertx2.eventBus().consumer("the-address", msg -> {
+    vertx2.eventBus().consumer(consumerOptions, msg -> {
+      received.incrementAndGet();
     });
     Context ctx = vertx1.getOrCreateContext();
     ctx.runOnContext(v -> {
       if (create) {
         tracer.activate(tracer.newTrace());
       }
-      vertx1.eventBus().publish("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy));
+      vertx1.eventBus().publish("the-address", "ping", new DeliveryOptions().setTracingPolicy(producerPolicy));
     });
+    assertWaitUntil(() -> received.get() == 2);
     assertWaitUntil(() -> tracer.getFinishedSpans().size() == expected);
     List<Span> finishedSpans = tracer.getFinishedSpans();
     if (singleTrace) {
@@ -116,38 +173,79 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusRequestReplyPropagate() throws Exception {
-    testRequestReply(TracingPolicy.PROPAGATE, true, false, 2);
+  public void testEventBusRequestReplyProducerPropagate() throws Exception {
+    testEventRequestReplyProducerPolicy(TracingPolicy.PROPAGATE, true, false, 2);
   }
 
   @Test
-  public void testEventBusRequestReplyIgnore() throws Exception {
-    testRequestReply(TracingPolicy.IGNORE, true, false, 0);
+  public void testEventBusRequestReplyProducerIgnore() throws Exception {
+    testEventRequestReplyProducerPolicy(TracingPolicy.IGNORE, true, false, 0);
   }
 
   @Test
-  public void testEventBusRequestReplyAlways() throws Exception {
-    testRequestReply(TracingPolicy.ALWAYS, false, false, 2);
+  public void testEventBusRequestReplyProducerAlways() throws Exception {
+    testEventRequestReplyProducerPolicy(TracingPolicy.ALWAYS, false, false, 2);
   }
 
   @Test
-  public void testEventBusRequestReplyFailurePropagate() throws Exception {
-    testRequestReply(TracingPolicy.PROPAGATE, true, true, 2);
+  public void testEventBusRequestReplyFailureProducerPropagate() throws Exception {
+    testEventRequestReplyProducerPolicy(TracingPolicy.PROPAGATE, true, true, 2);
   }
 
   @Test
-  public void testEventBusRequestReplyFailureIgnore() throws Exception {
-    testRequestReply(TracingPolicy.IGNORE, true, true, 0);
+  public void testEventBusRequestReplyFailureProducerIgnore() throws Exception {
+    testEventRequestReplyProducerPolicy(TracingPolicy.IGNORE, true, true, 0);
   }
 
   @Test
-  public void testEventBusRequestReplyFailureAlways() throws Exception {
-    testRequestReply(TracingPolicy.ALWAYS, false, true, 2);
+  public void testEventBusRequestReplyFailureProducerAlways() throws Exception {
+    testEventRequestReplyProducerPolicy(TracingPolicy.ALWAYS, false, true, 2);
   }
 
-  private void testRequestReply(TracingPolicy policy, boolean create, boolean fail, int expected) throws Exception {
+  private void testEventRequestReplyProducerPolicy(TracingPolicy policy, boolean create, boolean fail, int expected) throws Exception {
+    testEventRequestReply(policy, TracingPolicy.PROPAGATE, create, false, expected);
+  }
+
+  @Test
+  public void testEventBusRequestReplyConsumerPropagate() throws Exception {
+    testEventRequestReplyConsumerPolicy(TracingPolicy.PROPAGATE, true, false, 2);
+  }
+
+  @Test
+  public void testEventBusRequestReplyConsumerIgnore() throws Exception {
+    testEventRequestReplyConsumerPolicy(TracingPolicy.IGNORE, true, false, 1);
+  }
+
+  @Test
+  public void testEventBusRequestReplyConsumerAlways() throws Exception {
+    testEventRequestReplyConsumerPolicy(TracingPolicy.ALWAYS, false, false, 1);
+  }
+
+  @Test
+  public void testEventBusRequestReplyFailureConsumerPropagate() throws Exception {
+    testEventRequestReplyConsumerPolicy(TracingPolicy.PROPAGATE, true, true, 2);
+  }
+
+  @Test
+  public void testEventBusRequestReplyFailureConsumerIgnore() throws Exception {
+    testEventRequestReplyConsumerPolicy(TracingPolicy.IGNORE, true, true, 1);
+  }
+
+  @Test
+  public void testEventBusRequestReplyFailureConsumerAlways() throws Exception {
+    testEventRequestReplyConsumerPolicy(TracingPolicy.ALWAYS, false, true, 1);
+  }
+
+  private void testEventRequestReplyConsumerPolicy(TracingPolicy policy, boolean create, boolean fail, int expected) throws Exception {
+    testEventRequestReply(TracingPolicy.PROPAGATE, policy, create, false, expected);
+  }
+
+  private void testEventRequestReply(TracingPolicy producerPolicy, TracingPolicy consumerPolicy, boolean create, boolean fail, int expected) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    vertx2.eventBus().consumer("the-address", msg -> {
+    MessageConsumerOptions consumerOptions = new MessageConsumerOptions()
+      .setAddress("the-address")
+      .setTracingPolicy(consumerPolicy);
+    vertx2.eventBus().consumer(consumerOptions, msg -> {
       if (fail) {
         msg.fail(10, "it failed");
       } else {
@@ -159,7 +257,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
       if (create) {
         tracer.activate(tracer.newTrace());
       }
-      vertx1.eventBus().request("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy)).onComplete(ar -> {
+      vertx1.eventBus().request("the-address", "ping", new DeliveryOptions().setTracingPolicy(producerPolicy)).onComplete(ar -> {
         assertEquals(fail, ar.failed());
         vertx1.runOnContext(v2 -> latch.countDown()); // make sure span is finished
       });

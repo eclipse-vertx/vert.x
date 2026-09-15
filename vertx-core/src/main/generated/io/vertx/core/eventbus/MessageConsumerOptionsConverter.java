@@ -27,6 +27,11 @@ public class MessageConsumerOptionsConverter {
             obj.setMaxBufferedMessages(((Number)member.getValue()).intValue());
           }
           break;
+        case "tracingPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -41,5 +46,8 @@ public class MessageConsumerOptionsConverter {
     }
     json.put("localOnly", obj.isLocalOnly());
     json.put("maxBufferedMessages", obj.getMaxBufferedMessages());
+    if (obj.getTracingPolicy() != null) {
+      json.put("tracingPolicy", obj.getTracingPolicy().name());
+    }
   }
 }

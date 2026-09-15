@@ -30,17 +30,20 @@ public abstract class HandlerRegistration<T> implements Closeable {
   protected final EventBusImpl bus;
   protected final String address;
   protected final boolean src;
+  protected final TracingPolicy tracingPolicy;
   private Consumer<Promise<Void>> registered;
   private Object metric;
 
   HandlerRegistration(ContextInternal context,
                       EventBusImpl bus,
                       String address,
-                      boolean src) {
+                      boolean src,
+                      TracingPolicy tracingPolicy) {
     this.context = context;
     this.bus = bus;
     this.src = src;
     this.address = address;
+    this.tracingPolicy = tracingPolicy;
   }
 
   void receive(MessageImpl msg) {
@@ -116,7 +119,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
       bus.metrics.messageDelivered(m, message.isLocal());
     }
     if (tracer != null && !src) {
-      message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+      message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
       Promise<Object> completion = ctx.promise();
       dispatchMessage(message, ctx, processor, completion);
       if (message.replyAddress == null && message.trace != null) {
