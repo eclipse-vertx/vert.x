@@ -76,6 +76,48 @@ public class PrivateKeyParserTest extends VertxTestBase {
     assertKeySpecType(pkcs8, "EC");
   }
 
+  @Test
+  public void testGetPKCS8EncodedKeySpecSupportsMLDSA44() {
+
+    byte[] pkcs8 = new byte[] {
+                            0x30, 0x10, // SEQUENCE of 16 bytes
+                            0x02, 0x01, 0x00, // version = 0
+                            0x30, 0x0B, // SEQUENCE of 11 bytes
+                            0x06, 0x09, // OID of 9 bytes
+                            0x60, (byte) 0x86, 0x48, 0x01, 0x65,
+                            0x03, 0x04, 0x03, 0x11 // ML-DSA-44 OID
+    };
+    assertKeySpecType(pkcs8, "ML-DSA");
+  }
+
+  @Test
+  public void testGetPKCS8EncodedKeySpecSupportsMLDSA65() {
+
+    byte[] pkcs8 = new byte[] {
+                            0x30, 0x10, // SEQUENCE of 16 bytes
+                            0x02, 0x01, 0x00, // version = 0
+                            0x30, 0x0B, // SEQUENCE of 11 bytes
+                            0x06, 0x09, // OID of 9 bytes
+                            0x60, (byte) 0x86, 0x48, 0x01, 0x65,
+                            0x03, 0x04, 0x03, 0x12 // ML-DSA-65 OID
+    };
+    assertKeySpecType(pkcs8, "ML-DSA");
+  }
+
+  @Test
+  public void testGetPKCS8EncodedKeySpecSupportsMLDSA87() {
+
+    byte[] pkcs8 = new byte[] {
+                            0x30, 0x10, // SEQUENCE of 16 bytes
+                            0x02, 0x01, 0x00, // version = 0
+                            0x30, 0x0B, // SEQUENCE of 11 bytes
+                            0x06, 0x09, // OID of 9 bytes
+                            0x60, (byte) 0x86, 0x48, 0x01, 0x65,
+                            0x03, 0x04, 0x03, 0x13 // ML-DSA-87 OID
+    };
+    assertKeySpecType(pkcs8, "ML-DSA");
+  }
+
   private void assertKeySpecType(byte[] encodedKey, String expectedAlgorithm) {
     String keyAlgorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(encodedKey);
     Assertions.assertThat(keyAlgorithm).isEqualTo(expectedAlgorithm);

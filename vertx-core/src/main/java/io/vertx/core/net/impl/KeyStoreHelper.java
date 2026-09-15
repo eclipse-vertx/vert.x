@@ -309,8 +309,15 @@ public class KeyStoreHelper {
               return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
             } else if (ecKeyFactory != null && ecKeyFactory.getAlgorithm().equals(algorithm)) {
               return Collections.singletonList(ecKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+            } else if ("ML-DSA".equals(algorithm)) {
+              try {
+                KeyFactory kf = KeyFactory.getInstance(algorithm);
+                return Collections.singletonList(kf.generatePrivate(new PKCS8EncodedKeySpec(content)));
+              } catch (NoSuchAlgorithmException e) {
+                throw new VertxException("ML-DSA algorithm is not supported by this JVM", e);
+              }
             }
-            // fall through if ECC is not supported by JVM
+            // fall through if algorithm is not supported by JVM
           default:
             return Collections.emptyList();
         }

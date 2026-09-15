@@ -336,6 +336,25 @@ rm host3-keystore.p12
 rm host4-keystore.p12
 rm host5-keystore.p12
 
+## Self signed ML-DSA PEM (requires JDK 24+ keytool)
+
+1) Create an ML-DSA-65 private key + certificate in a PKCS12 key store:
+
+keytool -genkeypair -alias test-store -keyalg ML-DSA-65 -keystore server-keystore-mldsa.p12 -storetype PKCS12 -validity 1095 -dname CN=localhost -storepass wibble
+
+2) Extract the private key from the PKCS12 store
+
+openssl pkcs12 -in server-keystore-mldsa.p12 -nocerts -nodes -passin pass:wibble -out server-key-mldsa.pem
+
+3) Extract the X.509 certificate from the PKCS12 store
+
+openssl pkcs12 -in server-keystore-mldsa.p12 -nokeys -passin pass:wibble -out server-cert-mldsa.pem
+
+4) Remove the temporary PKCS12 store
+
+rm server-keystore-mldsa.p12
+
+
 ## JKS Store with multiple entries
 
 Execute these commands, in the same order:
