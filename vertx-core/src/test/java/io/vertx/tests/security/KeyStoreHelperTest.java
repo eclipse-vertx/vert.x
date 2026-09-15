@@ -15,13 +15,17 @@ package io.vertx.tests.security;
 import org.assertj.core.api.Assertions;
 
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.net.PemKeyCertOptions;
 import org.junit.Assume;
 import org.junit.Test;
@@ -72,8 +76,6 @@ public class KeyStoreHelperTest extends VertxTestBase {
   /**
    * Verifies that the key store helper can read a DER encoded EC private key
    * from a PEM file.
-   *
-   * @throws Exception if the key cannot be read.
    */
   @Test
   public void testKeyStoreHelperSupportsReadingECPrivateKeyFromPEMFile() throws Exception {
@@ -84,6 +86,44 @@ public class KeyStoreHelperTest extends VertxTestBase {
             .addCertPath("tls/server-cert-ec.pem");
     KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), ECPrivateKey.class);
+  }
+
+  /**
+   * Verifies that the key store helper can read a PKCS#8 encoded ML-DSA private key
+   * from a PEM file when the JVM supports ML-DSA, or fails with a clear error message
+   * when the JVM does not.
+   */
+  @Test
+  public void testKeyStoreHelperSupportsMLDSAPrivateKey() throws Exception {
+
+    PemKeyCertOptions options = new PemKeyCertOptions()
+            .addKeyPath("tls/server-key-mldsa.pem")
+            .addCertPath("tls/server-cert-mldsa.pem");
+    boolean mldsaSupported;
+    try {
+      KeyFactory.getInstance("ML-DSA");
+      mldsaSupported = true;
+    } catch (NoSuchAlgorithmException e) {
+      mldsaSupported = false;
+    }
+    if (mldsaSupported) {
+      KeyStoreHelper helper = options.getHelper(vertx);
+      assertTrue(helper.store().size() > 0);
+      for (Enumeration<String> e = helper.store().aliases(); e.hasMoreElements(); ) {
+        String alias = e.nextElement();
+        PrivateKey key = (PrivateKey) helper.store().getKey(alias, KeyStoreHelper.DUMMY_PASSWORD.toCharArray());
+        Assertions.assertThat(key).isNotNull();
+        Assertions.assertThat(key.getAlgorithm()).isEqualTo("ML-DSA");
+      }
+    } else {
+      try {
+        options.getHelper(vertx);
+        fail("Expected VertxException");
+      } catch (VertxException e) {
+        Assertions.assertThat(e.getMessage()).isEqualTo("ML-DSA algorithm is not supported by this JVM");
+        Assertions.assertThat(e.getCause()).isInstanceOf(NoSuchAlgorithmException.class);
+      }
+    }
   }
 
   private void assertKeyType(KeyStore store, Class<?> expectedKeyType) throws KeyStoreException, GeneralSecurityException {

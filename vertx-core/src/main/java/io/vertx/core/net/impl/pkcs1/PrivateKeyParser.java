@@ -44,6 +44,18 @@ public class PrivateKeyParser {
    * ASN.1 OID for EC public key.
    */
   private static final byte[] OID_EC_PUBLIC_KEY = { 0x2A, (byte) 0x86, 0x48, (byte) 0xCE, 0x3D, 0x02, 0x01 };
+  /**
+   * ASN.1 OID for ML-DSA-44 (2.16.840.1.101.3.4.3.17).
+   */
+  private static final byte[] OID_ML_DSA_44 = { 0x60, (byte) 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x11 };
+  /**
+   * ASN.1 OID for ML-DSA-65 (2.16.840.1.101.3.4.3.18).
+   */
+  private static final byte[] OID_ML_DSA_65 = { 0x60, (byte) 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x12 };
+  /**
+   * ASN.1 OID for ML-DSA-87 (2.16.840.1.101.3.4.3.19).
+   */
+  private static final byte[] OID_ML_DSA_87 = { 0x60, (byte) 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x13 };
 
   private static String oidToString(byte[] oid) {
     StringBuilder result = new StringBuilder();
@@ -112,6 +124,10 @@ public class PrivateKeyParser {
         return "RSA";
     } else if (Arrays.equals(OID_EC_PUBLIC_KEY, algorithmIdentifier)) {
         return "EC";
+    } else if (Arrays.equals(OID_ML_DSA_44, algorithmIdentifier)
+            || Arrays.equals(OID_ML_DSA_65, algorithmIdentifier)
+            || Arrays.equals(OID_ML_DSA_87, algorithmIdentifier)) {
+        return "ML-DSA";
     } else {
         throw new VertxException("Unsupported algorithm identifier");
     }
