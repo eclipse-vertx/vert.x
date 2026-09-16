@@ -30,6 +30,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.transports.IoUringTransport;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -4782,4 +4783,36 @@ public class NetTest {
     // client only sees the close (Netty discards the unflushed entry).
     assertEquals("pending-response", result.get(20, TimeUnit.SECONDS));
   }
+
+  @Test
+  public void testShutdownAcceptRace() {
+    assumeTrue(((VertxInternal)vertx).transport().getClass() != IoUringTransport.class);
+    for (int i = 0; i < 100; i++) {
+      NetServer s = vertx.createNetServer();
+      s.connectHandler(NetSocket::close);
+      s.listen(0).await();
+      int port = s.actualPort();
+      AtomicInteger connectCount = new AtomicInteger();
+      AtomicInteger closedCount = new AtomicInteger();
+      Future<Void> shutdownFuture = s.shutdown();
+      for (int t = 0; t < 4; t++) {
+        connectUntil(client, port, shutdownFuture, connectCount, closedCount);
+      }
+      shutdownFuture.await();
+      assertWaitUntil(() -> closedCount.get() == connectCount.get());
+    }
+  }
+
+  private void connectUntil(NetClient client, int port, Future<Void> stop, AtomicInteger connectCount, AtomicInteger closedCount) {
+    if (!stop.isComplete()) {
+      client.connect(port, "localhost").onComplete(ar -> {
+        if (ar.succeeded()) {
+          connectCount.incrementAndGet();
+          ar.result().closeHandler(v -> closedCount.incrementAndGet());
+        }
+        connectUntil(client, port, stop, connectCount, closedCount);
+      });
+    }
+  }
+
 }
