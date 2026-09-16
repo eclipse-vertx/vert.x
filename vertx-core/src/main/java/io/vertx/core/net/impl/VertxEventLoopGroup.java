@@ -13,14 +13,14 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.*;
 import io.netty.util.concurrent.*;
+import io.vertx.core.Handler;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -28,24 +28,26 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("deprecation")
 public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
-  private int pos;
-  private final List<EventLoopHolder> workers = new ArrayList<>();
+  private final AtomicReference<EventLoopLoadBalancer> eventLoopLoadBalancerRef;
+
+  public VertxEventLoopGroup() {
+    eventLoopLoadBalancerRef = new AtomicReference<>(new EventLoopLoadBalancer(0, List.of()));
+  }
 
   @Override
-  public synchronized EventLoop next() {
-    if (workers.isEmpty()) {
+  public EventLoop next() {
+    EventLoopLoadBalancer eventLoopLoadBalancer = eventLoopLoadBalancerRef.get();
+    EventLoop eventLoop = eventLoopLoadBalancer.selectEventLoop();
+    if (eventLoop == null) {
       throw new IllegalStateException();
     } else {
-      EventLoop worker = workers.get(pos).worker;
-      pos++;
-      checkPos();
-      return worker;
+      return eventLoop;
     }
   }
 
   @Override
   public Iterator<EventExecutor> iterator() {
-    return children.iterator();
+    return new EventLoopIterator(eventLoopLoadBalancerRef.get().handlerLoadBalancers.iterator());
   }
 
   @Override
@@ -74,20 +76,11 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
   }
 
   @Override
-  public synchronized boolean awaitTermination(long timeout, TimeUnit unit) {
+  public boolean awaitTermination(long timeout, TimeUnit unit) {
     return false;
   }
 
-  public synchronized void addWorker(EventLoop worker) {
-    EventLoopHolder holder = findHolder(worker);
-    if (holder == null) {
-      workers.add(new EventLoopHolder(worker));
-    } else {
-      holder.count++;
-    }
-  }
-
-  public synchronized void shutdown() {
+  public void shutdown() {
     throw new UnsupportedOperationException("Should never be called");
   }
 
@@ -106,135 +99,142 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     throw new UnsupportedOperationException("Should never be called");
   }
 
-  private EventLoopHolder findHolder(EventLoop worker) {
-    EventLoopHolder wh = new EventLoopHolder(worker);
-    for (EventLoopHolder holder : workers) {
-      if (holder.equals(wh)) {
-        return holder;
+  public void addHandler(EventLoop eventLoop, Handler<Channel> handler) {
+    while (true) {
+      EventLoopLoadBalancer prev = eventLoopLoadBalancerRef.get();
+      EventLoopLoadBalancer next = prev.addHandler(eventLoop, handler);
+      if (eventLoopLoadBalancerRef.compareAndSet(prev, next)) {
+        break;
       }
     }
-    return null;
   }
 
-  public synchronized void removeWorker(EventLoop worker) {
-    //TODO can be optimised
-    EventLoopHolder holder = findHolder(worker);
-    if (holder != null) {
-      holder.count--;
-      if (holder.count == 0) {
-        workers.remove(holder);
+  public boolean removeHandler(EventLoop eventLoop, Handler<Channel> handler) {
+    while (true) {
+      EventLoopLoadBalancer prev = eventLoopLoadBalancerRef.get();
+      EventLoopLoadBalancer next = prev.removeHandler(eventLoop, handler);
+      if (eventLoopLoadBalancerRef.compareAndSet(prev, next)) {
+        return !next.handlerLoadBalancers.isEmpty();
       }
-      checkPos();
+    }
+  }
+
+  public Handler<Channel> chooseHandler(EventLoop eventLoop) {
+    EventLoopLoadBalancer current = eventLoopLoadBalancerRef.get();
+    int idx = indexOfEventLoop(current.handlerLoadBalancers, eventLoop);
+    if (idx == -1) {
+      return null;
     } else {
-      throw new IllegalStateException("Can't find worker to remove");
+      return current.handlerLoadBalancers.get(idx)
+        .chooseHandler();
     }
   }
 
-  public synchronized int workerCount() {
-    return workers.size();
-  }
+  private static class EventLoopLoadBalancer extends AtomicInteger {
 
-  private void checkPos() {
-    if (pos == workers.size()) {
-      pos = 0;
+    private final List<HandlerLoadBalancer> handlerLoadBalancers;
+
+    public EventLoopLoadBalancer(int pos, List<HandlerLoadBalancer> handlerLoadBalancers) {
+      super(pos);
+      this.handlerLoadBalancers = handlerLoadBalancers;
+    }
+
+    public EventLoop selectEventLoop() {
+      if (handlerLoadBalancers.isEmpty()) {
+        return null;
+      } else {
+        int idx = getAndIncrement();
+        if (idx >= handlerLoadBalancers.size()) {
+          // Racy but ok
+          idx = 0;
+          set(1);
+        }
+        return handlerLoadBalancers.get(idx).eventLoop;
+      }
+    }
+
+    public EventLoopLoadBalancer addHandler(EventLoop eventLoop, Handler<Channel> handler) {
+      List<HandlerLoadBalancer> copyOfHandlerLoadBalancers = new ArrayList<>(handlerLoadBalancers);
+      int idx = indexOfEventLoop(copyOfHandlerLoadBalancers, eventLoop);
+      if (idx == -1) {
+        copyOfHandlerLoadBalancers.add(new HandlerLoadBalancer(0, eventLoop, List.of(handler)));
+      } else {
+        copyOfHandlerLoadBalancers.set(idx, copyOfHandlerLoadBalancers.get(idx).addHandler(handler));
+      }
+      return new EventLoopLoadBalancer(get(), copyOfHandlerLoadBalancers);
+    }
+
+
+    public EventLoopLoadBalancer removeHandler(EventLoop eventLoop, Handler<Channel> handler) {
+      int idx = indexOfEventLoop(handlerLoadBalancers, eventLoop);
+      if (idx == -1) {
+        throw new IllegalStateException("Can't find event-loop to remove");
+      }
+      HandlerLoadBalancer copyOfHandlerLoadBalancer = handlerLoadBalancers.get(idx)
+        .removeHandler(handler);
+      List<HandlerLoadBalancer> copyOfHandlerLoadBalancers = new ArrayList<>(handlerLoadBalancers);
+      if (copyOfHandlerLoadBalancer.handlers.isEmpty()) {
+        copyOfHandlerLoadBalancers.remove(idx);
+      } else {
+        copyOfHandlerLoadBalancers.set(idx, copyOfHandlerLoadBalancer);
+      }
+      return new EventLoopLoadBalancer(get(), copyOfHandlerLoadBalancers);
     }
   }
 
-  private static class EventLoopHolder {
-    int count = 1;
-    final EventLoop worker;
+  private static class HandlerLoadBalancer extends AtomicInteger {
 
-    EventLoopHolder(EventLoop worker) {
-      this.worker = worker;
+    private final EventLoop eventLoop;
+    private final List<Handler<Channel>> handlers;
+
+    HandlerLoadBalancer(int pos, EventLoop eventLoop, List<Handler<Channel>> handlers) {
+      super(pos);
+      this.eventLoop = eventLoop;
+      this.handlers = handlers;
     }
 
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      EventLoopHolder that = (EventLoopHolder) o;
-      return Objects.equals(worker, that.worker);
+    Handler<Channel> chooseHandler() {
+      int idx = getAndIncrement();
+      if (idx >= handlers.size()) {
+        // Racy but ok
+        idx = 0;
+        set(1);
+      }
+      return handlers.get(idx);
     }
 
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(worker);
+    public HandlerLoadBalancer removeHandler(Handler<Channel> handler) {
+      List<Handler<Channel>> handlersCopy = new ArrayList<>(handlers);
+      if (!handlersCopy.remove(handler)) {
+        throw new IllegalStateException("Can't find handler to remove");
+      }
+      return new HandlerLoadBalancer(get(), eventLoop, handlersCopy);
+    }
+
+    public HandlerLoadBalancer addHandler(Handler<Channel> handler) {
+      List<Handler<Channel>> copyOfHandlers = new ArrayList<>(handlers.size() + 1);
+      copyOfHandlers.addAll(handlers);
+      copyOfHandlers.add(handler);
+      return new HandlerLoadBalancer(get(), eventLoop, copyOfHandlers);
     }
   }
 
-  //
-  private final Set<EventExecutor> children = new Set<EventExecutor>() {
-    @Override
-    public Iterator<EventExecutor> iterator() {
-      return new EventLoopIterator(workers.iterator());
+  private static int indexOfEventLoop(List<HandlerLoadBalancer> handlersLoadBalancers, EventLoop eventLoop) {
+    int count = 0;
+    for (HandlerLoadBalancer handlerLoadBalancer : handlersLoadBalancers) {
+      if (handlerLoadBalancer.eventLoop == eventLoop) {
+        return count;
+      }
+      count++;
     }
-
-    @Override
-    public int size() {
-      return workers.size();
-    }
-
-    @Override
-    public boolean isEmpty() {
-      return workers.isEmpty();
-    }
-
-    @Override
-    public boolean contains(Object o) {
-      return workers.contains(o);
-    }
-
-    @Override
-    public Object[] toArray() {
-      return workers.toArray();
-    }
-
-    @Override
-    public <T> T[] toArray(T[] a) {
-      return workers.toArray(a);
-    }
-
-    @Override
-    public boolean add(EventExecutor eventExecutor) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean remove(Object o) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean containsAll(Collection<?> c) {
-      return workers.containsAll(c);
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends EventExecutor> c) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> c) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void clear() {
-      throw new UnsupportedOperationException();
-    }
-  };
+    return -1;
+  }
 
   private static final class EventLoopIterator implements Iterator<EventExecutor> {
-    private final Iterator<EventLoopHolder> holderIt;
 
-    public EventLoopIterator(Iterator<EventLoopHolder> holderIt) {
+    private final Iterator<HandlerLoadBalancer> holderIt;
+
+    public EventLoopIterator(Iterator<HandlerLoadBalancer> holderIt) {
       this.holderIt = holderIt;
     }
 
@@ -245,7 +245,7 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
 
     @Override
     public EventExecutor next() {
-      return holderIt.next().worker;
+      return holderIt.next().eventLoop;
     }
 
     @Override

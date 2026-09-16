@@ -610,8 +610,7 @@ public class NetServerImpl implements NetServerInternal {
     boolean hasHandlers;
     synchronized (servers) {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
-      balancer.removeWorker(eventLoop, worker);
-      hasHandlers = balancer.hasHandlers();
+      hasHandlers = balancer.removeWorker(eventLoop, worker);
     }
     // THIS CAN BE RACY
     if (hasHandlers) {
