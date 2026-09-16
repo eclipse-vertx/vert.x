@@ -17,11 +17,6 @@ import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 /**
  * A channel server load balancer that distributes channel processing to a list of workers.
  *
@@ -30,11 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   private final VertxEventLoopGroup workers;
-  private final ConcurrentMap<EventLoop, WorkerList> workerMap = new ConcurrentHashMap<>();
-
-  // We maintain a separate hasHandlers variable so we can implement hasHandlers() efficiently
-  // As it is called for every HTTP message received
-  private volatile boolean hasHandlers;
 
   ServerChannelLoadBalancer(EventExecutor executor) {
     this.workers = new VertxEventLoopGroup();
@@ -42,10 +32,6 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   public VertxEventLoopGroup workers() {
     return workers;
-  }
-
-  public boolean hasHandlers() {
-    return hasHandlers;
   }
 
   @Override
@@ -58,69 +44,15 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
     }
   }
 
-  private Handler<Channel> chooseInitializer(EventLoop worker) {
-    WorkerList handlers = workerMap.get(worker);
-    return handlers == null ? null : handlers.chooseHandler();
+  private Handler<Channel> chooseInitializer(EventLoop eventLoop) {
+    return workers.chooseHandler(eventLoop);
   }
 
-  public synchronized void addWorker(EventLoop eventLoop, Handler<Channel> handler) {
-    workers.addWorker(eventLoop);
-    WorkerList handlers = new WorkerList();
-    WorkerList prev = workerMap.putIfAbsent(eventLoop, handlers);
-    if (prev != null) {
-      handlers = prev;
-    }
-    handlers.addWorker(handler);
-    hasHandlers = true;
+  public void addWorker(EventLoop eventLoop, Handler<Channel> handler) {
+    workers.addHandler(eventLoop, handler);
   }
 
-  public synchronized boolean removeWorker(EventLoop worker, Handler<Channel> handler) {
-    WorkerList handlers = workerMap.get(worker);
-    if (handlers == null || !handlers.removeWorker(handler)) {
-      return false;
-    }
-    if (handlers.isEmpty()) {
-      workerMap.remove(worker);
-    }
-    if (workerMap.isEmpty()) {
-      hasHandlers = false;
-    }
-    //Available workers does it's own reference counting -since workers can be shared across different Handlers
-    workers.removeWorker(worker);
-    return true;
-  }
-
-  private static final class WorkerList {
-    private int pos;
-    private final List<Handler<Channel>> list = new CopyOnWriteArrayList<>();
-    Handler<Channel> chooseHandler() {
-      Handler<Channel> handler = list.get(pos);
-      pos++;
-      checkPos();
-      return handler;
-    }
-
-    void addWorker(Handler<Channel> handler) {
-      list.add(handler);
-    }
-
-    boolean removeWorker(Handler<Channel> handler) {
-      if (list.remove(handler)) {
-        checkPos();
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    boolean isEmpty() {
-      return list.isEmpty();
-    }
-
-    void checkPos() {
-      if (pos == list.size()) {
-        pos = 0;
-      }
-    }
+  public boolean removeWorker(EventLoop worker, Handler<Channel> handler) {
+    return workers.removeHandler(worker, handler);
   }
 }
