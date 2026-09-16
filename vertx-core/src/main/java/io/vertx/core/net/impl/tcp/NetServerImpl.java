@@ -612,11 +612,12 @@ public class NetServerImpl implements NetServerInternal {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
       hasHandlers = balancer.removeWorker(eventLoop, worker);
     }
-    // THIS CAN BE RACY
     if (hasHandlers) {
       // The actual server still has handlers so we don't actually close it
       completion.succeed();
     } else {
+      // Close the server, normally the load balancer entered a state in which all newly accepted connections
+      // are closed
       Promise<Void> p2 = Promise.promise();
       actualServer.actualClose(p2);
       p2.future().onComplete(ar -> {

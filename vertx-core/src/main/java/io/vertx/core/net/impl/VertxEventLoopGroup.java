@@ -31,7 +31,7 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
   private final AtomicReference<EventLoopLoadBalancer> eventLoopLoadBalancerRef;
 
   public VertxEventLoopGroup() {
-    eventLoopLoadBalancerRef = new AtomicReference<>(new EventLoopLoadBalancer(0, List.of()));
+    eventLoopLoadBalancerRef = new AtomicReference<>(new EventLoopLoadBalancer(0, List.of(), false));
   }
 
   @Override
@@ -40,9 +40,8 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     EventLoop eventLoop = eventLoopLoadBalancer.selectEventLoop();
     if (eventLoop == null) {
       throw new IllegalStateException();
-    } else {
-      return eventLoop;
     }
+    return eventLoop;
   }
 
   @Override
@@ -114,29 +113,38 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
       EventLoopLoadBalancer prev = eventLoopLoadBalancerRef.get();
       EventLoopLoadBalancer next = prev.removeHandler(eventLoop, handler);
       if (eventLoopLoadBalancerRef.compareAndSet(prev, next)) {
-        return !next.handlerLoadBalancers.isEmpty();
+        return !next.closing;
       }
     }
   }
 
   public Handler<Channel> chooseHandler(EventLoop eventLoop) {
     EventLoopLoadBalancer current = eventLoopLoadBalancerRef.get();
-    int idx = indexOfEventLoop(current.handlerLoadBalancers, eventLoop);
-    if (idx == -1) {
-      return null;
+    if (current.closing) {
+      return channel -> {
+        // Pretty much what ServerBootstrap#forceClose does
+        channel.unsafe().closeForcibly();
+      };
     } else {
-      return current.handlerLoadBalancers.get(idx)
-        .chooseHandler();
+      int idx = indexOfEventLoop(current.handlerLoadBalancers, eventLoop);
+      if (idx == -1) {
+        return null;
+      } else {
+        return current.handlerLoadBalancers.get(idx)
+          .chooseHandler();
+      }
     }
   }
 
   private static class EventLoopLoadBalancer extends AtomicInteger {
 
     private final List<HandlerLoadBalancer> handlerLoadBalancers;
+    private final boolean closing;
 
-    public EventLoopLoadBalancer(int pos, List<HandlerLoadBalancer> handlerLoadBalancers) {
+    public EventLoopLoadBalancer(int pos, List<HandlerLoadBalancer> handlerLoadBalancers, boolean closing) {
       super(pos);
       this.handlerLoadBalancers = handlerLoadBalancers;
+      this.closing = closing;
     }
 
     public EventLoop selectEventLoop() {
@@ -154,6 +162,9 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
     }
 
     public EventLoopLoadBalancer addHandler(EventLoop eventLoop, Handler<Channel> handler) {
+      if (closing) {
+        throw new IllegalStateException();
+      }
       List<HandlerLoadBalancer> copyOfHandlerLoadBalancers = new ArrayList<>(handlerLoadBalancers);
       int idx = indexOfEventLoop(copyOfHandlerLoadBalancers, eventLoop);
       if (idx == -1) {
@@ -161,24 +172,41 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
       } else {
         copyOfHandlerLoadBalancers.set(idx, copyOfHandlerLoadBalancers.get(idx).addHandler(handler));
       }
-      return new EventLoopLoadBalancer(get(), copyOfHandlerLoadBalancers);
+      return new EventLoopLoadBalancer(get(), copyOfHandlerLoadBalancers, false);
     }
 
 
     public EventLoopLoadBalancer removeHandler(EventLoop eventLoop, Handler<Channel> handler) {
-      int idx = indexOfEventLoop(handlerLoadBalancers, eventLoop);
-      if (idx == -1) {
+      if (closing) {
+        throw new IllegalStateException();
+      }
+      int idx1 = indexOfEventLoop(handlerLoadBalancers, eventLoop);
+      if (idx1 == -1) {
         throw new IllegalStateException("Can't find event-loop to remove");
       }
-      HandlerLoadBalancer copyOfHandlerLoadBalancer = handlerLoadBalancers.get(idx)
-        .removeHandler(handler);
-      List<HandlerLoadBalancer> copyOfHandlerLoadBalancers = new ArrayList<>(handlerLoadBalancers);
-      if (copyOfHandlerLoadBalancer.handlers.isEmpty()) {
-        copyOfHandlerLoadBalancers.remove(idx);
-      } else {
-        copyOfHandlerLoadBalancers.set(idx, copyOfHandlerLoadBalancer);
+      HandlerLoadBalancer handlerLoadBalancer = handlerLoadBalancers.get(idx1);
+      int idx2 = handlerLoadBalancer.handlers.indexOf(handler);
+      if (idx2 == -1) {
+        throw new IllegalStateException("Can't find handler to remove");
       }
-      return new EventLoopLoadBalancer(get(), copyOfHandlerLoadBalancers);
+      int numberOfHandlers = 0;
+      for (HandlerLoadBalancer loadBalancer : handlerLoadBalancers) {
+        numberOfHandlers += loadBalancer.handlers.size();
+      }
+      if (numberOfHandlers == 1) {
+        return new EventLoopLoadBalancer(get(), handlerLoadBalancers, true);
+      } else {
+        List<Handler<Channel>> handlersCopy = new ArrayList<>(handlerLoadBalancer.handlers);
+        handlersCopy.remove(idx2);
+        HandlerLoadBalancer copyOfHandlerLoadBalancer = new HandlerLoadBalancer(handlerLoadBalancer.get(), handlerLoadBalancer.eventLoop, handlersCopy);
+        List<HandlerLoadBalancer> copyOfHandlerLoadBalancers = new ArrayList<>(handlerLoadBalancers);
+        if (copyOfHandlerLoadBalancer.handlers.isEmpty()) {
+          copyOfHandlerLoadBalancers.remove(idx1);
+        } else {
+          copyOfHandlerLoadBalancers.set(idx1, copyOfHandlerLoadBalancer);
+        }
+        return new EventLoopLoadBalancer(get(), copyOfHandlerLoadBalancers, false);
+      }
     }
   }
 
@@ -201,14 +229,6 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
         set(1);
       }
       return handlers.get(idx);
-    }
-
-    public HandlerLoadBalancer removeHandler(Handler<Channel> handler) {
-      List<Handler<Channel>> handlersCopy = new ArrayList<>(handlers);
-      if (!handlersCopy.remove(handler)) {
-        throw new IllegalStateException("Can't find handler to remove");
-      }
-      return new HandlerLoadBalancer(get(), eventLoop, handlersCopy);
     }
 
     public HandlerLoadBalancer addHandler(Handler<Channel> handler) {
