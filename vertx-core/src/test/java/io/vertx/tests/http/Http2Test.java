@@ -18,10 +18,7 @@ import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Checkpoint;
@@ -767,7 +764,10 @@ public class Http2Test extends HttpTest {
         }
       });
     startServer();
-    NetSocket so = vertx.createNetClient().connect(config.port(), config.host()).await();
+    // Keeps a ref to the client with the following fut.await() statement
+    NetClient client = vertx.createNetClient();
+    Future<NetSocket> fut = client.connect(config.port(), config.host());
+    NetSocket so = fut.await();
   }
 
   @Test
