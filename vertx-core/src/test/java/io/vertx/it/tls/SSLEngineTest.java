@@ -14,7 +14,8 @@ package io.vertx.it.tls;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.*;
-import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.http.impl.tcp.TcpHttpServer;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.net.JdkSSLEngineOptions;
@@ -173,7 +174,7 @@ public class SSLEngineTest extends HttpTestBase2 {
     void setUp() throws Exception {
       startServer();
       resolvedEngine = expectedEngine != null ? expectedEngine : "jdk";
-      NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
+      NetServerInternal tcpServer = ((TcpHttpServer)((HttpServerInternal)server).unwrap()).tcpServer();
       assertEquals(tcpServer.actualPort(), server.actualPort());
       ServerSslContextProvider provider = tcpServer.sslContextProvider();
       SslContext ctx = provider.createServerContext(null);
