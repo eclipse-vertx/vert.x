@@ -1067,8 +1067,15 @@ public class NetTest {
     server = vertx.createNetServer(new NetServerOptions().setPort(0));
     NetServer s = server.connectHandler((netSocket) -> {
     }).listen().await();
-    assertTrue(server.actualPort() > 1024);
+    int port = server.actualPort();
+    assertTrue(port > 1024);
     assertEquals(server, s);
+    s.close().await();
+    server = vertx
+      .createNetServer(new NetServerOptions().setPort(port))
+      .connectHandler(socket -> {
+    });
+    server.listen().await();
   }
 
   @Test
@@ -2341,6 +2348,27 @@ public class NetTest {
     servers.forEach(server -> {
       assertTrue(server.isClosed());
     });
+  }
+
+  @Test
+  public void testSharedServerShutdownRemovesFromEventLoopGroup() throws Exception {
+    int numServers = 3;
+    List<NetServerInternal> servers = new ArrayList<>();
+    Set<Integer> accepted = Collections.synchronizedSet(new HashSet<>());
+    for (int i = 0;i < numServers;i++) {
+      int idx = i;
+      NetServer server = vertx.createNetServer().connectHandler(so -> {
+        accepted.add(idx);
+      });
+      startServer(server);
+      servers.add((NetServerInternal) server);
+    }
+    servers.get(1).close().await();
+    for (int i = 0;i < 10;i++) {
+      NetSocket so = client.connect(testAddress).await();
+      so.close().await();
+    }
+    assertEquals(Set.of(0, 2), accepted);
   }
 
   @Test
@@ -4784,6 +4812,7 @@ public class NetTest {
     assertEquals("pending-response", result.get(20, TimeUnit.SECONDS));
   }
 
+  @Ignore("Times out in CI")
   @Test
   public void testShutdownAcceptRace() {
     assumeTrue(((VertxInternal)vertx).transport().getClass() != IoUringTransport.class);

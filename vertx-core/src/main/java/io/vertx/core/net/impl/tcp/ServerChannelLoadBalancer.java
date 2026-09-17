@@ -13,7 +13,6 @@ package io.vertx.core.net.impl.tcp;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
-import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.VertxEventLoopGroup;
 
@@ -26,7 +25,7 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   private final VertxEventLoopGroup workers;
 
-  ServerChannelLoadBalancer(EventExecutor executor) {
+  ServerChannelLoadBalancer() {
     this.workers = new VertxEventLoopGroup();
   }
 

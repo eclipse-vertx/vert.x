@@ -142,7 +142,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
   private final EventExecutorProvider eventExecutorProvider;
-  private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
   private final ContextLocal<?>[] contextLocals;
   private final List<ContextLocal<?>> contextLocalsList;
   final WorkerPool workerPool;
@@ -567,10 +566,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     }
     return eventLoop;
-  }
-
-  public Map<ServerID, NetServerInternal> sharedTcpServers() {
-    return sharedNetServers;
   }
 
   @Override

@@ -33,7 +33,6 @@ import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.TcpServerConfig;
-import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
@@ -45,7 +44,6 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -269,11 +267,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public WorkerPool internalWorkerPool() {
     return delegate.internalWorkerPool();
-  }
-
-  @Override
-  public Map<ServerID, NetServerInternal> sharedTcpServers() {
-    return delegate.sharedTcpServers();
   }
 
   @Override

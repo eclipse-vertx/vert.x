@@ -1257,11 +1257,8 @@ public class MetricsTest extends VertxTestBase {
       })
       .build();
     vertx.createHttpServer().requestHandler(req -> {}).listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
-    vertx.close().onComplete(onSuccess(v -> {
-      assertEquals(2, lifecycle.get());
-      testComplete();
-    }));
-    await();
+    vertx.close().await();
+    TestUtils.assertWaitUntil(() -> lifecycle.get() == 2);
   }
 
   @Test

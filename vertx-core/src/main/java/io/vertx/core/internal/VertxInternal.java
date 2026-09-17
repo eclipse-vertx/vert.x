@@ -22,7 +22,6 @@ import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.internal.net.NetServerInternal;
-import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -32,7 +31,6 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -130,8 +128,6 @@ public interface VertxInternal extends Vertx {
   WorkerPool workerPool();
 
   WorkerPool internalWorkerPool();
-
-  Map<ServerID, NetServerInternal> sharedTcpServers();
 
   VertxMetrics metrics();
 
