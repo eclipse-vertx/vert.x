@@ -36,6 +36,8 @@ import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.internal.Closeable;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.QuicServerInternal;
@@ -43,7 +45,6 @@ import io.vertx.core.internal.tls.*;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.SslContextProviderReference;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
@@ -122,31 +123,29 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   @Override
   protected Future<ChannelHandler> channelHandler(ContextInternal context, ServerID serverID, TransportMetrics<?> metrics) throws Exception {
     if (config.isLoadBalanced()) {
-      LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
+
+
       QuicDispatcher dispatcher;
-      boolean init;
-      synchronized (map) {
-        QuicDispatcher attempt = map.get(serverID.toString());
-        if (attempt == null) {
-          init = true;
-          attempt = new QuicDispatcher(serverID, new SslContextProviderReference((ServerSslContextManager)manager));
-          map.put(serverID.toString(), attempt);
-        } else {
-          init = false;
-        }
-        dispatcher = attempt;
-      }
+      final boolean[] init = { false };
+      String key = serverID.host() + "." + serverID.port();
+      CloseableResource<QuicDispatcher> resource = vertx.createSharedResource(QUIC_SERVER_MAP_KEY, key, () -> {
+        init[0] = true;
+        return new QuicDispatcher(new SslContextProviderReference((ServerSslContextManager) manager));
+      });
+      dispatcher = resource.get();
+
       Future<ServerSslContextProvider> fut;
-      if (init) {
+      if (init[0]) {
         fut = dispatcher.sslContextProviderRef.update(sslOptions, context);
       } else {
         fut = context.succeededFuture();
       }
+
       sslContextProviderRef = dispatcher.sslContextProviderRef;
-      return fut.<ChannelHandler>map(sslContextProvider -> new ChannelInitializer<>() {
+      return fut.onFailure(err -> resource.close()).map(sslContextProvider -> new ChannelInitializer<>() {
         @Override
         protected void initChannel(Channel ch) {
-          dispatcher.register(ch, context, QuicServerImpl.this, metrics);
+          dispatcher.register(ch, context, QuicServerImpl.this, metrics, resource);
           ch.pipeline().addLast(dispatcher);
         }
       });
@@ -270,33 +269,38 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     return builder;
   }
 
-  private class QuicDispatcher extends QuicCodecDispatcher implements Shareable {
+  private static class QuicDispatcher extends QuicCodecDispatcher implements Shareable, Closeable {
 
-    private final ServerID serverID;
     private final SslContextProviderReference sslContextProviderRef;
-    private Map<Channel, ServerRegistration> registrations;
+    private final Map<Channel, ServerRegistration> registrations;
 
-    public QuicDispatcher(ServerID serverID, SslContextProviderReference sslContextProviderRef) {
-      this.serverID = serverID;
+    public QuicDispatcher(SslContextProviderReference sslContextProviderRef) {
       this.sslContextProviderRef = sslContextProviderRef;
       this.registrations = new ConcurrentHashMap<>();
     }
 
-    private class ServerRegistration {
+    @Override
+    public Future<Void> shutdown(Duration timeout) {
+      return Future.succeededFuture();
+    }
+
+    private static class ServerRegistration {
 
       final ContextInternal context;
       final QuicServerImpl server;
       final TransportMetrics<?> metrics;
+      final CloseableResource<?> closeable;
 
-      ServerRegistration(ContextInternal context, QuicServerImpl server, TransportMetrics<?> metrics) {
+      ServerRegistration(ContextInternal context, QuicServerImpl server, TransportMetrics<?> metrics, CloseableResource<?> closeable) {
         this.context = context;
         this.server = server;
         this.metrics = metrics;
+        this.closeable = closeable;
       }
     }
 
-    void register(Channel ch, ContextInternal context, QuicServerImpl server, TransportMetrics<?> metrics) {
-      registrations.put(ch, new ServerRegistration(context, server, metrics));
+    void register(Channel ch, ContextInternal context, QuicServerImpl server, TransportMetrics<?> metrics, CloseableResource<?> closeable) {
+      registrations.put(ch, new ServerRegistration(context, server, metrics, closeable));
     }
 
     @Override
@@ -315,10 +319,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-      registrations.remove(ctx.channel());
-      if (registrations.isEmpty()) {
-        LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
-        map.remove(serverID.toString());
+      ServerRegistration registration = registrations.remove(ctx.channel());
+      if (registration != null) {
+        registration.closeable.close();
       }
       super.channelUnregistered(ctx);
     }
