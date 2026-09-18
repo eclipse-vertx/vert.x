@@ -297,6 +297,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeContinue() {
+    stream.checkWriteThread();
     synchronized (conn) {
       checkHeadWritten();
     }
@@ -305,6 +306,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeHead() {
+    stream.checkWriteThread();
     synchronized (conn) {
       checkHeadWritten();
     }
@@ -313,6 +315,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
+    stream.checkWriteThread();
     HttpResponseHeaders http2Headers = new HttpResponseHeaders(conn.newHeaders());
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
@@ -392,6 +395,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private Future<Void> write_(Buffer chunk, boolean end) {
+    stream.checkWriteThread();
     boolean sendHeaders;
     synchronized (conn) {
       if (ended) {
@@ -457,6 +461,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
+    stream.checkWriteThread();
     synchronized (conn) {
       checkValid();
       checkSendHeaders();
@@ -511,6 +516,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    stream.checkWriteThread();
     if (offset < 0) {
       return context.failedFuture("offset : " + offset + " (expected: >= 0)");
     }
@@ -529,6 +535,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    stream.checkWriteThread();
     if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
@@ -543,6 +550,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    stream.checkWriteThread();
     if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }

@@ -41,6 +41,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
   private final boolean logEnabled;
+  private final boolean strictThreadMode;
 
   public Http2CodecServerChannelInitializer(HttpServerConnectionInitializer initializer,
                                             TracingPolicy tracingPolicy,
@@ -53,7 +54,8 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
                                             Supplier<ContextInternal> streamContextSupplier,
                                             Handler<HttpServerConnection> connectionHandler,
                                             Object metric,
-                                            boolean logEnabled) {
+                                            boolean logEnabled,
+                                            boolean strictThreadMode) {
     this.initializer = initializer;
     this.tracingPolicy = tracingPolicy;
     this.httpMetrics = httpMetrics;
@@ -66,6 +68,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
     this.connectionHandler = connectionHandler;
     this.metric = metric;
     this.logEnabled = logEnabled;
+    this.strictThreadMode = strictThreadMode;
   }
 
   @Override
@@ -95,7 +98,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
       .connectionFactory(connHandler -> {
         Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler,
           compressionManager != null ? compressionManager::determineEncoding : null, tracingPolicy, httpMetrics,
-          transportMetrics);
+          transportMetrics, strictThreadMode);
         conn.metric(metric);
         return conn;
       })

@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
@@ -43,7 +44,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
   private static final Buffer END_OF_STREAM = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
-  private final OutboundMessageQueue<MessageWrite> outboundQueue;
+  private final OutboundWriteQueue outboundQueue;
   private final InboundMessageQueue<Buffer> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
@@ -103,30 +104,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     };
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = writable;
-    this.outboundQueue = new OutboundMessageQueue<>(connection.context().executor()) {
-      // TODO implement stop drain to optimize flushes ?
-      @Override
-      public boolean test(MessageWrite msg) {
-        if (DefaultHttp2Stream.this.writable) {
-          msg.write();
-          return true;
-        } else {
-          return false;
-        }
-      }
-      @Override
-      protected void handleDispose(MessageWrite messageWrite) {
-        Throwable cause = failure;
-        if (cause == null) {
-          cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
-        }
-        messageWrite.cancel(cause);
-      }
-      @Override
-      protected void handleDrained() {
-        context.execute(DefaultHttp2Stream.this, DefaultHttp2Stream::handleWriteQueueDrained);
-      }
-    };
+    // Strict thread mode guarantees the stream is exclusively written from the connection event-loop,
+    // messages can therefore be relayed to the connection without going through a queue
+    boolean direct = connection.strictThreadMode() && context.nettyEventLoop() == connection.context().nettyEventLoop();
+    this.outboundQueue = direct ? new DirectWriteQueue() : new QueuedWriteQueue(connection.context().executor());
     if (id >= 0) {
       // Not great but well
       if (this instanceof DefaultHttp2ClientStream) {
@@ -273,6 +254,11 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   public final long bytesRead() {
     return bytesRead;
+  }
+
+  @Override
+  public final void checkWriteThread() {
+    outboundQueue.checkThread();
   }
 
   public final boolean isWritable() {
@@ -577,4 +563,105 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   abstract StreamObserver observer();
 
+  private interface OutboundWriteQueue {
+
+    void checkThread();
+
+    boolean isWritable();
+
+    boolean write(MessageWrite msg);
+
+    boolean tryDrain();
+
+    void close();
+
+  }
+
+  /**
+   * Queue used when writes can happen on any thread or when the stream is not bound to the connection
+   * event-loop: messages are queued and written by the connection event-loop.
+   */
+  private final class QueuedWriteQueue extends OutboundMessageQueue<MessageWrite> implements OutboundWriteQueue {
+
+    QueuedWriteQueue(EventExecutor consumer) {
+      super(consumer);
+    }
+
+    @Override
+    public void checkThread() {
+      // Any thread can write to a queue
+    }
+
+    // TODO implement stop drain to optimize flushes ?
+    @Override
+    public boolean test(MessageWrite msg) {
+      if (DefaultHttp2Stream.this.writable) {
+        msg.write();
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    @Override
+    protected void handleDispose(MessageWrite messageWrite) {
+      Throwable cause = failure;
+      if (cause == null) {
+        cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
+      }
+      messageWrite.cancel(cause);
+    }
+
+    @Override
+    protected void handleDrained() {
+      context.execute(DefaultHttp2Stream.this, DefaultHttp2Stream::handleWriteQueueDrained);
+    }
+  }
+
+  /**
+   * Queue used in strict thread mode: writes are relayed to the connection without queueing, like HTTP/1
+   * does with its direct outbound message queue. Frames the stream window cannot accommodate yet are
+   * buffered by the Netty flow controller instead of this queue, therefore:
+   *
+   * <ul>
+   *   <li>ordering is preserved, the flow controller queue is per stream and FIFO</li>
+   *   <li>{@link #isWritable()} reports the stream window, not a queue depth</li>
+   *   <li>the flow controller queue has no high-water mark, an application that ignores the write queue
+   *       signal can buffer an unbounded amount of frames</li>
+   * </ul>
+   */
+  private final class DirectWriteQueue implements OutboundWriteQueue {
+
+    @Override
+    public void checkThread() {
+      if (!connection.context().nettyEventLoop().inEventLoop()) {
+        throw new IllegalStateException("Only the context thread can write a message");
+      }
+    }
+
+    @Override
+    public boolean isWritable() {
+      return writable;
+    }
+
+    @Override
+    public boolean write(MessageWrite msg) {
+      checkThread();
+      msg.write();
+      return writable;
+    }
+
+    @Override
+    public boolean tryDrain() {
+      assert connection.context().nettyEventLoop().inEventLoop();
+      context.execute(DefaultHttp2Stream.this, DefaultHttp2Stream::handleWriteQueueDrained);
+      return false;
+    }
+
+    @Override
+    public void close() {
+      assert connection.context().nettyEventLoop().inEventLoop();
+      // Nothing pending here, the connection fails the promises of the frames it still holds
+    }
+  }
 }
