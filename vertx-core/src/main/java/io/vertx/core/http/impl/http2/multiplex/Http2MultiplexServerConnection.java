@@ -38,6 +38,7 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   private final TransportMetrics<?> transportMetrics;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
+  private final boolean strictThreadMode;
   private Handler<HttpServerStream> streamHandler;
 
   public Http2MultiplexServerConnection(Http2MultiplexHandler handler,
@@ -47,14 +48,21 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
                                         ChannelHandlerContext chctx,
                                         ContextInternal context,
                                         Supplier<ContextInternal> streamContextSupplier,
-                                        Handler<HttpServerConnection> connectionHandler) {
+                                        Handler<HttpServerConnection> connectionHandler,
+                                        boolean strictThreadMode) {
     super(handler, transportMetrics, chctx, context);
 
+    this.strictThreadMode = strictThreadMode;
     this.httpMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
     this.compressionManager = compressionManager;
     this.streamContextSupplier = streamContextSupplier;
     this.connectionHandler = connectionHandler;
+  }
+
+  @Override
+  public boolean strictThreadMode() {
+    return strictThreadMode;
   }
 
   @Override

@@ -60,6 +60,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   private int concurrentStreams;
   private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
+  private final boolean strictThreadMode;
+
   public Http2ServerConnectionImpl(
     ContextInternal context,
     Supplier<ContextInternal> streamContextSupplier,
@@ -67,15 +69,22 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     Function<String, String> encodingDetector,
     TracingPolicy tracingPolicy,
     HttpServerMetrics<?, ?> httpMetrics,
-    TransportMetrics<?> transportMetrics) {
+    TransportMetrics<?> transportMetrics,
+    boolean strictThreadMode) {
     super(context, connHandler);
 
+    this.strictThreadMode = strictThreadMode;
     this.tracingPolicy = tracingPolicy;
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.httpMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
     this.handler = connHandler;
+  }
+
+  @Override
+  public boolean strictThreadMode() {
+    return strictThreadMode;
   }
 
   @Override
