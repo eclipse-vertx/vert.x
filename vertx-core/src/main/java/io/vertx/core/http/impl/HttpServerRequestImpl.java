@@ -58,6 +58,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   private String uri;
   private MultiMap headersMap;
   private HostAndPort authority;
+  private String protocol;
   private HostAndPort realAuthority;
   private String absoluteURI;
   private MultiMap attributes;
@@ -113,6 +114,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
     method = headers.method();
     realAuthority = headers.authority;
     authority = headers.authority;
+    protocol = headers.protocol;
     if (authority == null) {
       String hostHeader = headers.headers.get(HttpHeaders.HOST);
       if (hostHeader != null) {
@@ -363,6 +365,11 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   @Override
   public @Nullable HostAndPort authority(boolean real) {
     return real ? realAuthority : authority;
+  }
+
+  @Override
+  public String connectProtocol() {
+    return protocol;
   }
 
   @Override
