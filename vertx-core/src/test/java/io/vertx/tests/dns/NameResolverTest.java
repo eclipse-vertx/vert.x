@@ -184,6 +184,22 @@ public class NameResolverTest extends VertxTestBase {
   }
 
   @Test
+  public void testBareIpv6NameServerUsesDefaultPort() {
+    assertNameServerAccepted(new AddressResolverOptions().addServer("2001:4860:4860::8888"));
+    assertNameServerAccepted(new AddressResolverOptions().setServers(Collections.singletonList("2001:db8::1:abcd")));
+  }
+
+  @Test
+  public void testIpv6NameServerWithPortRemainsSupported() {
+    assertNameServerAccepted(new AddressResolverOptions().addServer("2001:db8::1:5353"));
+  }
+
+  private void assertNameServerAccepted(AddressResolverOptions options) {
+    Vertx configuredVertx = vertx(new VertxOptions().setAddressResolverOptions(options));
+    configuredVertx.createDnsClient().close();
+  }
+
+  @Test
   public void testOptions() {
     AddressResolverOptions options = new AddressResolverOptions();
     assertEquals(AddressResolverOptions.DEFAULT_OPT_RESOURCE_ENABLED, options.isOptResourceEnabled());
