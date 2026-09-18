@@ -55,7 +55,7 @@ public class ProxyErrorTest extends VertxTestBase {
   @Override
   protected VertxOptions getOptions() {
     if (dnsServer == null) {
-      dnsServer = new MockDnsServer(vertx()).testLookupNonExisting();
+      dnsServer = new MockDnsServer().testLookupNonExisting();
       dnsServer.start();
       dnsServerAddress = dnsServer.localAddress();
     }
