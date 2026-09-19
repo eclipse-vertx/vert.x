@@ -11,9 +11,11 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TcpClientConfig;
 
 /**
@@ -27,6 +29,7 @@ public class NetClientBuilder {
   private ClientSSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
   private boolean registerWriteHandler;
+  private SocketAddress localAddress;
 
   public NetClientBuilder(VertxInternal vertx, TcpClientConfig config) {
     this.vertx = vertx;
@@ -42,6 +45,23 @@ public class NetClientBuilder {
     this.sslOptions = options.getSslOptions();
     this.sslEngineOptions = options.getSslEngineOptions();
     this.protocol = null;
+    this.localAddress = localAddress(options);
+  }
+
+  /**
+   * @return the client default local address of {@code options}, {@code null} when none is configured
+   */
+  public static SocketAddress localAddress(ClientOptionsBase options) {
+    String localAddress = options.getLocalAddress();
+    return localAddress != null ? SocketAddress.inetSocketAddress(0, localAddress) : null;
+  }
+
+  /**
+   * Set the client default local address, used when connect options do not define one.
+   */
+  public NetClientBuilder localAddress(SocketAddress localAddress) {
+    this.localAddress = localAddress;
+    return this;
   }
 
   public NetClientBuilder sslOptions(ClientSSLOptions sslOptions) {
@@ -60,6 +80,6 @@ public class NetClientBuilder {
   }
 
   public NetClientImpl build() {
-    return new NetClientImpl(vertx, config, protocol, sslOptions, sslEngineOptions, registerWriteHandler);
+    return new NetClientImpl(vertx, config, protocol, sslOptions, sslEngineOptions, registerWriteHandler, localAddress);
   }
 }

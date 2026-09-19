@@ -29,6 +29,7 @@ public class ConnectOptions {
   private Integer port;
   private String sniServerName;
   private SocketAddress remoteAddress;
+  private SocketAddress localAddress;
   private ProxyOptions proxyOptions;
   private boolean ssl;
   private ClientSSLOptions sslOptions;
@@ -42,6 +43,7 @@ public class ConnectOptions {
     port = null;
     sniServerName = null;
     remoteAddress = null;
+    localAddress = null;
     proxyOptions = null;
     ssl = DEFAULT_SSL;
     sslOptions = null;
@@ -58,6 +60,7 @@ public class ConnectOptions {
      port = other.getPort();
      sniServerName = other.getSniServerName();
      remoteAddress = other.getRemoteAddress();
+     localAddress = other.getLocalAddress();
      proxyOptions = other.getProxyOptions() != null ? new ProxyOptions(other.getProxyOptions()) : null;
      ssl = other.isSsl();
      sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
@@ -123,6 +126,33 @@ public class ConnectOptions {
    */
   public ConnectOptions setRemoteAddress(SocketAddress remoteAddress) {
     this.remoteAddress = remoteAddress;
+    return this;
+  }
+
+  /**
+   * Get the local address to bind the client connection to, when none is provided the client default local address
+   * is used and when the client does not define one, the operating system chooses the local address.
+   *
+   * @return the local address
+   */
+  public SocketAddress getLocalAddress() {
+    return localAddress;
+  }
+
+  /**
+   * Set the local address to bind the client connection to.
+   *
+   * <p> When set, the connection is bound to this address before connecting to the remote address, an ephemeral
+   * port is used when the port is {@code 0}. This overrides the default local address of the client, if any.
+   *
+   * @param localAddress the local address, must be an inet socket address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ConnectOptions setLocalAddress(SocketAddress localAddress) {
+    if (localAddress != null && localAddress.isDomainSocket()) {
+      throw new IllegalArgumentException("Cannot set a domain socket local address");
+    }
+    this.localAddress = localAddress;
     return this;
   }
 
