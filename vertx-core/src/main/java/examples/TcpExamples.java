@@ -149,6 +149,15 @@ public class TcpExamples {
       .onFailure(err -> System.out.println("Could not send file: " + err.getMessage()));
   }
 
+  public void sendFileChunkSize(Vertx vertx) {
+    TcpServerConfig config = new TcpServerConfig()
+      .setSendFileChunkSize(32 * 1024);
+
+    vertx.createNetServer(config).connectHandler(socket -> {
+      socket.sendFile("myfile.dat");
+    }).listen(1234, "localhost");
+  }
+
   public void gracefullyShuttingDownAServer(NetServer server) {
     server
       .shutdown()

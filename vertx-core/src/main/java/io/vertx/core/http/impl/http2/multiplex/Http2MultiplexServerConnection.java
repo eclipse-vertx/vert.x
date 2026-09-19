@@ -38,6 +38,7 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   private final TransportMetrics<?> transportMetrics;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
+  private final int sendFileChunkSize;
   private Handler<HttpServerStream> streamHandler;
 
   public Http2MultiplexServerConnection(Http2MultiplexHandler handler,
@@ -47,7 +48,8 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
                                         ChannelHandlerContext chctx,
                                         ContextInternal context,
                                         Supplier<ContextInternal> streamContextSupplier,
-                                        Handler<HttpServerConnection> connectionHandler) {
+                                        Handler<HttpServerConnection> connectionHandler,
+                                        int sendFileChunkSize) {
     super(handler, transportMetrics, chctx, context);
 
     this.httpMetrics = httpMetrics;
@@ -55,11 +57,17 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
     this.compressionManager = compressionManager;
     this.streamContextSupplier = streamContextSupplier;
     this.connectionHandler = connectionHandler;
+    this.sendFileChunkSize = sendFileChunkSize;
   }
 
   @Override
   public Headers<CharSequence, CharSequence, ?> newHeaders() {
     return new DefaultHttp2Headers();
+  }
+
+  @Override
+  public int sendFileChunkSize() {
+    return sendFileChunkSize;
   }
 
   @Override

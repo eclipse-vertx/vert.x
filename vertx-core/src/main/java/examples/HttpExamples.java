@@ -397,6 +397,15 @@ public class HttpExamples {
     }).listen(8080);
   }
 
+  public void serverResponseSendFileChunkSize(Vertx vertx) {
+    HttpServerConfig config = new HttpServerConfig()
+      .setSendFileChunkSize(32 * 1024);
+
+    vertx.createHttpServer(config).requestHandler(request -> {
+      request.response().sendFile("web/mybigfile.txt");
+    }).listen(8080);
+  }
+
   public void serverResponsePiping(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       HttpServerResponse response = request.response();
