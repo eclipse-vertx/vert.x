@@ -208,7 +208,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   private void metricsEnd(Stream stream) {
-    if (metrics != null) {
+    if (metrics != null && stream.response != null) {
       metrics.responseEnd(stream.metric, stream.bytesRead());
     }
   }
