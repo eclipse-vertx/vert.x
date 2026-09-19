@@ -17,8 +17,13 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerConfig;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpServerConnection;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.FileDescriptorLeakDetectorRule;
@@ -35,7 +40,11 @@ import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -65,6 +74,58 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
   public void testSendFileWithHandler(Checkpoint checkpoint) throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile(checkpoint, "test-send-file.html", content, true, () -> client.request(requestOptions));
+  }
+
+  /**
+   * @return whether the file is streamed to the client instead of being transferred with the zero-copy mechanism, in
+   *         which case the size of the chunks the client receives is bounded by the configured chunk size
+   */
+  protected boolean isSendFileChunked() {
+    return false;
+  }
+
+  /**
+   * Create a server from {@link #createBaseServerOptions()} with the opportunity to amend the derived config.
+   */
+  protected HttpServer createHttpServer(Consumer<HttpServerConfig> configurator) {
+    HttpServerOptions options = createBaseServerOptions();
+    HttpServerConfig config = new HttpServerConfig(options);
+    configurator.accept(config);
+    ServerSSLOptions sslOptions;
+    if (options.isSsl()) {
+      sslOptions = options.getSslOptions() != null ? options.getSslOptions().copy() : new ServerSSLOptions();
+    } else {
+      sslOptions = null;
+    }
+    return vertx.createHttpServer(config, sslOptions);
+  }
+
+  @Test
+  public void testSendFileChunkSize() throws Exception {
+    int chunkSize = 1024;
+    File file = TestUtils.tmpFile(".dat", 256 * 1024);
+    AtomicInteger connectionChunkSize = new AtomicInteger();
+    server = createHttpServer(config -> config.setSendFileChunkSize(chunkSize));
+    server.requestHandler(req -> {
+      connectionChunkSize.set(((HttpServerConnection) req.connection()).sendFileChunkSize());
+      req.response().sendFile(file.getAbsolutePath());
+    });
+    startServer(testAddress, server);
+    List<Integer> sizes = Collections.synchronizedList(new ArrayList<>());
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req.send().compose(resp -> {
+        resp.handler(buff -> sizes.add(buff.length()));
+        return resp.body();
+      }))
+      .await();
+    assertEquals(file.length(), body.length());
+    // The setting is carried by the connection, whatever the protocol
+    assertEquals(chunkSize, connectionChunkSize.get());
+    if (isSendFileChunked()) {
+      // The file is pumped chunk per chunk, no chunk can be larger than the configured size, which is smaller than
+      // the default one - this would not hold if the setting was ignored
+      assertThat(sizes).isNotEmpty().allMatch(size -> size <= chunkSize);
+    }
   }
 
   protected void sendFile(Checkpoint checkpoint, String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {

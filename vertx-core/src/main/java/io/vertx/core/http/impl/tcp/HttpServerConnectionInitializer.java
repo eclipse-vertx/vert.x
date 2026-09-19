@@ -70,6 +70,7 @@ public class HttpServerConnectionInitializer {
   private final QueryParamDecoderConfig queryParamDecoderConfig;
   private final Http1ServerConfig http1Config;
   private final Http2ServerConfig http2Config;
+  private final int sendFileChunkSize;
   private final boolean registerWebSocketWriteHandlers;
   private final WebSocketServerConfig webSocketConfig;
   private final CompressionManager compressionManager;
@@ -96,6 +97,7 @@ public class HttpServerConnectionInitializer {
                                   QueryParamDecoderConfig queryParamDecoderConfig,
                                   Http1ServerConfig http1Config,
                                   Http2ServerConfig http2Config,
+                                  int sendFileChunkSize,
                                   boolean registerWebSocketWriteHandlers,
                                   WebSocketServerConfig webSocketConfig,
                                   ServerSSLOptions sslOptions,
@@ -129,6 +131,7 @@ public class HttpServerConnectionInitializer {
           http2Config.getRstFloodMaxRstFramePerWindow(),
           (int)http2Config.getRstFloodWindowDuration().toSeconds(),
           http2Config.getMaxSmallContinuationFrames(),
+          sendFileChunkSize,
           logEnabled);
       } else {
         http2ChannelInitializer = new Http2CodecServerChannelInitializer(
@@ -139,6 +142,7 @@ public class HttpServerConnectionInitializer {
           useDecompression,
           useCompression,
           http2Config,
+          sendFileChunkSize,
           compressionManager,
           streamContextSupplier,
           connectionHandler,
@@ -164,6 +168,7 @@ public class HttpServerConnectionInitializer {
     this.queryParamDecoderConfig = queryParamDecoderConfig;
     this.http1Config = http1Config;
     this.http2Config = http2Config;
+    this.sendFileChunkSize = sendFileChunkSize;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
@@ -312,6 +317,7 @@ public class HttpServerConnectionInitializer {
         maxFormBufferedBytes,
         queryParamDecoderConfig,
         http1Config,
+        sendFileChunkSize,
         registerWebSocketWriteHandlers,
         webSocketConfig,
         chctx,

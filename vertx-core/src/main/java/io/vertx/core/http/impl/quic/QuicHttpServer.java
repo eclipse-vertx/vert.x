@@ -149,6 +149,7 @@ public class QuicHttpServer implements HttpServerInternal {
     private final int maxFormBufferedSize;
     private final QueryParamDecoder queryParamDecoder;
     private final Http3Settings localSettings;
+    private final int sendFileChunkSize;
     private final boolean logEnabled;
 
     public ConnectionHandler(QuicServer transport,
@@ -161,6 +162,7 @@ public class QuicHttpServer implements HttpServerInternal {
                              int maxFormBufferedSize,
                              QueryParamDecoder queryParamDecoder,
                              Http3Settings localSettings,
+                             int sendFileChunkSize,
                              boolean logEnabled) {
       this.transport = transport;
       this.httpMetrics = httpMetrics;
@@ -172,6 +174,7 @@ public class QuicHttpServer implements HttpServerInternal {
       this.maxFormBufferedSize = maxFormBufferedSize;
       this.queryParamDecoder = queryParamDecoder;
       this.localSettings = localSettings;
+      this.sendFileChunkSize = sendFileChunkSize;
       this.logEnabled = logEnabled;
     }
 
@@ -185,7 +188,8 @@ public class QuicHttpServer implements HttpServerInternal {
 
       Http3FrameLogger frameLogger = logEnabled ? new Http3FrameLogger(InternalLogLevel.DEBUG) : null;
 
-      Http3ServerConnection http3Connection = new Http3ServerConnection(connectionInternal, localSettings, httpMetrics, frameLogger);
+      Http3ServerConnection http3Connection = new Http3ServerConnection(connectionInternal, localSettings, httpMetrics, frameLogger,
+        sendFileChunkSize);
 
       http3Connection.init();
 
@@ -252,7 +256,7 @@ public class QuicHttpServer implements HttpServerInternal {
     quicServer.connectHandler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), formDecoderConfig.getMaxAttributeSize(), formDecoderConfig.getMaxFields(), formDecoderConfig.getMaxBufferedBytes(),
       queryParamDecoder, http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(),
-      logEnabled));
+      config.getSendFileChunkSize(), logEnabled));
     quicServer.exceptionHandler(exceptionHandler);
     return quicServer
       .bind(current, address)

@@ -53,4 +53,19 @@ public class HttpServerConfigTest {
     assertNotNull(cfg.getQueryParamConfig());
     assertFalse(cfg.getQueryParamConfig().isUseSemicolonAsDelimiter());
   }
+
+  @Test
+  public void testSendFileChunkSize() {
+    assertEquals(HttpServerConfig.DEFAULT_SEND_FILE_CHUNK_SIZE, new HttpServerConfig().getSendFileChunkSize());
+    assertEquals(HttpServerConfig.DEFAULT_SEND_FILE_CHUNK_SIZE, new HttpServerConfig(new HttpServerOptions()).getSendFileChunkSize());
+    HttpServerConfig config = new HttpServerConfig().setSendFileChunkSize(32 * 1024);
+    assertEquals(32 * 1024, config.getSendFileChunkSize());
+    assertEquals(32 * 1024, new HttpServerConfig(config).getSendFileChunkSize());
+  }
+
+  @Test
+  public void testInvalidSendFileChunkSize() {
+    assertThrows(IllegalArgumentException.class, () -> new HttpServerConfig().setSendFileChunkSize(0));
+    assertThrows(IllegalArgumentException.class, () -> new HttpServerConfig().setSendFileChunkSize(-1));
+  }
 }
