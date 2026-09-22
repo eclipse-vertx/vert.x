@@ -57,7 +57,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
   protected final Supplier<SslContextFactory> supplier;
   protected final boolean useWorkerPool;
   private final Map<ConfigKey, Future<Config>> configMap;
-  private final Map<ConfigKey, Future<P>> sslContextProviderMap;
+  private final Map<ProviderKey, Future<P>> sslContextProviderMap;
   private boolean closed;
 
   public SslContextManager(SSLEngineOptions sslEngineOptions) {
@@ -165,7 +165,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
                                       boolean force,
                                       ContextInternal ctx) {
     Promise<P> promise;
-    ConfigKey k = new ConfigKey(options);
+    ProviderKey k = new ProviderKey(options);
     synchronized (this) {
       if (closed) {
         return ctx.failedFuture("SslContextManager closed");
@@ -266,15 +266,20 @@ public abstract class SslContextManager<P extends SslContextProvider> {
   }
 
   private final static class ConfigKey {
+
     private final KeyCertOptions keyCertOptions;
     private final TrustOptions trustOptions;
+    private final List<String> crlPaths;
     private final List<Buffer> crlValues;
+
     public ConfigKey(SSLOptions options) {
-      this(options.getKeyCertOptions(), trustOptionsOf(options), options.getCrlValues());
-    }
-    public ConfigKey(KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<Buffer> crlValues) {
-      this.keyCertOptions = keyCertOptions;
-      this.trustOptions = trustOptions;
+
+      List<Buffer> crlValues = options.getCrlValues();
+      List<String> crlPaths = options.getCrlPaths();
+
+      this.keyCertOptions = options.getKeyCertOptions();
+      this.trustOptions = trustOptionsOf(options);
+      this.crlPaths = crlPaths != null ? new ArrayList<>(crlPaths) : null;
       this.crlValues = crlValues != null ? new ArrayList<>(crlValues) : null;
     }
 
@@ -285,7 +290,10 @@ public abstract class SslContextManager<P extends SslContextProvider> {
       }
       if (obj instanceof ConfigKey) {
         ConfigKey that = (ConfigKey) obj;
-        return Objects.equals(keyCertOptions, that.keyCertOptions) && Objects.equals(trustOptions, that.trustOptions) && Objects.equals(crlValues, that.crlValues);
+        return Objects.equals(keyCertOptions, that.keyCertOptions) &&
+          Objects.equals(trustOptions, that.trustOptions) &&
+          Objects.equals(crlPaths, that.crlPaths) &&
+          Objects.equals(crlValues, that.crlValues);
       }
       return false;
     }
@@ -294,6 +302,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     public int hashCode() {
       int hashCode = Objects.hashCode(keyCertOptions);
       hashCode = 31 * hashCode + Objects.hashCode(trustOptions);
+      hashCode = 31 * hashCode + Objects.hashCode(crlPaths);
       hashCode = 31 * hashCode + Objects.hashCode(crlValues);
       return hashCode;
     }
@@ -311,6 +320,65 @@ public abstract class SslContextManager<P extends SslContextProvider> {
       this.keyManagerFactoryMapper = keyManagerFactoryMapper;
       this.trustManagerMapper = trustManagerMapper;
       this.crls = crls;
+    }
+  }
+
+  private final static class ProviderKey {
+
+    private final ConfigKey config;
+    private final String hostnameIdentificationAlgorithm;
+    private final ClientAuth clientAuth;
+    private final Set<String> enabledCipherSuites;
+    private final Set<String> enabledSecuredTransportProtocols;
+
+    public ProviderKey(SSLOptions options) {
+
+      String hostnameIdentificationAlgorithm;
+      ClientAuth clientAuth;
+      if (options instanceof ClientSSLOptions) {
+        hostnameIdentificationAlgorithm = ((ClientSSLOptions)options).getHostnameVerificationAlgorithm();
+        clientAuth = null;
+      } else if (options instanceof ServerSSLOptions) {
+        hostnameIdentificationAlgorithm = null;
+        clientAuth = ((ServerSSLOptions)options).getClientAuth();
+      } else {
+        hostnameIdentificationAlgorithm = null;
+        clientAuth = null;
+      }
+
+      this.config = new ConfigKey(options);
+      this.hostnameIdentificationAlgorithm = hostnameIdentificationAlgorithm;
+      this.clientAuth = clientAuth;
+      Set<String> enabledCipherSuites = options.getEnabledCipherSuites();
+      Set<String> enabledSecuredTransportProtocols = options.getEnabledSecureTransportProtocols();
+      this.enabledCipherSuites = enabledCipherSuites != null ? new LinkedHashSet<>(enabledCipherSuites) : null;
+      this.enabledSecuredTransportProtocols = enabledSecuredTransportProtocols != null ? new LinkedHashSet<>(enabledSecuredTransportProtocols) : null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj instanceof ProviderKey) {
+        ProviderKey that = (ProviderKey) obj;
+        return Objects.equals(config, that.config) &&
+          Objects.equals(hostnameIdentificationAlgorithm, that.hostnameIdentificationAlgorithm) &&
+          Objects.equals(clientAuth, that.clientAuth) &&
+          Objects.equals(enabledCipherSuites, that.enabledCipherSuites) &&
+          Objects.equals(enabledSecuredTransportProtocols, that.enabledSecuredTransportProtocols);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = Objects.hashCode(config);
+      hashCode = 31 * hashCode + Objects.hashCode(hostnameIdentificationAlgorithm);
+      hashCode = 31 * hashCode + Objects.hashCode(clientAuth);
+      hashCode = 31 * hashCode + Objects.hashCode(enabledCipherSuites);
+      hashCode = 31 * hashCode + Objects.hashCode(enabledSecuredTransportProtocols);
+      return hashCode;
     }
   }
 }
