@@ -13,17 +13,17 @@ package io.vertx.tests.tls;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.tls.ServerSslContextManager;
-import io.vertx.core.internal.tls.ServerSslContextProvider;
-import io.vertx.core.internal.tls.SslContextManager;
-import io.vertx.core.internal.tls.SslContextProvider;
+import io.vertx.core.internal.tls.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
@@ -222,5 +222,50 @@ public class SslContextManagerTest extends VertxTestBase {
 
   public SSLEngine createEngine(ServerSslContextProvider provider) {
     return provider.createServerContext(null).newEngine(ByteBufAllocator.DEFAULT);
+  }
+
+  @Test
+  public void testClientCacheKey() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ClientSslContextManager helper = new ClientSslContextManager(new JdkSSLEngineOptions());
+    ClientSSLOptions options1 = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()).setHostnameVerificationAlgorithm("");
+    SslContextProvider f1 = awaitFuture(helper.resolveSslContextProvider(options1, ctx));
+    ClientSSLOptions options2 = new ClientSSLOptions(options1);
+    SslContextProvider f2 = awaitFuture(helper.resolveSslContextProvider(options2, ctx));
+    assertSame(f1, f2);
+    ClientSSLOptions options3 = new ClientSSLOptions(options1).setHostnameVerificationAlgorithm("HTTPS");
+    SslContextProvider f3 = awaitFuture(helper.resolveSslContextProvider(options3, ctx));
+    assertNotSame(f1, f3);
+    ClientSSLOptions options4 = new ClientSSLOptions(options1).addEnabledSecureTransportProtocol("TLSv1.1");
+    SslContextProvider f4 = awaitFuture(helper.resolveSslContextProvider(options4, ctx));
+    assertNotSame(f1, f4);
+    ClientSSLOptions options5 = new ClientSSLOptions(options1).addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA");
+    SslContextProvider f5 = awaitFuture(helper.resolveSslContextProvider(options5, ctx));
+    assertNotSame(f1, f5);
+    ClientSSLOptions options6 = new ClientSSLOptions(options1).addCrlPath("tls/root-ca/crl.pem");
+    SslContextProvider f6 = awaitFuture(helper.resolveSslContextProvider(options6, ctx));
+    assertNotSame(f1, f6);
+    ClientSSLOptions options7 = new ClientSSLOptions(options1).addCrlValue(Buffer.buffer());
+    SslContextProvider f7 = awaitFuture(helper.resolveSslContextProvider(options7, ctx));
+    assertNotSame(f1, f7);
+  }
+
+  @Test
+  public void testServerCacheKey() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ServerSslContextManager helper = new ServerSslContextManager(new JdkSSLEngineOptions());
+    ServerSSLOptions options1 = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
+    SslContextProvider f1 = awaitFuture(helper.resolveSslContextProvider(options1, false, ctx));
+    ServerSSLOptions options2 = new ServerSSLOptions(options1);
+    SslContextProvider f2 = awaitFuture(helper.resolveSslContextProvider(options2, false, ctx));
+    assertSame(f1, f2);
+    ServerSSLOptions options3 = new ServerSSLOptions(options1).setClientAuth(ClientAuth.REQUIRED);
+    SslContextProvider f3 = awaitFuture(helper.resolveSslContextProvider(options3, false, ctx));
+    assertNotSame(f1, f3);
+  }
+
+  private void assertNotSame(SslContextProvider a, SslContextProvider b) {
+    Assert.assertNotSame(a, b);
+    Assert.assertNotEquals(a.hashCode(), b.hashCode());
   }
 }

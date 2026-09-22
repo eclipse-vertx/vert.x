@@ -4844,4 +4844,37 @@ public class NetTest {
     }
   }
 
+  @Test
+  public void testSslContextCaching() throws Exception {
+
+    Assume.assumeTrue(testAddress.isInetSocket());
+
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.connectHandler(connection -> {
+
+    });
+
+    startServer(testAddress);
+
+    SocketAddress address = SocketAddress.inetSocketAddress(testAddress.port(), "host1");
+
+    client.connect(new ConnectOptions()
+      .setRemoteAddress(address
+      ).setSsl(true)
+      .setSslOptions(new ClientSSLOptions()
+        .setTrustOptions(Trust.SERVER_JKS.get())
+        .setHostnameVerificationAlgorithm(""))).await();
+
+    try {
+      client.connect(new ConnectOptions()
+        .setRemoteAddress(address
+        ).setSsl(true)
+        .setSslOptions(new ClientSSLOptions()
+          .setTrustOptions(Trust.SERVER_JKS.get())
+          .setHostnameVerificationAlgorithm("HTTPS"))).await();
+      fail();
+    } catch (Exception e) {
+      assertEquals(SSLHandshakeException.class, e.getClass());
+    }
+  }
 }
