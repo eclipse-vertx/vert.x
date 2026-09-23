@@ -66,6 +66,26 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
     _Accept = internToLowerCase ? HttpHeaderNames.ACCEPT : intern("Accept");
   }
 
+  public AsciiString contentTypeAsciiString() {
+    return _Content_Type;
+  }
+
+  public AsciiString contentLengthAsciiString() {
+    return _Content_Length;
+  }
+
+  public AsciiString hostAsciiString() {
+    return _Host;
+  }
+
+  public AsciiString connectionAsciiString() {
+    return _Connection;
+  }
+
+  public AsciiString acceptAsciiString() {
+    return _Accept;
+  }
+
   private AsciiString intern(String name) {
     byte[] bytes = name.getBytes(StandardCharsets.UTF_8);
     return super.splitHeaderName(bytes, 0, bytes.length);
@@ -75,32 +95,42 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
   protected AsciiString splitHeaderName(byte[] sb, int start, int length) {
     final byte firstChar = sb[start];
     if (firstChar == 'H' || firstChar == 'h') {
-      if (length == 4 && isHost(sb, start)) {
+      if (length == 4 && mightBeHost(sb, start)) {
         return firstChar == 'H' ? _Host : HttpHeaderNames.HOST;
       }
     } else if (firstChar == 'A' || firstChar == 'a') {
-      if (length == 6 && isAccept(sb, start)) {
+      if (length == 6 && mightBeAccept(sb, start)) {
         return firstChar == 'A' ? _Accept : HttpHeaderNames.ACCEPT;
       }
     } else if (firstChar == 'C' || firstChar == 'c') {
       if (length == 10) {
-        if (isConnection(sb, start)) {
+        if (mightBeConnection(sb, start)) {
           return firstChar == 'C' ? _Connection : HttpHeaderNames.CONNECTION;
         }
       } else if (length == 12) {
-        if (isContentType(sb, start)) {
-          return firstChar == 'C' ? _Content_Type : HttpHeaderNames.CONTENT_TYPE;
+        if (mightBeContentType(sb, start)) {
+          byte maybeT = sb[start + 8];
+          if (firstChar == 'C' && maybeT == 'T') {
+            return _Content_Type;
+          } else if (firstChar == 'c' && maybeT == 't') {
+            return HttpHeaderNames.CONTENT_TYPE;
+          }
         }
       } else if (length == 14) {
-        if (isContentLength(sb, start)) {
-          return firstChar == 'C' ? _Content_Length : HttpHeaderNames.CONTENT_LENGTH;
+        if (mightBeContentLength(sb, start)) {
+          byte maybeL = sb[start + 8];
+          if (firstChar == 'C' && maybeL == 'L') {
+            return _Content_Length;
+          } else if (firstChar == 'c' && maybeL == 'l') {
+            return HttpHeaderNames.CONTENT_LENGTH;
+          }
         }
       }
     }
     return new AsciiString(sb, start, length, true);
   }
 
-  private static boolean isAccept(byte[] sb, int start) {
+  private static boolean mightBeAccept(byte[] sb, int start) {
     final long maybeAccept = sb[start + 1] << 8 |
       sb[start + 2] << 16 |
       sb[start + 3] << 24 |
@@ -109,15 +139,14 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
     return maybeAccept == ACCEPT_AS_LONG;
   }
 
-  private static boolean isHost(byte[] sb, int start) {
+  private static boolean mightBeHost(byte[] sb, int start) {
     final int maybeHost = sb[start + 1] << 8 |
       sb[start + 2] << 16 |
       sb[start + 3] << 24;
-    int a = HOST_AS_INT;
     return maybeHost == HOST_AS_INT;
   }
 
-  private static boolean isConnection(byte[] sb, int start) {
+  private static boolean mightBeConnection(byte[] sb, int start) {
     final long maybeConnecti = sb[start + 1] << 8 |
       sb[start + 2] << 16 |
       sb[start + 3] << 24 |
@@ -132,15 +161,15 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
     return maybeOn == CONNECTION_AS_SHORT_1;
   }
 
-  private static boolean isContentType(byte[] sb, int start) {
-    final long maybeContent = sb[start + 1] << 8 |
+  private static boolean mightBeContentType(byte[] sb, int start) {
+    final long maybe_ontent_ = sb[start + 1] << 8 |
       sb[start + 2] << 16 |
       sb[start + 3] << 24 |
       (long) sb[start + 4] << 32 |
       (long) sb[start + 5] << 40 |
       (long) sb[start + 6] << 48 |
       (long) sb[start + 7] << 56;
-    if (maybeContent != CONTENT_AS_LONG) {
+    if (maybe_ontent_ != CONTENT_AS_LONG) {
       return false;
     }
     final int maybeType = sb[start + 9] << 8 |
@@ -149,7 +178,7 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
     return maybeType == TYPE_AS_INT;
   }
 
-  private static boolean isContentLength(byte[] sb, int start) {
+  private static boolean mightBeContentLength(byte[] sb, int start) {
     final long maybeContent = sb[start + 1] << 8 |
       sb[start + 2] << 16 |
       sb[start + 3] << 24 |
