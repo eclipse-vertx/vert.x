@@ -13,6 +13,8 @@ package io.vertx.core.http;
 
 
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.CorruptedFrameException;
+import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
@@ -4161,5 +4163,111 @@ public class WebSocketTest extends VertxTestBase {
       pump1.join(10_000);
       pump2.join(10_000);
     }
+  }
+
+  @Test
+  public void testDenyFrameSizeGreaterThanMaxFrameSize() throws Exception {
+    testMaxFrameSize(false, Buffer.buffer(randomAlphaString(257)), 256, true);
+  }
+
+  @Test
+  public void testAllowFrameSizeLesserOrEqualsThanMaxFrameSize() throws Exception {
+    testMaxFrameSize(false, Buffer.buffer(randomAlphaString(256)), 256, false);
+  }
+
+  @Test
+  public void testDenyFrameSizeGreaterThanMaxFrameSizeWithCompression() throws Exception {
+    testMaxFrameSize(true, Buffer.buffer(new byte[1024]), 256, true);
+  }
+
+  @Test
+  public void testAllowFrameSizeLesserOrEqualsThanMaxFrameSizeWithCompression() throws Exception {
+    testMaxFrameSize(true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  private void testMaxFrameSize(boolean compressed, Buffer body, int maxFrameSize, boolean expectFailure) throws Exception {
+    waitFor(2);
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(HttpTestBase.DEFAULT_HTTP_HOST)
+      .setMaxWebSocketFrameSize(maxFrameSize));
+    server.webSocketHandler(ws -> {
+      ws.exceptionHandler(err -> {
+        if (compressed && err instanceof DecompressionException) {
+          assertTrue(expectFailure);
+          complete();
+        } else if (!compressed && err instanceof CorruptedFrameException) {
+          assertTrue(expectFailure);
+          complete();
+        }
+      });
+      ws.frameHandler(frame -> {
+        assertFalse(expectFailure);
+        complete();
+      });
+    });
+    server.listen().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setTryUsePerFrameCompression(compressed));
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      ws
+        .writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(body, true))
+        .onComplete(onSuccess(v -> {
+          complete();
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testDenyMessageSizeGreaterThanMaxMessageSize() throws Exception {
+    testMaxMessageSize(false, Buffer.buffer(randomAlphaString(257)), 256, true);
+  }
+
+  @Test
+  public void testAllowMessageSizeLesserOrEqualsThanMaxMessageSize() throws Exception {
+    testMaxMessageSize(false, Buffer.buffer(randomAlphaString(256)), 256, false);
+  }
+
+  @Test
+  public void testDenyMessageSizeGreaterThanMaxMessageSizeWithCompression() throws Exception {
+    testMaxMessageSize(true, Buffer.buffer(new byte[1024]), 256, true);
+  }
+
+  @Test
+  public void testAllowMessageSizeLesserOrEqualsThanMaxMessageSizeWithCompression() throws Exception {
+    testMaxMessageSize(true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  private void testMaxMessageSize(boolean compressed, Buffer message, int maxMessageSize, boolean expectFailure) throws Exception {
+    waitFor(2);
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(HttpTestBase.DEFAULT_HTTP_HOST)
+      .setMaxWebSocketMessageSize(maxMessageSize));
+    server.webSocketHandler(ws -> {
+      ws.exceptionHandler(err -> {
+        if (compressed && err instanceof DecompressionException) {
+          assertTrue(expectFailure);
+          complete();
+        } else if (!compressed && err instanceof IllegalStateException) {
+          assertTrue(expectFailure);
+          complete();
+        }
+      });
+      ws.binaryMessageHandler(msg -> {
+        assertFalse(expectFailure);
+        complete();
+      });
+    });
+    server.listen().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setTryUsePerMessageCompression(compressed));
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      ws
+        .writeBinaryMessage(message)
+        .onComplete(onSuccess(v -> {
+          complete();
+        }));
+    }));
+    await();
   }
 }
