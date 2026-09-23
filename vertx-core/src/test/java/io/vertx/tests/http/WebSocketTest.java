@@ -17,11 +17,7 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -36,6 +32,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.http1.Http1ServerConnection;
@@ -2529,15 +2526,15 @@ public class WebSocketTest extends VertxTestBase2 {
   }
 
   @Test
-  public void testServerWebSocketSendPingExceeds125Bytes(Checkpoint checkpoint) {
-    //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
+  public void testServerWebSocketSendPingExceeds125Bytes(Checkpoint exit) {
     String pingBody = randomAlphaString(126);
     int maxFrameSize = 256;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> {
       ws.pongHandler(buff -> fail());
-      ws.writeFrame(io.vertx.core.http.WebSocketFrame.pingFrame(Buffer.buffer(pingBody)));
-      vertx.setTimer(2000, id -> checkpoint.succeed());
+      ws
+        .writeFrame(io.vertx.core.http.WebSocketFrame.pingFrame(Buffer.buffer(pingBody)))
+        .onComplete(TestUtils.onFailure(err -> exit.succeed()));
     });
     server.listen().await();
     client = vertx.createWebSocketClient();
@@ -2545,54 +2542,62 @@ public class WebSocketTest extends VertxTestBase2 {
   }
 
   @Test
-  public void testClientWebSocketSendPingExceeds125Bytes(Checkpoint checkpoint) {
-    //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
+  public void testClientWebSocketSendPingExceeds125Bytes(Checkpoint exit) {
     String pingBody = randomAlphaString(126);
     int maxFrameSize = 256;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
-    server.webSocketHandler(ws -> { });
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
+    server.webSocketHandler(ws -> {});
     server.listen().await();
     client = vertx.createWebSocketClient();
     client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
       ws.pongHandler(buffer -> fail());
-      ws.writeFrame(io.vertx.core.http.WebSocketFrame.pingFrame(Buffer.buffer(pingBody)));
-      vertx.setTimer(2000, id -> checkpoint.succeed());
+      ws
+        .writeFrame(io.vertx.core.http.WebSocketFrame.pingFrame(Buffer.buffer(pingBody)))
+        .onComplete(TestUtils.onFailure(err -> exit.succeed()));
     }));
   }
 
   @Test
-  public void testServerWebSocketSendPongExceeds125Bytes(Checkpoint checkpoint) {
-    //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
+  public void testServerWebSocketSendPongExceeds125Bytes(Checkpoint exit, Checkpoint sent) {
     String pingBody = randomAlphaString(126);
     int maxFrameSize = 256;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> {
-      ws.writeFrame(io.vertx.core.http.WebSocketFrame.pongFrame(Buffer.buffer(pingBody)));
-    });
-    server.listen().await();
-    client = vertx.createWebSocketClient();
-    vertx.runOnContext(v -> {
-      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
-        ws.pongHandler(buff -> fail());
-        vertx.setTimer(2000, id -> checkpoint.succeed());
-      }));
-    });
-  }
-
-  @Test
-  public void testClientWebSocketSendPongExceeds125Bytes(Checkpoint checkpoint) {
-    //Netty will prevent us from encoding a pingBody greater than 126 bytes by silently throwing an error in the background
-    String pingBody = randomAlphaString(126);
-    int maxFrameSize = 256;
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
-    server.webSocketHandler(ws -> {
-      ws.pongHandler(buff -> fail());
-      vertx.setTimer(2000, id -> checkpoint.succeed());
+      ws
+        .writeFrame(io.vertx.core.http.WebSocketFrame.pongFrame(Buffer.buffer(pingBody)))
+        .onComplete(sent);
     });
     server.listen().await();
     client = vertx.createWebSocketClient();
     client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
-      ws.writeFrame(io.vertx.core.http.WebSocketFrame.pongFrame(Buffer.buffer(pingBody)));
+      ws.exceptionHandler(err -> {
+        if (err instanceof CorruptedWebSocketFrameException) {
+          exit.succeed();
+        }
+      });
+      ws.pongHandler(buff -> fail());
+    }));
+  }
+
+  @Test
+  public void testClientWebSocketSendPongExceeds125Bytes(Checkpoint exit, Checkpoint sent) {
+    String pingBody = randomAlphaString(126);
+    int maxFrameSize = 256;
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
+    server.webSocketHandler(ws -> {
+      ws.exceptionHandler(err -> {
+        if (err instanceof CorruptedWebSocketFrameException) {
+          exit.succeed();
+        }
+      });
+      ws.pongHandler(buff -> fail());
+    });
+    server.listen().await();
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
+      ws
+        .writeFrame(io.vertx.core.http.WebSocketFrame.pongFrame(Buffer.buffer(pingBody)))
+        .onComplete(sent);
     }));
   }
 
