@@ -16,6 +16,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.CorruptedFrameException;
+import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -4121,5 +4123,103 @@ public class WebSocketTest extends VertxTestBase2 {
     }
 
     TestUtils.awaitLatch(latch, 10, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testDenyFrameSizeGreaterThanMaxFrameSize(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, false, Buffer.buffer(randomAlphaString(257)), 256, true);
+  }
+
+  @Test
+  public void testAllowFrameSizeLesserOrEqualsThanMaxFrameSize(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, false, Buffer.buffer(randomAlphaString(256)), 256, false);
+  }
+
+  @Test
+  public void testDenyFrameSizeGreaterThanMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, Buffer.buffer(new byte[1024]), 256, true);
+  }
+
+  @Test
+  public void testAllowFrameSizeLesserOrEqualsThanMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  private void testMaxFrameSize(Checkpoint exit, Checkpoint sent, boolean compressed, Buffer body, int maxFrameSize, boolean expectFailure) {
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(HttpTestBase.DEFAULT_HTTP_HOST)
+      .setMaxWebSocketFrameSize(maxFrameSize));
+    server.webSocketHandler(ws -> {
+      ws.exceptionHandler(err -> {
+        if (compressed && err instanceof DecompressionException) {
+          assertTrue(expectFailure);
+          exit.succeed();
+        } else if (!compressed && err instanceof CorruptedFrameException) {
+          assertTrue(expectFailure);
+          exit.succeed();
+        }
+      });
+      ws.frameHandler(frame -> {
+        assertFalse(expectFailure);
+        exit.succeed();
+      });
+    });
+    server.listen().await();
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setTryUsePerFrameCompression(compressed));
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
+      ws
+        .writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(body, true))
+        .onComplete(sent);
+    }));
+  }
+
+  @Test
+  public void testDenyMessageSizeGreaterThanMaxMessageSize(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, false, Buffer.buffer(randomAlphaString(257)), 256, true);
+  }
+
+  @Test
+  public void testAllowMessageSizeLesserOrEqualsThanMaxMessageSize(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, false, Buffer.buffer(randomAlphaString(256)), 256, false);
+  }
+
+  @Test
+  public void testDenyMessageSizeGreaterThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, Buffer.buffer(new byte[1024]), 256, true);
+  }
+
+  @Test
+  public void testAllowMessageSizeLesserOrEqualsThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  private void testMaxMessageSize(Checkpoint exit, Checkpoint sent, boolean compressed, Buffer message, int maxMessageSize, boolean expectFailure) {
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(HttpTestBase.DEFAULT_HTTP_HOST)
+      .setMaxWebSocketMessageSize(maxMessageSize));
+    server.webSocketHandler(ws -> {
+      ws.exceptionHandler(err -> {
+        if (compressed && err instanceof DecompressionException) {
+          assertTrue(expectFailure);
+          exit.succeed();
+        } else if (!compressed && err instanceof IllegalStateException) {
+          assertTrue(expectFailure);
+          exit.succeed();
+        }
+      });
+      ws.binaryMessageHandler(msg -> {
+        assertFalse(expectFailure);
+        exit.succeed();
+      });
+    });
+    server.listen().await();
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setTryUsePerMessageCompression(compressed));
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
+      ws
+        .writeBinaryMessage(message)
+        .onComplete(sent);
+    }));
   }
 }
