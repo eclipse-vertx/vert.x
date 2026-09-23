@@ -1196,14 +1196,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(HttpClientOptions options) {
     ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
     if (options.getTryUsePerFrameWebSocketCompression()) {
+      int maxAllocation = options.getMaxWebSocketFrameSize() + 512;
       extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
-        false));
+        false, maxAllocation));
     }
 
     if (options.getTryUsePerMessageWebSocketCompression()) {
+      int maxAllocation = options.getMaxWebSocketMessageSize() + 512;
       extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        options.getWebSocketCompressionAllowClientNoContext(), options.getWebSocketCompressionRequestServerNoContext()));
+        options.getWebSocketCompressionAllowClientNoContext(), options.getWebSocketCompressionRequestServerNoContext(), maxAllocation));
     }
 
     return extensionHandshakers;
