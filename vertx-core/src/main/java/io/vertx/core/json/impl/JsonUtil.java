@@ -92,6 +92,10 @@ public final class JsonUtil {
       val = ((Shareable) val).copy();
     } else if (val instanceof Map) {
       val = (new JsonObject((Map) val)).copy(copier);
+    } else if (val instanceof JsonObject) {
+      val = ((JsonObject)val).copy(copier);
+    } else if (val instanceof JsonArray) {
+      val = ((JsonArray)val).copy(copier);
     } else if (val instanceof List) {
       val = (new JsonArray((List) val)).copy(copier);
     } else if (val instanceof byte[]) {
