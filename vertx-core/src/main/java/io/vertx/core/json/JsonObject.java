@@ -12,8 +12,6 @@ package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.JsonUtil;
-import io.vertx.core.shareddata.ClusterSerializable;
-import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
 import java.util.*;
@@ -36,7 +34,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterSerializable, Shareable {
+public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 
   private Map<String, Object> map;
 
@@ -1060,7 +1058,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a copy where all elements have been copied recursively
    * @throws IllegalStateException when a nested element cannot be copied
    */
-  @Override
   public JsonObject copy() {
     return copy(DEFAULT_CLONER);
   }
@@ -1207,14 +1204,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return h;
   }
 
-  @Override
   public void writeToBuffer(Buffer buffer) {
     Buffer buf = toBuffer();
     buffer.appendInt(buf.length());
     buffer.appendBuffer(buf);
   }
 
-  @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     int start = pos + 4;

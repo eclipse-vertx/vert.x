@@ -16,6 +16,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 
@@ -142,7 +144,7 @@ public class SharedDataImpl implements SharedData {
       throw new IllegalArgumentException("Cannot put null in key or value of async map");
     }
     // All immutables and byte arrays are Serializable by the platform
-    if (!(obj instanceof Serializable || obj instanceof ClusterSerializable)) {
+    if (!(obj instanceof Serializable || obj instanceof ClusterSerializable) && !(obj instanceof JsonObject) && !(obj instanceof JsonArray)) {
       throw new IllegalArgumentException("Invalid type: " + obj.getClass().getName() + " to put in async map");
     }
   }

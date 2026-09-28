@@ -13,8 +13,6 @@ package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.JsonUtil;
-import io.vertx.core.shareddata.ClusterSerializable;
-import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,7 +38,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareable {
+public class JsonArray implements Iterable<Object> {
 
   private List<Object> list;
 
@@ -617,7 +615,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a copy where all elements have been copied recursively
    * @throws IllegalStateException when a nested element cannot be copied
    */
-  @Override
   public JsonArray copy() {
     return copy(DEFAULT_CLONER);
   }
@@ -703,14 +700,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     return h;
   }
 
-  @Override
   public void writeToBuffer(Buffer buffer) {
     Buffer buf = toBuffer();
     buffer.appendInt(buf.length());
     buffer.appendBuffer(buf);
   }
 
-  @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     int start = pos + 4;

@@ -21,6 +21,8 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.ClusterSerializable;
+import io.vertx.core.shareddata.Shareable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -38,7 +40,7 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BufferImpl implements BufferInternal {
+public class BufferImpl implements BufferInternal, ClusterSerializable, Shareable {
 
   private ByteBuf buffer;
 
