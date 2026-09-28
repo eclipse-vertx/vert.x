@@ -15,6 +15,8 @@ import io.vertx.core.impl.ClusterSerializableUtils;
 import io.vertx.core.impl.SerializableUtils;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
@@ -53,7 +55,7 @@ class Checker {
   static void checkType(Object obj) {
     Objects.requireNonNull(obj, "null not allowed for shareddata data structure");
     // All immutables and byte arrays are Serializable by the platform
-    if (!(obj instanceof Serializable || obj instanceof Shareable || obj instanceof ClusterSerializable)) {
+    if (!(obj instanceof Serializable || obj instanceof Shareable || obj instanceof ClusterSerializable || obj instanceof JsonObject || obj instanceof JsonArray)) {
       throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
     }
   }
@@ -72,6 +74,10 @@ class Checker {
       result = ((Shareable) obj).copy();
     } else if (obj instanceof ClusterSerializable) {
       result = copyClusterSerializable((ClusterSerializable) obj);
+    } else if (obj instanceof JsonObject) {
+      result = ((JsonObject) obj).copy();
+    } else if (obj instanceof JsonArray) {
+      result = ((JsonArray) obj).copy();
     } else if (obj instanceof Serializable) {
       result = copySerializable(obj);
     } else {

@@ -20,8 +20,6 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.impl.JsonUtil;
-import io.vertx.core.shareddata.ClusterSerializable;
-import io.vertx.core.shareddata.Shareable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -37,7 +35,7 @@ import java.nio.charset.Charset;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-public interface Buffer extends ClusterSerializable, Shareable {
+public interface Buffer {
 
   /**
    * Create a buffer from the base 64 URL encoded {@code value}
