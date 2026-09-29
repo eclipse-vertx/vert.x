@@ -15,10 +15,12 @@ import java.util.Objects;
 public abstract class HttpServerRequestBase extends HttpServerRequestInternal {
 
   private QueryParamDecoder queryParamDecoder;
+  private boolean useSemiColonAsDelimiter;
   private MultiMap params;
 
   public HttpServerRequestBase(QueryParamDecoder queryParamDecoder) {
     this.queryParamDecoder = queryParamDecoder;
+    this.useSemiColonAsDelimiter = queryParamDecoder.isUseSemiColonAsDelimiter();
   }
 
   @Override
@@ -28,7 +30,7 @@ public abstract class HttpServerRequestBase extends HttpServerRequestInternal {
     if (!queryParamDecoder.charset().equals(cs)) {
       queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
         .setMaxSize(queryParamDecoder.maxParams())
-        .setUseSemicolonAsDelimiter(queryParamDecoder.isUseSemiColonAsDelimiter())
+        .setUseSemicolonAsDelimiter(useSemiColonAsDelimiter)
         .setCharset(cs));
       params = null;
     }
@@ -41,13 +43,15 @@ public abstract class HttpServerRequestBase extends HttpServerRequestInternal {
   }
 
   @Override
+  public MultiMap params() {
+    return params(!useSemiColonAsDelimiter);
+  }
+
+  @Override
   public final MultiMap params(boolean semicolonIsNormalChar) {
-    if (queryParamDecoder.isUseSemiColonAsDelimiter() == semicolonIsNormalChar) {
-      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
-        .setCharset(queryParamDecoder.charset())
-        .setMaxSize(queryParamDecoder.maxParams())
-        .setUseSemicolonAsDelimiter(!semicolonIsNormalChar)
-      );
+    QueryParamDecoder decoder = queryParamDecoder(semicolonIsNormalChar);
+    if (decoder != queryParamDecoder) {
+      queryParamDecoder = decoder;
       params = null;
     }
     if (params == null) {
@@ -56,8 +60,20 @@ public abstract class HttpServerRequestBase extends HttpServerRequestInternal {
     return params;
   }
 
+  private QueryParamDecoder queryParamDecoder(boolean semicolonIsNormalChar) {
+    QueryParamDecoder decoder = queryParamDecoder;
+    if (decoder.isUseSemiColonAsDelimiter() == semicolonIsNormalChar) {
+      decoder = new QueryParamDecoder(new QueryParamDecoderConfig()
+        .setCharset(decoder.charset())
+        .setMaxSize(decoder.maxParams())
+        .setUseSemicolonAsDelimiter(!semicolonIsNormalChar)
+      );
+    }
+    return decoder;
+  }
+
   @Override
   public final QueryParamDecoder queryParamDecoder() {
-    return queryParamDecoder;
+    return queryParamDecoder(!useSemiColonAsDelimiter);
   }
 }

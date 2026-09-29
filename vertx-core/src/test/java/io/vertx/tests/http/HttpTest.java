@@ -837,22 +837,69 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     testConfigureQueryParamsDecoding(
       new QueryParamDecoderConfig().setCharset(StandardCharsets.ISO_8859_1),
       "/?param=%E2%82%AC",
-      params -> {
-        String val = params.get("param");
+      request -> {
+        MultiMap defaultParams = request.params();
+        String val = defaultParams.get("param");
         assertEquals("\u00E2\u0082\u00AC", val);
       });
   }
 
   @Test
   public void testConfigureQueryParamsSemicolonDelimiterDecoding() throws Exception {
-    MultiMap p = TestUtils.randomMultiMap(10);
     testConfigureQueryParamsDecoding(
       new QueryParamDecoderConfig().setUseSemicolonAsDelimiter(false),
-      "/some?" + generateQueryString(p, ';'),
-      params -> {
-        assertEquals(params.size(), params.size());
+      "/some?a=b&c=d;e=f",
+      request -> {
+        Map<String, String> expected1 = Map.of("a", "b", "c", "d;e=f");
+        Map<String, String> expected2 = Map.of("a", "b", "c", "d", "e", "f");
+        MultiMap params;
+        params = request.params();
+        assertEquals(expected1.size(), params.size());
         for (Map.Entry<String, String> entry : params) {
-          assertEquals(entry.getValue(), params.get(entry.getKey()));
+          assertEquals(entry.getValue(), expected1.get(entry.getKey()));
+        }
+        params = request.params(true);
+        assertEquals(expected1.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected1.get(entry.getKey()));
+        }
+        params = request.params(false);
+        assertEquals(expected2.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected2.get(entry.getKey()));
+        }
+        params = request.params();
+        assertEquals(expected1.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected1.get(entry.getKey()));
+        }
+      });
+    testConfigureQueryParamsDecoding(
+      new QueryParamDecoderConfig().setUseSemicolonAsDelimiter(true),
+      "/some?a=b&c=d;e=f",
+      request -> {
+        Map<String, String> expected1 = Map.of("a", "b", "c", "d", "e", "f");
+        Map<String, String> expected2 = Map.of("a", "b", "c", "d;e=f");
+        MultiMap params;
+        params = request.params();
+        assertEquals(expected1.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected1.get(entry.getKey()));
+        }
+        params = request.params(false);
+        assertEquals(expected1.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected1.get(entry.getKey()));
+        }
+        params = request.params(true);
+        assertEquals(expected2.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected2.get(entry.getKey()));
+        }
+        params = request.params();
+        assertEquals(expected1.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), expected1.get(entry.getKey()));
         }
       });
   }
@@ -860,30 +907,35 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   @Test
   public void testConfigureQueryParamsMaxSizeDecoding() throws Exception {
     int maxSize = 10;
-    MultiMap p = TestUtils.randomMultiMap(maxSize + 1);
+    MultiMap params = TestUtils.randomMultiMap(maxSize + 1);
     testConfigureQueryParamsDecoding(
       new QueryParamDecoderConfig().setMaxSize(maxSize),
-      "/some?" + generateQueryString(p, '&'),
-      params -> {
-        assertEquals(maxSize, params.size());
-        for (Map.Entry<String, String> entry : params) {
-          assertEquals(entry.getValue(), params.get(entry.getKey()));
+      "/some?" + generateQueryString(params, '&'),
+      request -> {
+        MultiMap defaultParams = request.params();
+        assertEquals(maxSize, defaultParams.size());
+        for (Map.Entry<String, String> entry : defaultParams) {
+          assertEquals(entry.getValue(), defaultParams.get(entry.getKey()));
         }
       });
   }
 
-  private void testConfigureQueryParamsDecoding(QueryParamDecoderConfig queryParamDecoderConfig, String uri, Consumer<MultiMap> checker) throws Exception {
+  private void testConfigureQueryParamsDecoding(QueryParamDecoderConfig queryParamDecoderConfig, String uri, Consumer<HttpServerRequest> checker) throws Exception {
     server = vertx.httpServerBuilder()
       .with(config.forServer()
         .config().setQueryParamConfig(queryParamDecoderConfig))
       .with(config.forServer().sslOptions())
       .build();
-    server.requestHandler(req -> {
-      checker.accept(req.params());
-      req.response().end();
-    });
-    startServer(testAddress);
-    sendAndAwait(new RequestOptions(requestOptions).setURI(uri));
+    try {
+      server.requestHandler(req -> {
+        checker.accept(req);
+        req.response().end();
+      });
+      startServer(testAddress);
+      sendAndAwait(new RequestOptions(requestOptions).setURI(uri));
+    } finally {
+      server.close().await();
+    }
   }
 
   @Test
