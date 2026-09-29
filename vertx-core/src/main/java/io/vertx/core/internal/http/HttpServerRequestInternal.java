@@ -39,7 +39,8 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
   }
 
   /**
-   * @return the request query param decoder
+   * @return the request query param decoder, the {@code maxSize} and {@code useSemiColonAsDelimiter} reflect the default
+   * configuration size of the decoder, the {@code charset} reflects the request charset set by {@link #setParamsCharset(String)}.
    */
   public abstract QueryParamDecoder queryParamDecoder();
 
