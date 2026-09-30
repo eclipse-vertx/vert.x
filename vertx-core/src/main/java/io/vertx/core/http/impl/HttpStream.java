@@ -43,6 +43,16 @@ public interface HttpStream {
   ContextInternal context();
   ByteBufAllocator allocator();
 
+  /**
+   * Check the calling thread is allowed to write to this stream.
+   *
+   * <p>A stream running in strict thread mode is exclusively written from the event-loop thread it is bound
+   * to, therefore this throws {@link IllegalStateException} when it is called from another thread. Callers
+   * must call it before they mutate any state, so that a rejected write leaves the stream usable.</p>
+   */
+  default void checkWriteThread() {
+  }
+
   Future<Void> writeChunk(Buffer buf, boolean end);
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);

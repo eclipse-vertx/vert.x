@@ -24,6 +24,14 @@ public interface Http2Connection {
 
   ByteBufAllocator allocator();
 
+  /**
+   * @return whether the connection is used in strict thread mode, i.e. streams are exclusively written from
+   *         the context thread they are bound to, allowing single threaded optimizations
+   */
+  default boolean strictThreadMode() {
+    return false;
+  }
+
   boolean isSsl();
 
   void reportBytesWritten(long numOfBytes);

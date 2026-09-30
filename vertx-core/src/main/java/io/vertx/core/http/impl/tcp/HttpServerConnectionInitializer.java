@@ -129,7 +129,8 @@ public class HttpServerConnectionInitializer {
           http2Config.getRstFloodMaxRstFramePerWindow(),
           (int)http2Config.getRstFloodWindowDuration().toSeconds(),
           http2Config.getMaxSmallContinuationFrames(),
-          logEnabled);
+          logEnabled,
+          strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP);
       } else {
         http2ChannelInitializer = new Http2CodecServerChannelInitializer(
           this,
@@ -143,7 +144,8 @@ public class HttpServerConnectionInitializer {
           streamContextSupplier,
           connectionHandler,
           metric,
-          logEnabled
+          logEnabled,
+          strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP
         );
       }
     } else {
