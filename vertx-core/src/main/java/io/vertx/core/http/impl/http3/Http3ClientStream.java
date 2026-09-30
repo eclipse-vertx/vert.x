@@ -131,6 +131,12 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
     if (request.method != HttpMethod.CONNECT) {
       headers.path(request.uri);
       headers.scheme("https");
+    } else {
+      if (request.protocol != null) {
+        headers.path(request.uri);
+        headers.scheme("https");
+        headers.protocol(request.protocol);
+      }
     }
     headers.prepare();
     return writeHeaders(headers, chunk, end);
