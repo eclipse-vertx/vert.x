@@ -33,6 +33,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.*;
 import io.vertx.test.fakedns.DnsRecord;
 import io.vertx.test.fakedns.WithDnsServer;
@@ -2166,6 +2167,48 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
     startServer(testAddress);
     consumer.accept(resumeFuture);
+  }
+
+  @Test
+  public void testHttpServerResponseFlowControl(Checkpoint checkpoint) throws Exception {
+
+    Promise<Void> promise = Promise.promise();
+
+    server.requestHandler(request -> {
+      request.pause();
+      request.endHandler(v -> {
+        checkpoint.succeed();
+      });
+      promise.future().onSuccess(v -> {
+        request.resume();
+      });
+    });
+
+    startServer();
+
+    Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
+
+    client.request(new RequestOptions(requestOptions).setMethod(PUT)).onComplete(TestUtils.onSuccess(request -> {
+      exhaustControlFlowWindow(request, chunk, v -> {
+        promise.succeed();
+        request.end();
+      });
+    }));
+  }
+
+  private void exhaustControlFlowWindow(WriteStream<Buffer> stream, Buffer chunk, Handler<Void> done) {
+    int numWrites = 0;
+    while (!stream.writeQueueFull()) {
+      stream.write(chunk);
+      numWrites++;
+    }
+    if (numWrites > 0) {
+      vertx.setTimer(5, id -> {
+        exhaustControlFlowWindow(stream, chunk, done);
+      });
+    } else {
+      done.handle(null);
+    }
   }
 
   @Test
