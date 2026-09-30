@@ -56,6 +56,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private boolean headersSent;
   private boolean trailersSent;
   private boolean writable;
+  private int readable; // When negative : redeem inbound buffers immediately, otherwise the value of cumulation of
+                        // inbound buffers bytes to redeem when resuming
 
   // Written by event-loop and read by context thread with an happens-before
   private HttpHeaders trailers;
@@ -89,20 +91,29 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.id = id_;
     this.inboundQueue = new InboundMessageQueue<>(connection.context().eventLoop(), context.executor()) {
       @Override
+      protected void handleResume() {
+        int len = readable;
+        readable = -1;
+        connection.consumeCredits(id, len);
+      }
+      @Override
+      protected void handlePause() {
+        readable = 0;
+      }
+      @Override
       protected void handleMessage(Buffer data) {
         if (data == END_OF_STREAM) {
           HttpHeaders map = trailers;
           trailers = null;
           handleTrailers(map);
         } else {
-          int len = data.length();
-          connection.context().execute(len, v -> connection.consumeCredits(DefaultHttp2Stream.this.id, v));
           handleData(data);
         }
       }
     };
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = writable;
+    this.readable = -1;
     this.outboundQueue = new OutboundMessageQueue<>(connection.context().executor()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
@@ -234,8 +245,14 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public void onData(Buffer data) {
-    bytesRead += data.length();
+    int len = data.length();
+    bytesRead += len;
     inboundQueue.write(data);
+    if (readable < 0) {
+      connection.consumeCredits(id, len);
+    } else {
+      readable += len;
+    }
   }
 
   public void onWritabilityChanged() {
