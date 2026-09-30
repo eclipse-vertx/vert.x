@@ -39,7 +39,6 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.util.Set;
 
@@ -81,7 +80,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
-  private volatile InboundMessageQueue<Object> queue;
+  private volatile InboundMessageQueue<Buffer> queue;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
     super(conn.queryParamDecoder());
@@ -90,23 +89,23 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     this.request = request;
   }
 
-  private InboundMessageQueue<Object> queue() {
+  private InboundMessageQueue<Buffer> queue() {
     return queue(true);
   }
 
-  private InboundMessageQueue<Object> queue(boolean create) {
-    InboundMessageQueue<Object> ref = queue;
+  private InboundMessageQueue<Buffer> queue(boolean create) {
+    InboundMessageQueue<Buffer> ref = queue;
     if (create && ref == null) {
       synchronized (this) {
         ref = queue;
         if (ref == null) {
           ref = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
             @Override
-            protected void handleMessage(Object elt) {
-              if (elt == InboundBuffer.END_SENTINEL) {
+            protected void handleMessage(Buffer elt) {
+              if (elt == HttpUtils.END_OF_STREAM) {
                 onEnd();
               } else {
-                onData((Buffer) elt);
+                onData(elt);
               }
             }
             @Override
@@ -149,7 +148,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   void handleContent(Buffer buffer) {
-    InboundMessageQueue<Object> queue = queue();
+    InboundMessageQueue<Buffer> queue = queue();
     boolean drain = queue.add(buffer);
     if (drain) {
       queue.drain();
@@ -157,7 +156,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   void handleEnd() {
-    InboundMessageQueue<Object> queue = queue(false);
+    InboundMessageQueue<Buffer> queue = queue(false);
     if (queue != null) {
       handleEnd(queue);
     } else {
@@ -165,8 +164,8 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
   }
 
-  private void handleEnd(InboundMessageQueue<Object> queue) {
-    boolean drain = queue.add(InboundBuffer.END_SENTINEL);
+  private void handleEnd(InboundMessageQueue<Buffer> queue) {
+    boolean drain = queue.add(HttpUtils.END_OF_STREAM);
     if (drain) {
       queue.drain();
     }

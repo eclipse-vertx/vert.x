@@ -30,6 +30,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
@@ -68,10 +69,9 @@ import static io.vertx.core.http.Http2Settings.*;
  */
 public final class HttpUtils {
 
+  public static final Buffer END_OF_STREAM = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   public static final HttpClosedException CONNECTION_CLOSED_EXCEPTION = new HttpClosedException("Connection was closed");
   public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
-  public static final int SC_SWITCHING_PROTOCOLS = 101;
-  public static final int SC_BAD_GATEWAY = 502;
 
   public static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override

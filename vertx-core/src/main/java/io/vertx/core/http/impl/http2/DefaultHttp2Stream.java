@@ -41,7 +41,6 @@ import io.vertx.core.net.impl.MessageWrite;
 abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream {
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
-  private static final Buffer END_OF_STREAM = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Buffer> inboundQueue;
@@ -102,7 +101,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       }
       @Override
       protected void handleMessage(Buffer data) {
-        if (data == END_OF_STREAM) {
+        if (data == HttpUtils.END_OF_STREAM) {
           HttpHeaders map = trailers;
           trailers = null;
           handleTrailers(map);
@@ -277,7 +276,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     connection.flushBytesRead();
     trailers = received;
-    inboundQueue.write(END_OF_STREAM);
+    inboundQueue.write(HttpUtils.END_OF_STREAM);
   }
 
   public final long id() {
