@@ -14,19 +14,21 @@ package io.vertx.core.internal;
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Closeable;
-import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -529,4 +531,41 @@ public interface ContextInternal extends Context {
   }
 
   ContextBuilder toBuilder();
+
+  @Override
+  default <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+    return executeBlocking(blockingCodeHandler, ordered ? EXECUTE_BLOCKING_ORDERED : 0);
+  }
+
+  /**
+   * Request that the blocking code be executed on a virtual thread.
+   * <p>
+   * This is a best-effort flag: if virtual threads are not available on this JVM, the call falls back to the default worker thread pool.
+   */
+  int EXECUTE_BLOCKING_PREFER_VIRTUAL_THREAD = 0x01;
+
+  /**
+   * Enforce FIFO ordering of submitted tasks.
+   * <p>
+   * When set, tasks submitted from the same context are serialized (no two tasks run concurrently).
+   * When absent, tasks may run in parallel.
+   */
+  int EXECUTE_BLOCKING_ORDERED = 0x02;
+
+  /**
+   * Safely execute some blocking code using the supplied flags to influence execution.
+   *
+   * <p>Flag constants may be combined via bitwise OR, for example:
+   * <pre>{@code
+   * context.executeBlocking(callable,
+   *     EXECUTE_BLOCKING_PREFER_VIRTUAL_THREAD | EXECUTE_BLOCKING_PREFER_ORDERED);
+   * }</pre>
+   * </p>
+   *
+   * @param blockingCodeHandler handler representing the blocking code to run
+   * @param flags               bitwise OR of zero or more flags
+   * @param <T>                 the type of the result
+   * @return a future completed when the blocking code is complete
+   */
+  <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, int flags);
 }

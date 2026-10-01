@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,13 +14,19 @@ package io.vertx.tests.worker;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.VertxException;
+import io.vertx.core.impl.JdkDependent;
 import io.vertx.core.impl.VertxThread;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static io.vertx.core.internal.ContextInternal.EXECUTE_BLOCKING_ORDERED;
+import static io.vertx.core.internal.ContextInternal.EXECUTE_BLOCKING_PREFER_VIRTUAL_THREAD;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -175,5 +181,47 @@ public class ExecuteBlockingTest extends VertxTestBase {
     long now = System.currentTimeMillis();
     long leeway = 1000;
     assertTrue(now - start < pause + leeway);
+  }
+
+  @Test
+  public void testExecuteBlockingPreferVirtualThread() {
+    vertx.runOnContext(v -> {
+      ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+      ctx.executeBlocking(() -> {
+        assertEquals(JdkDependent.VIRTUAL_THREAD_AVAILABLE, JdkDependent.isVirtual(Thread.currentThread()));
+        return "vt-result";
+      }, EXECUTE_BLOCKING_PREFER_VIRTUAL_THREAD).onComplete(onSuccess(res -> {
+        assertEquals("vt-result", res);
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testExecuteBlockingOrderedAndPreferVirtualThread() throws Exception {
+    int count = 5;
+    CountDownLatch latch = new CountDownLatch(count);
+    List<Integer> order = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    vertx.runOnContext(v -> {
+      ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+      int composedHints = EXECUTE_BLOCKING_PREFER_VIRTUAL_THREAD | EXECUTE_BLOCKING_ORDERED;
+      for (int i = 0; i < count; i++) {
+        final int idx = i;
+        ctx.executeBlocking(() -> {
+          Thread.sleep(10);
+          return idx;
+        }, composedHints).onComplete(onSuccess(res -> {
+          order.add(res);
+          latch.countDown();
+        }));
+      }
+    });
+
+    awaitLatch(latch);
+    for (int i = 0; i < count; i++) {
+      assertEquals(i, (int) order.get(i));
+    }
   }
 }

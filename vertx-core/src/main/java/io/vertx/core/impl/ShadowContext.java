@@ -13,10 +13,10 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
+import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -149,8 +149,8 @@ public final class ShadowContext extends ContextBase {
   }
 
   @Override
-  public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return ExecuteBlocking.executeBlocking(owner.workerPool(), this, blockingCodeHandler, ordered ? orderedTasks : null);
+  public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, int flags) {
+    return ContextImpl.executeBlocking(blockingCodeHandler, flags, owner.virtualThreadWorkerPool, owner.workerPool, this, orderedTasks);
   }
 
   @Override
