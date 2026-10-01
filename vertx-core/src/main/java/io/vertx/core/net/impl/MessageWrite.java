@@ -21,6 +21,9 @@ public interface MessageWrite {
    */
   void write();
 
+  default void enqueued(boolean writable) {
+  }
+
   /**
    * Cancel the write operation.
    *

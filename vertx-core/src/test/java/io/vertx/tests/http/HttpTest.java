@@ -30,8 +30,10 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.*;
@@ -6651,5 +6653,78 @@ public abstract class HttpTest extends SimpleHttpTest2 {
           .compose(HttpClientResponse::body);
       })
       .await();
+  }
+
+  @Test
+  public void testServerMessageWrite() throws Exception {
+    AtomicReference<Future<Void>> ref1 = new AtomicReference<>();
+    AtomicReference<Future<Void>> ref2 = new AtomicReference<>();
+    server.requestHandler(request -> {
+      HttpServerResponse response = request
+        .response()
+        .setChunked(true);
+      ref1.set(response.write("chunk"));
+      ref2.set(response.end("last"));
+    });
+    startServer();
+    client.request(new RequestOptions(requestOptions).setPort(server.actualPort()))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body));
+    TestUtils.assertWaitUntil(() -> ref1.get() != null);
+    TestUtils.assertWaitUntil(() -> ref2.get() != null);
+    assertTrue(ref1.get() instanceof MessageWrite);
+    assertTrue(ref2.get() instanceof MessageWrite);
+  }
+
+  private void stableUnwritable(Buffer chunk, HttpServerResponse response, WriteResult<?> prev, Consumer<WriteResult<?>> done) {
+    WriteResult<?> last = null;
+    while (true) {
+      if (response.writeQueueFull()) {
+        WriteResult<?> w = last;
+        if (w == null) {
+          // Done => use prev
+          done.accept(prev);
+        } else {
+          // Give some time to fill the window
+          vertx.setTimer(10, v -> {
+            stableUnwritable(chunk, response, w, done);
+          });
+        }
+        break;
+      } else {
+        last = (WriteResult<?>)response.write(chunk);
+      }
+    }
+  }
+
+  @Test
+  public void testServerMessageWriteWritability(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3) throws Exception {
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      response.setChunked(true);
+      vertx.runOnContext(v1 -> {
+        Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
+        stableUnwritable(chunk, response, null, last -> {
+          assertEquals(last.isWritable(), !response.writeQueueFull());
+          last.onComplete(v -> {
+            checkpoint2.succeed();
+          });
+          response.drainHandler(v2 -> {
+            checkpoint3.succeed();
+          });
+          checkpoint1.succeed();
+        });
+      });
+    });
+    startServer();
+    HttpClientResponse response = client.request(new RequestOptions(requestOptions).setPort(server.actualPort()))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .andThen(onSuccess(HttpClientResponse::pause))).await();
+    checkpoint1.awaitSuccess();
+    response.resume();
   }
 }
