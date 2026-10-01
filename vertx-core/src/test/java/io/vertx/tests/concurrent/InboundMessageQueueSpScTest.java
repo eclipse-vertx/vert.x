@@ -19,4 +19,5 @@ public class InboundMessageQueueSpScTest extends InboundMessageQueueTest {
   protected Context createContext(VertxInternal vertx) {
     return vertx.createWorkerContext();
   }
+
 }
