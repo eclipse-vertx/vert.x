@@ -15,10 +15,10 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
+import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -125,8 +125,9 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return ExecuteBlocking.executeBlocking(delegate.workerPool, this, blockingCodeHandler, ordered ? delegate.executeBlockingTasks : null);
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, int flags) {
+    VertxImpl owner = delegate.owner();
+    return ContextImpl.executeBlocking(blockingCodeHandler, flags, owner.virtualThreadWorkerPool, delegate.workerPool, this, delegate.executeBlockingTasks);
   }
 
   @Override
