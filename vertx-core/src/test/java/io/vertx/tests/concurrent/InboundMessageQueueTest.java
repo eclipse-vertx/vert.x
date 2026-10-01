@@ -505,6 +505,31 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
   }
 
   @Test
+  public void testHandlePauseNotCalledTwice() {
+    AtomicInteger pauseCount = new AtomicInteger();
+    queue = new TestChannel(elt -> {
+      producerTask(() -> {
+        queue.emit();
+        assertEquals(1, pauseCount.get());
+        testComplete();
+      });
+    }, 2, 4) {
+      @Override
+      protected void handlePause() {
+        pauseCount.incrementAndGet();
+        super.handlePause();
+      }
+    };
+    producerTask(() -> {
+      queue.pause();
+      queue.fill();
+      assertEquals(1, pauseCount.get());
+      queue.fetch(1);
+    });
+    await();
+  }
+
+  @Test
   public void testClose() {
     List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());
     List<Integer> disposed = Collections.synchronizedList(new ArrayList<>());
