@@ -158,7 +158,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   @Override
   public void run() {
     assert consumer.inThread();
-    if (!draining && needsDrain) {
+    if (needsDrain) {
       drainInternal();
     }
   }
