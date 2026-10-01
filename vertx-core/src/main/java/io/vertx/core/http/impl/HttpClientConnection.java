@@ -37,6 +37,11 @@ public interface HttpClientConnection extends HttpConnection {
   MultiMap newHttpRequestHeaders();
 
   /**
+   * @return an empty trailer map suitable for this connection's protocol
+   */
+  MultiMap newHttpTrailers();
+
+  /**
    * @return the number of active request/response (streams)
    */
   long activeStreams();

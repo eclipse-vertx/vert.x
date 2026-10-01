@@ -86,6 +86,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   @Override
+  public MultiMap newHttpTrailers() {
+    return Http1xHeaders.httpHeaders();
+  }
+
+  @Override
   public HostAndPort authority() {
     return current.authority();
   }
@@ -168,6 +173,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     @Override
     public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       return delegate.writeHead(request, chunked, buf, end, priority, connect);
+    }
+
+    @Override
+    public Future<Void> writeHeaders(MultiMap headers, boolean end) {
+      return delegate.writeHeaders(headers, end);
     }
 
     @Override
@@ -632,6 +642,28 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
         return upgradedStream.isWritable();
       } else {
         return upgradingStream.isWritable();
+      }
+    }
+
+    @Override
+    public Future<Void> writeHeaders(MultiMap headers, boolean end) {
+      EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
+      if (exec.inEventLoop()) {
+        Future<Void> future = upgradingStream.writeHeaders(headers, end);
+        if (end) {
+          // Trailers terminate the request, so the buffered messages must be flushed here too.
+          ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
+          future = future.andThen(ar -> {
+            if (ar.succeeded()) {
+              pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES_EVENT);
+            }
+          });
+        }
+        return future;
+      } else {
+        Promise<Void> promise = upgradingStream.context().promise();
+        exec.execute(() -> writeHeaders(headers, end).onComplete(promise));
+        return promise.future();
       }
     }
 

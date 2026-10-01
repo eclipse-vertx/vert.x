@@ -35,6 +35,7 @@ import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -94,6 +95,11 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
   @Override
   public MultiMap newHttpRequestHeaders() {
     return new HttpRequestHeaders(new DefaultHttp3Headers());
+  }
+
+  @Override
+  public MultiMap newHttpTrailers() {
+    return new HttpHeaders(new DefaultHttp3Headers());
   }
 
   @Override

@@ -132,6 +132,16 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public String getTrailer(String trailerName) {
+    return delegate.getTrailer(trailerName);
+  }
+
+  @Override
+  public MultiMap trailers() {
+    return delegate.trailers();
+  }
+
+  @Override
   public HttpServerRequest setParamsCharset(String charset) {
     return delegate.setParamsCharset(charset);
   }
