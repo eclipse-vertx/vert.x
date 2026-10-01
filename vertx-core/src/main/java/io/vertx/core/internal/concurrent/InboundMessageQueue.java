@@ -31,6 +31,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
   // Accessed by produced thread
   private boolean producerClosed;
+  private boolean paused;
 
   // Accessed by consumer thread
   private boolean draining;
@@ -50,12 +51,14 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     this.mqp = messageQueueFactory.create(this);
     this.consumer = consumer;
     this.producer = producer;
+    this.paused = false;
   }
 
   public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, MessagePassingQueue.Factory factory) {
     this.mqp = factory.create(this);
     this.consumer = consumer;
     this.producer = producer;
+    this.paused = false;
   }
 
   public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
@@ -101,7 +104,8 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
       return false;
     }
     int res = mqp.add(msg);
-    if ((res & MessagePassingQueue.UNWRITABLE_MASK) != 0) {
+    if ((res & MessagePassingQueue.UNWRITABLE_MASK) != 0 && !paused) {
+      paused = true;
       handlePause();
     }
     return (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
@@ -159,6 +163,13 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
   }
 
+  private void tryResume() {
+    if (paused) {
+      paused = false;
+      handleResume();
+    }
+  }
+
   private void drainInternal() {
     if (consumerClosed) {
       return;
@@ -172,9 +183,9 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
         needsDrain = (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
         if ((res & MessagePassingQueue.WRITABLE_MASK) != 0) {
           if (producer.inThread()) {
-            handleResume();
+            tryResume();
           } else {
-            producer.execute(this::handleResume);
+            producer.execute(this::tryResume);
           }
         }
       }
