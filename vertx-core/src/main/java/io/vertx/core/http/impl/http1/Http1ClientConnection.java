@@ -46,6 +46,7 @@ import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.WebSocketConnectionImpl;
 import io.vertx.core.http.impl.websocket.WebSocketHandshakeInboundHandler;
 import io.vertx.core.http.impl.websocket.WebSocketImpl;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -72,6 +73,7 @@ import java.util.function.BiConsumer;
 
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
 import static io.vertx.core.http.HttpHeaders.*;
+import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -418,7 +420,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     private Promise<HttpClientStream> promise;
 
-    private final InboundMessageQueue<Buffer> queue;
+    private final InboundMessageQueue<ByteBuf> queue;
     protected final ContextInternal context;
     protected final Http1ClientConnection conn;
     protected final int id;
@@ -453,11 +455,29 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           conn.doPause();
         }
         @Override
-        protected void handleMessage(Buffer item) {
-          if (item == HttpUtils.END_OF_STREAM) {
+        protected void handleMessage(ByteBuf item) {
+          if (item == HttpUtils.END_OF_STREAM_2) {
             handleEnd(trailers);
           } else {
-            handleChunk(item);
+            try {
+              handleChunk(item);
+            } finally {
+              item.release();
+            }
+          }
+        }
+        @Override
+        protected ByteBuf releaseMessage(ByteBuf buf) {
+          if (buf == END_OF_STREAM_2) {
+            return END_OF_STREAM_2;
+          } else {
+            try {
+              ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
+              buffer.writeBytes(buf, buf.readerIndex(), buf.readableBytes());
+              return buffer;
+            } finally {
+              buf.release();
+            }
           }
         }
       };
@@ -488,6 +508,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     void onClose() {
       if (!closed) {
         closed = true;
+        queue.close();
         if (!requestEnded || !responseEnded) {
           onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
         }
@@ -507,17 +528,17 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       context.emit(null, this::handleContinue);
     }
 
-    void onEnd(LastHttpContent trailer) {
-      trailers = new HeadersAdaptor(trailer.trailingHeaders());
-      queue.write(HttpUtils.END_OF_STREAM);
+    void onEnd(HttpHeaders trailer) {
+      trailers = new HeadersAdaptor(trailer);
+      queue.write(HttpUtils.END_OF_STREAM_2);
     }
 
-    void onChunk(Buffer buff) {
+    void onChunk(ByteBuf buff) {
       queue.write(buff);
     }
 
     abstract void handleEnd(MultiMap trailer);
-    abstract void handleChunk(Buffer chunk);
+    abstract void handleChunk(ByteBuf chunk);
     abstract void handleContinue(Void v);
     abstract void handleEarlyHints(MultiMap headers);
     abstract void handleHead(io.vertx.core.http.impl.HttpResponseHead response);
@@ -748,10 +769,12 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    void handleChunk(Buffer chunk) {
+    void handleChunk(ByteBuf chunk) {
       Handler<Buffer> handler = chunkHandler;
       if (handler != null) {
-        handler.handle(chunk);
+        ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(chunk.readableBytes());
+        buffer.writeBytes(chunk, chunk.readerIndex(), chunk.readableBytes());
+        handler.handle(BufferInternal.buffer(buffer));
       }
     }
 
@@ -885,9 +908,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
         handleResponseChunk(stream, chunk.content());
+      } else {
+        chunk.content().release();
       }
       if (!isConnect && chunk instanceof LastHttpContent) {
-        handleResponseEnd(stream, (LastHttpContent) chunk);
+        handleResponseEnd(stream, ((LastHttpContent) chunk).trailingHeaders());
       }
     }
   }
@@ -969,16 +994,16 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.safeBuffer(chunk);
-    int len = buff.length();
+    int len = chunk.readableBytes();
     stream.bytesRead += len;
     if (!stream.reset) {
-      stream.onChunk(buff);
+      stream.onChunk(chunk);
+    } else {
+      chunk.release();
     }
   }
 
-  private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
-    boolean check;
+  private void handleResponseEnd(Stream stream, HttpHeaders trailer) {
     io.vertx.core.http.impl.HttpResponseHead response;
     HttpVersion version;
     synchronized (this) {

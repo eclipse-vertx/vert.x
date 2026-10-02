@@ -28,12 +28,15 @@ import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
+
+import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -43,7 +46,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
-  private final InboundMessageQueue<Buffer> inboundQueue;
+  private final InboundMessageQueue<ByteBuf> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -100,13 +103,32 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         readable = 0;
       }
       @Override
-      protected void handleMessage(Buffer data) {
-        if (data == HttpUtils.END_OF_STREAM) {
+      protected void handleMessage(ByteBuf data) {
+        if (data == END_OF_STREAM_2) {
           HttpHeaders map = trailers;
           trailers = null;
           handleTrailers(map);
         } else {
-          handleData(data);
+          try {
+            handleData(data);
+          } finally {
+            // No-op for VertxHeapByteBuf
+            data.release();
+          }
+        }
+      }
+      @Override
+      protected ByteBuf releaseMessage(ByteBuf buf) {
+        if (buf == END_OF_STREAM_2) {
+          return END_OF_STREAM_2;
+        } else {
+          try {
+            ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
+            buffer.writeBytes(buf, buf.readerIndex(), buf.readableBytes());
+            return buffer;
+          } finally {
+            buf.release();
+          }
         }
       }
     };
@@ -204,6 +226,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.flushBytesWritten();
     context.execute(v -> handleClose());
     outboundQueue.close();
+    inboundQueue.close();
   }
 
   public void onReset(long code) {
@@ -243,8 +266,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     context.execute(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
-  public void onData(Buffer data) {
-    int len = data.length();
+  public void onData(ByteBuf data) {
+    data.retain();
+    int len = data.readableBytes();
     bytesRead += len;
     inboundQueue.write(data);
     if (readable < 0) {
@@ -276,7 +300,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     connection.flushBytesRead();
     trailers = received;
-    inboundQueue.write(HttpUtils.END_OF_STREAM);
+    inboundQueue.write(END_OF_STREAM_2);
   }
 
   public final long id() {
@@ -500,10 +524,13 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return (S)this;
   }
 
-  private void handleData(Buffer buf) {
+  private void handleData(ByteBuf buf) {
+    ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
+    buffer.writeBytes(buf, buf.readerIndex(), buf.readableBytes());
+    Buffer buff = BufferInternal.buffer(buffer);
     Handler<Buffer> handler = dataHandler;
     if (handler != null) {
-      context.dispatch(buf, handler);
+      context.dispatch(buff, handler);
     }
   }
 

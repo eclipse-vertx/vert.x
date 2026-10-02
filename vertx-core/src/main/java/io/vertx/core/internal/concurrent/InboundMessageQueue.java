@@ -14,6 +14,8 @@ import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.streams.impl.MessagePassingQueue;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
@@ -37,6 +39,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private boolean draining;
   private boolean needsDrain;
   private boolean consumerClosed;
+  private Deque<M> tail;
 
   // Any thread
   private volatile long demand = Long.MAX_VALUE;
@@ -158,8 +161,32 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   @Override
   public void run() {
     assert consumer.inThread();
-    if (!draining && needsDrain) {
-      drainInternal();
+    if (consumerClosed) {
+      drainTail();
+    } else {
+      if (needsDrain) {
+        drainInternal();
+      }
+    }
+  }
+
+  private void drainTail() {
+    Deque<M> pending = tail;
+    while (pending != null) {
+      while (true) {
+        long d = DEMAND_UPDATER.get(this);
+        if (d == 0L) {
+          return;
+        } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
+          break;
+        }
+      }
+      M elt = pending.poll();
+      if (pending.isEmpty()) {
+        pending = null;
+        tail = null;
+      }
+      handleMessage(elt);
     }
   }
 
@@ -268,9 +295,22 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
   private void releaseMessages() {
     List<M> messages = mqp.clear();
+    Deque<M> l = null;
     for (M elt : messages) {
-      handleDispose(elt);
+      M m = releaseMessage(elt);
+      if (m != null) {
+        if (l == null) {
+          l = new ArrayDeque<>();
+        }
+        l.add(m); // Maybe not correct order
+      }
     }
+    tail = l;
+  }
+
+  protected M releaseMessage(M message) {
+    handleDispose(message);
+    return null;
   }
 
   /**
@@ -299,7 +339,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    *
    * @param msg the message to dispose
    */
-  // Todo : try remove this
   protected void handleDispose(M msg) {
   }
 }
