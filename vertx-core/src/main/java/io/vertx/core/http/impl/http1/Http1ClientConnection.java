@@ -418,7 +418,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     private Promise<HttpClientStream> promise;
 
-    private final InboundMessageQueue<Object> queue;
+    private final InboundMessageQueue<Buffer> queue;
     protected final ContextInternal context;
     protected final Http1ClientConnection conn;
     protected final int id;
@@ -435,6 +435,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private boolean reset;
     private boolean closed;
 
+    // Written by event-loop and read by context thread with an happens-before
+    private MultiMap trailers;
+
     Stream(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       this.context = context;
       this.id = id;
@@ -450,11 +453,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           conn.doPause();
         }
         @Override
-        protected void handleMessage(Object item) {
-          if (item instanceof MultiMap) {
-            handleEnd((MultiMap) item);
+        protected void handleMessage(Buffer item) {
+          if (item == HttpUtils.END_OF_STREAM) {
+            handleEnd(trailers);
           } else {
-            handleChunk((Buffer) item);
+            handleChunk(item);
           }
         }
       };
@@ -505,7 +508,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     void onEnd(LastHttpContent trailer) {
-      queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
+      trailers = new HeadersAdaptor(trailer.trailingHeaders());
+      queue.write(HttpUtils.END_OF_STREAM);
     }
 
     void onChunk(Buffer buff) {
