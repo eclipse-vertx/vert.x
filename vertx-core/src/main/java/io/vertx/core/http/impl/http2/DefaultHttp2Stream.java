@@ -36,13 +36,14 @@ import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
 
+import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream {
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
-  private static final ByteBuf END_OF_STREAM = VertxByteBufAllocator.DEFAULT.buffer();
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<ByteBuf> inboundQueue;
@@ -103,7 +104,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       }
       @Override
       protected void handleMessage(ByteBuf data) {
-        if (data == END_OF_STREAM) {
+        if (data == END_OF_STREAM_2) {
           HttpHeaders map = trailers;
           trailers = null;
           handleTrailers(map);
@@ -118,8 +119,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       }
       @Override
       protected ByteBuf releaseMessage(ByteBuf buf) {
-        if (buf == END_OF_STREAM) {
-          return END_OF_STREAM;
+        if (buf == END_OF_STREAM_2) {
+          return END_OF_STREAM_2;
         } else {
           try {
             ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
@@ -299,7 +300,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     connection.flushBytesRead();
     trailers = received;
-    inboundQueue.write(END_OF_STREAM);
+    inboundQueue.write(END_OF_STREAM_2);
   }
 
   public final long id() {
