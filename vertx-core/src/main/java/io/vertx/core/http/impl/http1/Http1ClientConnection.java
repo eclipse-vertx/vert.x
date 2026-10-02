@@ -632,6 +632,13 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
+    public boolean isResponseFullyReceived() {
+      synchronized (conn) {
+        return ((Stream) this).responseEnded;
+      }
+    }
+
+    @Override
     public long id() {
       return id;
     }

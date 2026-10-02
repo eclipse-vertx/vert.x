@@ -131,6 +131,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public boolean isResponseFullyReceived() {
+      return delegate.isResponseFullyReceived();
+    }
+
+    @Override
     public long id() {
       return delegate.id();
     }
@@ -388,6 +393,15 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       this.upgradingStream = stream;
       this.upgrade = upgrade;
       this.clientMetrics = clientMetrics;
+    }
+
+    @Override
+    public boolean isResponseFullyReceived() {
+      if (upgradedStream != null) {
+        return upgradedStream.isResponseFullyReceived();
+      } else {
+        return upgradingStream.isResponseFullyReceived();
+      }
     }
 
     @Override

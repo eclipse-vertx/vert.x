@@ -22,6 +22,15 @@ import io.vertx.core.http.*;
  */
 public interface HttpClientStream extends HttpStream {
 
+  /**
+   * Whether the complete response has been received from the transport, even if
+   * its body and end event are still queued for delivery to the application.
+   * Implementations that do not track this separately conservatively return false.
+   */
+  default boolean isResponseFullyReceived() {
+    return false;
+  }
+
   Object trace();
 
   HttpClientConnection connection();
