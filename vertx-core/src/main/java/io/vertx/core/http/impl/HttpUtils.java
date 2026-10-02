@@ -28,6 +28,7 @@ import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -70,6 +71,7 @@ import static io.vertx.core.http.Http2Settings.*;
 public final class HttpUtils {
 
   public static final Buffer END_OF_STREAM = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
+  public static final ByteBuf END_OF_STREAM_2 = VertxByteBufAllocator.DEFAULT.buffer();
   public static final HttpClosedException CONNECTION_CLOSED_EXCEPTION = new HttpClosedException("Connection was closed");
   public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
 
