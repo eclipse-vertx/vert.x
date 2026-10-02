@@ -11,6 +11,8 @@
 
 package io.vertx.tests.http;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.TooLongFrameException;
@@ -47,6 +49,7 @@ import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.tls.Cert;
 import org.junit.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -5859,6 +5862,209 @@ public class Http1xTest extends HttpTest {
       assertEquals(expected, body);
       assertTrue(responseEnded.get());
       assertNull(responseFailure.get());
+    }
+  }
+
+  @Test
+  public void testClientByteBufLeak() throws Exception {
+    testClientByteBufLeak(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testClientByteBufLeakWorker() throws Exception {
+    testClientByteBufLeak(ThreadingModel.WORKER);
+  }
+
+  private void testClientByteBufLeak(ThreadingModel threadingModel) throws Exception {
+    server.requestHandler(req -> {
+      req.response().end("Hello");
+    });
+    testClientByteBufLeak(threadingModel, request -> request
+      .send()
+      .compose(HttpClientResponse::body));
+  }
+
+  @Test
+  public void testClientByteBufLeakNoHandler() throws Exception {
+    testClientByteBufLeakNoHandler(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testClientByteBufLeakNoHandlerWorker() throws Exception {
+    testClientByteBufLeakNoHandler(ThreadingModel.WORKER);
+  }
+
+  private void testClientByteBufLeakNoHandler(ThreadingModel threadingModel) throws Exception {
+    server.requestHandler(req -> {
+      req.response().end("Hello");
+    });
+    testClientByteBufLeak(threadingModel, request -> request
+      .send()
+      .compose(HttpClientResponse::end));
+  }
+
+  @Test
+  public void testClientByteBufLeakChunked() throws Exception {
+    testClientByteBufLeakChunked(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testClientByteBufLeakChunkedWorker() throws Exception {
+    testClientByteBufLeakChunked(ThreadingModel.WORKER);
+  }
+
+  private void testClientByteBufLeakChunked(ThreadingModel threadingModel) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse response = req.response();
+      response.setChunked(true);
+      AtomicInteger count = new AtomicInteger();
+      vertx.setPeriodic(10, id -> {
+        if (count.incrementAndGet() < 5) {
+          response.write("chunk");
+        } else {
+          response.end("last");
+          vertx.cancelTimer(id);
+        }
+      });
+    });
+    testClientByteBufLeak(threadingModel, request -> request
+      .send()
+      .compose(HttpClientResponse::body));
+  }
+
+  @Test
+  public void testClientByteBufLeakPauseResume() throws Exception {
+    testClientByteBufLeakPauseResume(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testClientByteBufLeakPauseResumeWorker() throws Exception {
+    testClientByteBufLeakPauseResume(ThreadingModel.WORKER);
+  }
+
+  private void testClientByteBufLeakPauseResume(ThreadingModel threadingModel) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse response = req.response();
+      response.setChunked(true);
+      AtomicInteger count = new AtomicInteger();
+      vertx.setPeriodic(10, id -> {
+        if (count.incrementAndGet() < 5) {
+          response.write("chunk");
+        } else {
+          response.end("last");
+          vertx.cancelTimer(id);
+        }
+      });
+    });
+    testClientByteBufLeak(threadingModel, request -> request
+      .send()
+      .compose(response -> {
+        response.handler(chunk -> {
+          response.pause();
+          vertx.setTimer(10, id -> {
+            response.resume();
+          });
+        });
+        return response.end();
+      }));
+  }
+
+  @Test
+  public void testClientByteBufLeakConnectionClose() throws Exception {
+    testClientByteBufLeakConnectionClose(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testClientByteBufLeakConnectionCloseWorker() throws Exception {
+    testClientByteBufLeakConnectionClose(ThreadingModel.WORKER);
+  }
+
+  private void testClientByteBufLeakConnectionClose(ThreadingModel threadingModel) throws Exception {
+    AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
+    server.requestHandler(request -> {
+      ref.set(request);
+      HttpServerResponse response = request.response();
+      response.setChunked(true);
+      response.write("chunk1");
+      response.write("chunk2");
+    });
+    testClientByteBufLeak(threadingModel, request -> request
+      .send()
+      .compose(response -> {
+        Promise<Void> promise = Promise.promise();
+        response.handler(chunk -> {
+          response.pause();
+          response.exceptionHandler(err -> {
+            promise.succeed();
+          });
+          ref.get().connection().close();
+        });
+        return promise.future();
+      }));
+  }
+
+  @Test
+  public void testClientByteBufLeakConnectionReset() throws Exception {
+    testClientByteBufLeakConnectionReset(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testClientByteBufLeakConnectionResetWorker() throws Exception {
+    testClientByteBufLeakConnectionReset(ThreadingModel.WORKER);
+  }
+
+  private void testClientByteBufLeakConnectionReset(ThreadingModel threadingModel) throws Exception {
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      response.setChunked(true);
+      response.write("chunk1");
+      response.write("chunk2");
+    });
+    testClientByteBufLeak(threadingModel, request -> request
+      .send()
+      .compose(response -> {
+        Promise<Void> promise = Promise.promise();
+        response.handler(chunk -> {
+          request.reset();
+          vertx.setTimer(100, id -> {
+            promise.succeed();
+          });
+        });
+        return promise.future();
+      }));
+  }
+
+  private void testClientByteBufLeak(ThreadingModel threadingModel, Function<HttpClientRequest, Future<?>> handler) throws Exception {
+    startServer(testAddress);
+    List<ByteBuf> content = Collections.synchronizedList(new ArrayList<>());
+    Context context = ((VertxInternal)vertx).createContext(threadingModel);
+    Promise<Object> cont = Promise.promise();
+    context.runOnContext(v -> {
+      client.request(new RequestOptions(requestOptions))
+        .andThen(onSuccess(request -> {
+          HttpClientConnection connection = (HttpClientConnection) request.connection();
+          ChannelHandlerContext chctx = connection.channelHandlerContext();
+          chctx.pipeline().addBefore("handler", "tracker", new ChannelDuplexHandler() {
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+              if (msg instanceof HttpContent) {
+                content.add(((HttpContent)msg).content());
+              }
+              super.channelRead(ctx, msg);
+            }
+          });
+        }))
+        .compose(handler::apply)
+        .onComplete(cont);
+    });
+    cont
+      .future()
+      .await();
+    for (ByteBuf toCheck : content) {
+      if (toCheck.refCnt() > 0 && toCheck.alloc() instanceof PooledByteBufAllocator) {
+        int refCnt = toCheck.refCnt();
+        fail("Was expecting chunk " + toCheck.toString(StandardCharsets.UTF_8) + " to be released " + refCnt + " > 0");
+      }
     }
   }
 }
