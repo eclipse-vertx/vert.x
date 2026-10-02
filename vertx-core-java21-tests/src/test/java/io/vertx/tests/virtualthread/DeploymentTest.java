@@ -13,6 +13,7 @@ package io.vertx.tests.virtualthread;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assert;
@@ -21,6 +22,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,6 +43,22 @@ public class DeploymentTest extends VertxTestBase {
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
     await();
+  }
+
+  @Test
+  public void testInstancesUseDistinctEventLoopThreads() {
+    int instances = 4;
+    Vertx vertx = vertx(new VertxOptions().setEventLoopPoolSize(2 * instances));
+    Set<String> eventLoops = Collections.synchronizedSet(new HashSet<>());
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start() {
+        CompletableFuture<String> latch = new CompletableFuture<>();
+        ((ContextInternal) context).eventLoop().execute(() -> latch.complete(Thread.currentThread().getName()));
+        eventLoops.add(latch.join());
+      }
+    }, new DeploymentOptions().setInstances(instances).setThreadingModel(ThreadingModel.VIRTUAL_THREAD)).await();
+    Assert.assertEquals(instances, eventLoops.size());
   }
 
   @Test
