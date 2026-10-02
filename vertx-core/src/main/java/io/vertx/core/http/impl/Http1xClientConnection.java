@@ -523,6 +523,13 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
+    public boolean isResponseFullyReceived() {
+      synchronized (conn) {
+        return ((Stream) this).responseEnded;
+      }
+    }
+
+    @Override
     public int id() {
       return id;
     }

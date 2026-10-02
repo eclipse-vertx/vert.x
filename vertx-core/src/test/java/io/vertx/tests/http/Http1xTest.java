@@ -103,6 +103,66 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPausedCompleteResponseAfterConnectionClose() throws Exception {
+    testPausedResponseAfterConnectionClose(false);
+  }
+
+  @Test
+  public void testPausedTruncatedResponseAfterConnectionClose() throws Exception {
+    testPausedResponseAfterConnectionClose(true);
+  }
+
+  private void testPausedResponseAfterConnectionClose(boolean truncated) throws Exception {
+    Buffer expected = Buffer.buffer("response body");
+    CompletableFuture<NetSocket> peer = new CompletableFuture<>();
+    NetServer backend = vertx.createNetServer().connectHandler(socket -> {
+      peer.complete(socket);
+      socket.handler(data -> {
+        socket.handler(null);
+        int contentLength = expected.length() + (truncated ? 1 : 0);
+        socket.write(Buffer.buffer("HTTP/1.1 200 OK\r\nContent-Length: " + contentLength +
+          "\r\nConnection: close\r\n\r\n").appendBuffer(expected));
+      });
+    });
+    backend.listen(testAddress).toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    CompletableFuture<HttpClientResponse> paused = new CompletableFuture<>();
+    CompletableFuture<Throwable> requestFailure = new CompletableFuture<>();
+    AtomicReference<Throwable> responseFailure = new AtomicReference<>();
+    AtomicBoolean responseEnded = new AtomicBoolean();
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .onComplete(onSuccess(request -> {
+        request.setChunked(true);
+        request.exceptionHandler(requestFailure::complete);
+        request.response().onComplete(onSuccess(response -> {
+          response.pause();
+          response.exceptionHandler(responseFailure::set);
+          response.endHandler(v -> responseEnded.set(true));
+          response.body();
+          paused.complete(response);
+        }));
+        // The server may reply before the request body has finished uploading.
+        request.write("unfinished request");
+      }));
+    HttpClientResponse response = paused.get(10, TimeUnit.SECONDS);
+    peer.get(10, TimeUnit.SECONDS).close().toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    // Wait for the close to reach the request before releasing the paused response.
+    assertTrue(requestFailure.get(10, TimeUnit.SECONDS) instanceof HttpClosedException);
+    Future<Buffer> responseBody = response.body();
+    if (truncated) {
+      assertTrue(responseFailure.get() instanceof HttpClosedException);
+      assertTrue(responseBody.failed());
+      assertFalse(responseEnded.get());
+    } else {
+      assertNull(responseFailure.get());
+      response.resume();
+      Buffer body = responseBody.toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+      assertEquals(expected, body);
+      assertTrue(responseEnded.get());
+      assertNull(responseFailure.get());
+    }
+  }
+
+  @Test
   public void testClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
 
