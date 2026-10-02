@@ -39,6 +39,11 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public boolean isResponseFullyReceived() {
+    return delegate.isResponseFullyReceived();
+  }
+
+  @Override
   public long id() {
     return delegate.id();
   }

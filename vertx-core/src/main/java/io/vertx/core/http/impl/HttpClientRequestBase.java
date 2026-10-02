@@ -165,7 +165,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
   void fail(Throwable t) {
     responsePromise.tryFail(t);
     HttpClientResponseImpl response = (HttpClientResponseImpl) responsePromise.future().result();
-    if (response != null) {
+    // An early response can be fully received while the request is still uploading.
+    // Closing that connection fails the request, but must not fail the complete
+    // response whose body/end events may still be queued behind a pause.
+    if (response != null && !(t instanceof HttpClosedException && stream.isResponseFullyReceived())) {
       response.handleException(t);
     }
   }
