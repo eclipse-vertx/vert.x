@@ -151,6 +151,17 @@ classpath resolution or disabling it.
 {@link examples.TcpExamples#sendingAFile}
 ----
 
+When the file cannot be transferred by the operating system, e.g. the connection is encrypted, the file is read and
+written to the socket chunk per chunk. The size of these chunks is set with
+{@link io.vertx.core.net.TcpServerConfig#setSendFileChunkSize} and applies to every file sent by the sockets the server
+accepts. The default value is a conservative one, a larger value can achieve a better throughput at the cost of a
+larger memory footprint.
+
+[source,$lang]
+----
+{@link examples.TcpExamples#sendFileChunkSize}
+----
+
 === Streaming sockets
 
 Instances of {@link io.vertx.core.net.NetSocket} are also {@link io.vertx.core.streams.ReadStream} and

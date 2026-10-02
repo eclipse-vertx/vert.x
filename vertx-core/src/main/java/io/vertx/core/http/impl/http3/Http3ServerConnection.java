@@ -36,16 +36,19 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
 
   private final Supplier<ContextInternal> streamContextProvider;
   private final HttpServerMetrics<?, ?> httpMetrics;
+  private final int sendFileChunkSize;
   private Handler<HttpServerStream> streamHandler;
 
   public Http3ServerConnection(QuicConnectionInternal connection,
                                Http3Settings localSettings,
                                HttpServerMetrics<?, ?> httpMetrics,
-                               Http3FrameLogger frameLogger) {
+                               Http3FrameLogger frameLogger,
+                               int sendFileChunkSize) {
     super(connection, localSettings, frameLogger);
 
     this.streamContextProvider = connection.context()::duplicate;
     this.httpMetrics = httpMetrics;
+    this.sendFileChunkSize = sendFileChunkSize;
   }
 
   void handleRequestStream(QuicStreamInternal quicStream) {
@@ -108,6 +111,11 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
   @Override
   public boolean supportsSendFile() {
     return false;
+  }
+
+  @Override
+  public int sendFileChunkSize() {
+    return sendFileChunkSize;
   }
 
   @Override

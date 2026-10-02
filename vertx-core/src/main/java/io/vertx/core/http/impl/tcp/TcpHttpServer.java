@@ -268,6 +268,7 @@ public class TcpHttpServer implements HttpServerInternal {
         queryParamDecoderConfig,
         http1Config,
         http2Config,
+        config.getSendFileChunkSize(),
         registerWebSocketWriteHandlers,
         config.getWebSocketConfig(),
         sslOptions,

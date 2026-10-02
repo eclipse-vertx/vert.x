@@ -23,8 +23,8 @@ import java.nio.channels.FileChannel;
  */
 public class UncloseableChunkedNioFile extends ChunkedNioFile {
 
-  public UncloseableChunkedNioFile(FileChannel in, long offset, long length) throws IOException {
-    super(in, offset, length, 8192);
+  public UncloseableChunkedNioFile(FileChannel in, long offset, long length, int chunkSize) throws IOException {
+    super(in, offset, length, chunkSize);
   }
 
   @Override

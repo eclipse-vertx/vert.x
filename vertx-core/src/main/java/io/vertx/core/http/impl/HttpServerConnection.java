@@ -28,6 +28,11 @@ public interface HttpServerConnection extends HttpConnection {
   boolean supportsSendFile();
 
   /**
+   * @return the chunk size used to send a file when the zero-copy (file region) mechanism cannot be used
+   */
+  int sendFileChunkSize();
+
+  /**
    * @return the connection context
    */
   ContextInternal context();

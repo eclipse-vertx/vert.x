@@ -236,6 +236,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE,
         new QueryParamDecoderConfig(),
         new Http1ServerConfig(),
+        HttpServerConfig.DEFAULT_SEND_FILE_CHUNK_SIZE,
         false,
         null,
         chctx,

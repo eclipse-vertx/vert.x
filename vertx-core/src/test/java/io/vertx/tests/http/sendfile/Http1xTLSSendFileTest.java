@@ -17,6 +17,12 @@ import io.vertx.test.tls.Cert;
 public class Http1xTLSSendFileTest extends Http1xSendFileTest {
 
   @Override
+  protected boolean isSendFileChunked() {
+    // Encrypted connections cannot use the zero-copy file region transfer, each chunk is written as a TLS record
+    return true;
+  }
+
+  @Override
   protected HttpServerOptions createBaseServerOptions() {
     return super.createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get());
   }

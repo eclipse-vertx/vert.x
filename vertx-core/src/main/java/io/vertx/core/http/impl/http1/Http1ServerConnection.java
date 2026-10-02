@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl.http1;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -47,6 +48,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.nio.channels.FileChannel;
 import java.time.Duration;
 import java.util.function.Supplier;
 
@@ -82,6 +84,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private final int maxFormBufferedBytes;
   private final QueryParamDecoder queryParamDecoder;
   private final Http1ServerConfig serverConfig;
+  private final int sendFileChunkSize;
   private final boolean registerWebSocketWriteHandlers;
   private final WebSocketServerConfig webSocketConfig;
   private final ServerSSLOptions sslOptions;
@@ -109,6 +112,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
                                int maxFormBufferedBytes,
                                QueryParamDecoderConfig queryParamDecoderConfig,
                                Http1ServerConfig serverConfig,
+                               int sendFileChunkSize,
                                boolean registerWebSocketWriteHandlers,
                                WebSocketServerConfig webSocketConfig,
                                ChannelHandlerContext chctx,
@@ -125,6 +129,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.queryParamDecoder = new QueryParamDecoder(queryParamDecoderConfig);
     this.serverConfig = serverConfig;
+    this.sendFileChunkSize = sendFileChunkSize;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
     this.sslContextManager = sslContextManager;
@@ -170,6 +175,16 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   @Override
   public boolean supportsSendFile() {
     return true;
+  }
+
+  @Override
+  public int sendFileChunkSize() {
+    return sendFileChunkSize;
+  }
+
+  @Override
+  public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
+    return sendFile(fc, offset, length, sendFileChunkSize);
   }
 
   TracingPolicy tracingPolicy() {
