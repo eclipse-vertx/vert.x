@@ -63,6 +63,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private String traceOperation;
   private int maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
   private List<Buffer> bodyBuffer;
+  private boolean bodyBufferDiscarded;
 
   public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream) {
     super(authority, connection, stream, stream.context().promise(), HttpMethod.GET, "/");
@@ -403,31 +404,46 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     next.setMaxRedirects(maxRedirects);
     HttpClientRequestImpl nextImpl = (HttpClientRequestImpl) next;
     nextImpl.numberOfRedirections = numberOfRedirections + 1;
-    nextImpl.bodyBuffer = bodyBuffer;
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.idleTimeout(timeoutMs);
         }
-        if (next.getMethod() == HttpMethod.QUERY && bodyBuffer != null && !bodyBuffer.isEmpty()) {
-          Buffer redirectBody;
-          if (bodyBuffer.size() == 1) {
-            redirectBody = bodyBuffer.get(0);
-          } else {
-            CompositeByteBuf composite = Unpooled.compositeBuffer();
-            for (Buffer b : bodyBuffer) {
-              composite.addComponent(true, ((BufferInternal) b).getByteBuf());
-            }
-            redirectBody = BufferInternal.buffer(composite);
+        if (getMethod().equals(next.getMethod()) && canRedirectBody(getMethod())) {
+          // The redirection keeps the method, so the body is sent again
+          if (bodyBufferDiscarded) {
+            handler.tryFail(new VertxException("Cannot follow the " + getMethod() + " redirection: the request body " +
+              "exceeds the maximum size that can be buffered for redirections (" + maxRedirectBufferSize + " bytes)", true));
+            next.reset(0);
+            return;
           }
-          next.end(redirectBody);
-        } else {
-          next.end();
+          if (bodyBuffer != null && !bodyBuffer.isEmpty()) {
+            Buffer redirectBody;
+            if (bodyBuffer.size() == 1) {
+              redirectBody = bodyBuffer.get(0);
+            } else {
+              CompositeByteBuf composite = Unpooled.compositeBuffer();
+              for (Buffer b : bodyBuffer) {
+                composite.addComponent(true, ((BufferInternal) b).getByteBuf());
+              }
+              redirectBody = BufferInternal.buffer(composite);
+            }
+            next.end(redirectBody);
+            return;
+          }
         }
+        next.end();
       } else {
         next.reset(0);
       }
     });
+  }
+
+  /**
+   * @return whether the body of a request using {@code method} is sent again when a redirection keeps the method
+   */
+  private static boolean canRedirectBody(HttpMethod method) {
+    return method != HttpMethod.GET && method != HttpMethod.HEAD && method != HttpMethod.CONNECT;
   }
 
   private void handleContinue(Void v) {
@@ -452,7 +468,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   void handleResponse(Promise<HttpClientResponse> promise, HttpClientResponse resp, long timeoutMs) {
     int statusCode = resp.statusCode();
-    if (followRedirects && numberOfRedirections < maxRedirects && statusCode >= 300 && statusCode < 400) {
+    if (followRedirects && numberOfRedirections < maxRedirects && statusCode >= 300 && statusCode < 400
+      && !(bodyBufferDiscarded && statusCode != 303)) {
+      // A redirection other than 303 may keep the method and therefore needs the body, which could not be buffered
       Function<HttpClientResponse, Future<HttpClientRequest>> handler = redirectHandler;
       if (handler != null) {
         ContextInternal prev = context.beginDispatch();
@@ -538,23 +556,22 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (trailersSent) {
         return context.failedFuture(new IllegalStateException("Request already complete"));
       }
-      if (followRedirects && getMethod() == HttpMethod.QUERY) {
-        if (buff != null) {
-          int currentLen = 0;
-          if (bodyBuffer != null) {
-            for (Buffer b : bodyBuffer) {
-              currentLen += b.length();
-            }
+      if (followRedirects && buff != null && !bodyBufferDiscarded && canRedirectBody(getMethod())) {
+        // Keep a copy of the body in case a redirection keeps the method, e.g. 307 and 308
+        int currentLen = 0;
+        if (bodyBuffer != null) {
+          for (Buffer b : bodyBuffer) {
+            currentLen += b.length();
           }
-          if (currentLen + buff.length() > maxRedirectBufferSize) {
-            followRedirects = false;
-            bodyBuffer = null;
-          } else {
-            if (bodyBuffer == null) {
-              bodyBuffer = new ArrayList<>();
-            }
-            bodyBuffer.add(buff.copy());
+        }
+        if (currentLen + buff.length() > maxRedirectBufferSize) {
+          bodyBufferDiscarded = true;
+          bodyBuffer = null;
+        } else {
+          if (bodyBuffer == null) {
+            bodyBuffer = new ArrayList<>();
           }
+          bodyBuffer.add(buff.copy());
         }
       }
       if (!headersSent) {
