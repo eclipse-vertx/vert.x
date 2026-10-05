@@ -36,21 +36,20 @@ public interface HttpServerStream extends HttpStream {
   Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end);
   Future<Void> end(MultiMap headers);
 
+  HttpServerStream contentDecoder(ContentDecoder decoder);
+
   Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority);
 
   HttpServerStream headHandler(Handler<HttpRequestHead> handler);
   HttpServerStream resetHandler(Handler<Long> handler);
   HttpServerStream exceptionHandler(Handler<Throwable> handler);
   HttpServerStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpServerStream dataHandler(Handler<Buffer> handler);
   HttpServerStream trailersHandler(Handler<MultiMap> handler);
   HttpServerStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpServerStream closeHandler(Handler<Void> handler);
   HttpServerStream drainHandler(Handler<Void> handler);
 
   HttpServerStream setWriteQueueMaxSize(int maxSize);
-  HttpServerStream pause();
-  HttpServerStream fetch(long amount);
 
   void sendFile(ChunkedInput<ByteBuf> file, Promise<Void> promise);
 
