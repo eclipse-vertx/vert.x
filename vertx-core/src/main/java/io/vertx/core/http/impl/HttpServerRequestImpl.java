@@ -552,4 +552,8 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
     stream.routed(route);
     return this;
   }
+
+  public HttpServerStream stream() {
+    return stream;
+  }
 }

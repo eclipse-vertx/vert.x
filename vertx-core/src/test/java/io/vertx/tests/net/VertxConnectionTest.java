@@ -11,11 +11,14 @@
 package io.vertx.tests.net;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.VertxUnsafeHeapByteBuf;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -29,6 +32,7 @@ import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -362,6 +366,61 @@ public class VertxConnectionTest extends VertxTestBase {
       }
     };
     awaitFuture(client.connect(1234, "localhost"));
+    await();
+  }
+
+  @Test
+  public void testReleaseMessageInPendingQueueOnClose() {
+    connectHandler = conn -> {
+      ChannelPipeline pipeline = conn
+        .channelHandlerContext()
+        .pipeline();
+      List<ByteBuf> received = new ArrayList<>();
+      pipeline.addBefore("handler", "test", new ChannelDuplexHandler() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          if (msg instanceof ByteBuf) {
+            ByteBuf buffer = (ByteBuf) msg;
+            received.add(buffer);
+            ByteBuf another = buffer.copy();
+            received.add(another);
+            super.channelRead(ctx, new DefaultByteBufHolder(buffer));
+            super.channelRead(ctx, another);
+          } else {
+            super.channelRead(ctx, msg);
+          }
+        }
+      });
+      conn.messageHandler(msg -> {
+        fail();
+      });
+      conn.readCompletionHandler(v -> {
+        conn.close();
+      });
+      conn.closeHandler(v1 -> {
+        conn.messageHandler(msg -> {
+          if (msg instanceof ByteBufHolder) {
+            ByteBufHolder holder = (ByteBufHolder)msg;
+            Assert.assertTrue(holder.content() instanceof VertxUnsafeHeapByteBuf);
+          } else if (msg instanceof ByteBuf) {
+            ByteBuf buff = (ByteBuf)msg;
+            Assert.assertTrue(buff instanceof VertxUnsafeHeapByteBuf);
+          } else {
+            Assert.fail();
+          }
+        });
+        conn.endHandler(v2 -> {
+          for (ByteBuf buff : received) {
+            Assert.assertEquals(0, buff.refCnt());
+          }
+          testComplete();
+        });
+        conn.resume();
+      });
+      conn.pause();
+    };
+    NetSocket so = client.connect(1234, "localhost").await();
+    so.write("ping").await();
     await();
   }
 
