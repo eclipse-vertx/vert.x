@@ -12,6 +12,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,6 +27,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.EventLoopExecutor;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -84,6 +86,30 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
           MessageHandler handler = messageHandler();
           handler.handle(msg);
         }
+      }
+      @Override
+      protected Object releaseMessage(Object msg) {
+        if (msg instanceof ByteBufHolder) {
+          ByteBufHolder holder = (ByteBufHolder) msg;
+          try {
+            ByteBuf content = holder.content();
+            ByteBuf copy = VertxByteBufAllocator.DEFAULT.heapBuffer(content.readableBytes());
+            copy.writeBytes(content, content.readerIndex(), content.readableBytes());
+            msg = holder.replace(copy);
+          } finally {
+            holder.release();
+          }
+        } else if (msg instanceof ByteBuf) {
+          ByteBuf content = (ByteBuf) msg;
+          try {
+            ByteBuf copy = VertxByteBufAllocator.DEFAULT.heapBuffer(content.readableBytes());
+            copy.writeBytes(content, content.readerIndex(), content.readableBytes());
+            msg = copy;
+          } finally {
+            content.release();
+          }
+        }
+        return msg;
       }
     };
   }
@@ -271,6 +297,7 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
   }
 
   protected void handleEnded() {
+    doResume();
     read(InboundBuffer.END_SENTINEL);
     endRead();
   }
@@ -296,6 +323,12 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
     if (handler != null) {
       context.emit(handler);
     }
+  }
+
+  @Override
+  protected void handleClosed() {
+    pending.close();
+    super.handleClosed();
   }
 
   @Override

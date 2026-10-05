@@ -556,4 +556,134 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testReleaseMessages() {
+    List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());
+    queue = new TestChannel(emitted::add) {
+      @Override
+      protected Integer releaseMessage(Integer message) {
+        return -message;
+      }
+    };
+
+    producerTask(() -> {
+      queue.pause();
+      queue.emit(5);
+      queue.closeProducer();
+      consumerTask(() -> {
+        queue.closeConsumer();
+        assertEquals(Collections.emptyList(), emitted);
+        queue.resume();
+        consumerTask(() -> {
+          assertEquals(Arrays.asList(0, -1, -2, -3, -4), emitted);
+          testComplete();
+        });
+      });
+    });
+
+    await();
+  }
+
+  @Test
+  public void testFetchReleasedMessages() {
+    List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());
+    queue = new TestChannel(emitted::add) {
+      @Override
+      protected Integer releaseMessage(Integer message) {
+        return -message;
+      }
+    };
+
+    producerTask(() -> {
+      queue.pause();
+      queue.emit(3);
+      queue.closeProducer();
+      consumerTask(() -> {
+        queue.closeConsumer();
+        assertEquals(Collections.emptyList(), emitted);
+        queue.fetch(1);
+        consumerTask(() -> {
+          assertEquals(Collections.singletonList(0), emitted);
+          queue.fetch(1);
+          consumerTask(() -> {
+            assertEquals(Arrays.asList(0, -1), emitted);
+            queue.fetch(1);
+            consumerTask(() -> {
+              assertEquals(Arrays.asList(0, -1, -2), emitted);
+              testComplete();
+            });
+          });
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testFetchReleasedMessagesInHandler() {
+    List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());
+    queue = new TestChannel(msg -> {
+      emitted.add(msg);
+      if (msg < 4) {
+        queue.fetch(1);
+      }
+    }) {
+      @Override
+      protected Integer releaseMessage(Integer message) {
+        return -message;
+      }
+    };
+
+    producerTask(() -> {
+      queue.pause();
+      queue.emit(5);
+      queue.closeProducer();
+      consumerTask(() -> {
+        queue.closeConsumer();
+        assertEquals(Collections.emptyList(), emitted);
+        queue.fetch(1);
+        consumerTask(() -> {
+          assertEquals(Arrays.asList(0, -1, -2, -3, -4), emitted);
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testTailPauseAndResume() {
+    List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());
+    queue = new TestChannel(msg -> {
+      emitted.add(msg);
+      if (msg == -1) {
+        queue.pause();
+      }
+    }) {
+      @Override
+      protected Integer releaseMessage(Integer message) {
+        return -message;
+      }
+    };
+
+    producerTask(() -> {
+      queue.pause();
+      queue.emit(5);
+      queue.closeProducer();
+      consumerTask(() -> {
+        queue.closeConsumer();
+        queue.resume();
+        consumerTask(() -> {
+          assertEquals(Arrays.asList(0, -1), emitted);
+          queue.resume();
+          consumerTask(() -> {
+            assertEquals(Arrays.asList(0, -1, -2, -3, -4), emitted);
+            testComplete();
+          });
+        });
+      });
+    });
+    await();
+  }
 }
