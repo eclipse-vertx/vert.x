@@ -35,6 +35,8 @@ import java.util.List;
  */
 public class HttpClientResponseImpl implements HttpClientResponse  {
 
+  private static final Throwable ENDED_SENTINEL = new Throwable();
+
   private static final Logger log = LoggerFactory.getLogger(HttpClientResponseImpl.class);
 
   private final HttpVersion version;
@@ -54,37 +56,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private List<String> cookies;
   private NetSocket netSocket;
 
-  /**
-   * This {@code ended} field is used internally to track whether the response has ended.
-   * The {@link #completion} promise is used to expose the response result, completed as failed
-   * or succeeded. The promise's {@link Future} is exposed to external users via {@link #end()}.
-   *
-   * <p>The {@code ended} / {@link #completion} pair decouples the "response ended" state handling
-   * from the potentially expensive work that might be incurred by handlers registered on the promise's
-   * {@link Future}.
-   *
-   * <p>The pattern for both fields in {@link #handleException(Throwable)} and {@link #handleTrailers(MultiMap)}
-   * is:
-   * <ol>
-   *   <li>Acquire lock ({@code synchronized (conn)}).
-   *   <li>Check {@code ended}, if {@code ended != null} return immediately.
-   *   <li>Set {@code ended}.
-   *   <li>Release lock.
-   *   <li>Complete the {@link #completion} promise.
-   * </ol>
-   *
-   * <p>Possible states of {@code ended}:
-   * <ul>
-   *   <li>{@code null} - the response has not ended yet</li>
-   *   <li>{@link #ENDED_SENTINEL ENDED_SENTINEL} - the response has ended successfully</li>
-   *   <li>any other {@link Throwable} - the response has ended with an exception</li>
-   * </ul>
-   *
-   * <p>All accesses to this field must be guarded by {@code conn}.
-   */
   private Throwable ended;
-  private static final Throwable ENDED_SENTINEL = new Throwable();
-  private final Promise<Void> completion;
+  private final Promise<Void> endFuture;
 
   HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, MultiMap headers) {
     this.version = version;
@@ -93,11 +66,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.request = request;
     this.stream = stream;
     this.conn = stream.connection();
-    this.completion = request.context.promise();
+    this.endFuture = request.context.promise();
     this.headers = headers;
   }
 
-  // Must be guarded by a `synchronized (conn)` block.
   private HttpEventHandler eventHandler(boolean create) {
     if (eventHandler == null && create) {
       eventHandler = new HttpEventHandler(request.context);
@@ -311,9 +283,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   void handleTrailers(MultiMap trailers) {
     HttpEventHandler handler;
     Throwable wasEnded;
-    // This synchronized block is used to guarantee that a handler's `handleEnd()` is
-    // called only once and that setting/updating `trailers` does not race with
-    // `trailers()`, where the `trailers` field can escape.
     synchronized (conn) {
       wasEnded = this.ended;
       if (wasEnded != null) {
@@ -327,7 +296,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       this.ended = ENDED_SENTINEL;
       handler = eventHandler;
     }
-    completion.tryComplete();
+    endFuture.tryComplete();
     if (handler != null) {
       handler.handleEnd();
     }
@@ -337,8 +306,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     HttpEventHandler handler;
     Throwable wasEnded;
     synchronized (conn) {
-      // Only report the first exception, and generally only report when the
-      // response has not yet ended.
       wasEnded = this.ended;
       if (wasEnded != null) {
         return;
@@ -346,7 +313,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       this.ended = e;
       handler = eventHandler;
     }
-    completion.tryFail(e);
+    endFuture.tryFail(e);
     if (handler != null) {
       handler.handleException(e);
     } else {
@@ -374,7 +341,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public Future<Void> end() {
-    return completion.future();
+    return endFuture.future();
   }
 
   @Override
