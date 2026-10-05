@@ -20,7 +20,7 @@ import io.vertx.core.internal.PromiseInternal;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class PromiseImpl<T> extends FutureImpl<T> implements PromiseInternal<T> {
+public class PromiseImpl<T> extends FutureImpl<T> implements PromiseInternal<T> {
 
   /**
    * Create a promise that hasn't completed yet
