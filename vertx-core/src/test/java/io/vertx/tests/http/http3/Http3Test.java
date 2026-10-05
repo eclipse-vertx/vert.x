@@ -10,10 +10,26 @@
  */
 package io.vertx.tests.http.http3;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http3.Http3DataFrame;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.impl.HttpServerRequestImpl;
+import io.vertx.core.http.impl.http3.Http3ServerStream;
+import io.vertx.core.internal.net.QuicStreamInternal;
 import io.vertx.test.core.Checkpoint;
+import io.vertx.test.core.TestUtils;
 import io.vertx.tests.http.HttpTest;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Http3Test extends HttpTest {
 
@@ -85,5 +101,40 @@ public class Http3Test extends HttpTest {
   @Test
   @Override
   public void testCancelPartialServerResponse(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  }
+
+  @Test
+  public void testByteBufLeak(Checkpoint checkpoint) throws Exception {
+    List<ByteBuf> buffers = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(request -> {
+      request.pause();
+      Http3ServerStream stream = (Http3ServerStream)((HttpServerRequestImpl)request).stream();
+      QuicStreamInternal quicStream = (QuicStreamInternal)stream.quicStream();
+      ChannelHandlerContext chctx = quicStream.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "test", new ChannelDuplexHandler() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          if (msg instanceof Http3DataFrame) {
+            buffers.add(((Http3DataFrame)msg).content());
+          }
+          super.channelRead(ctx, msg);
+        }
+      });
+      checkpoint.succeed();
+    });
+    startServer(testAddress);
+    HttpClientRequest request = client.request(requestOptions).await();
+    request
+      .setChunked(true)
+      .writeHead()
+      .await();
+    checkpoint.awaitSuccess();
+    request.end(Buffer.buffer(TestUtils.randomAlphaString(512))).await();
+    TestUtils.assertWaitUntil(() -> buffers.size() == 1);
+    ByteBuf buffer = buffers.get(0);
+    Assert.assertTrue(buffer.refCnt() > 0);
+    request.connection().close().await();
+    TestUtils.assertWaitUntil(() -> buffer.refCnt() == 0);
   }
 }
