@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
+import io.vertx.core.net.QuicStream;
 import io.vertx.core.net.impl.VertxHandler;
 
 /**
@@ -366,5 +367,9 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   public final ByteBufAllocator allocator() {
     return stream.channelHandlerContext().alloc();
+  }
+
+  public QuicStream quicStream() {
+    return stream;
   }
 }
