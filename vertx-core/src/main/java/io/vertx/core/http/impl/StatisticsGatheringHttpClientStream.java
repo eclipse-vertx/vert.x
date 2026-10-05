@@ -21,6 +21,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
 /**
@@ -133,8 +134,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream dataHandler(Handler<Buffer> handler) {
-    delegate.dataHandler(handler);
+  public HttpClientStream contentDecoder(ContentDecoder decoder) {
+    delegate.contentDecoder(decoder);
     return this;
   }
 
@@ -152,12 +153,6 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpStream endHandler(Handler<Void> handler) {
-    delegate.endHandler(handler);
-    return this;
-  }
-
-  @Override
   public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
     delegate.priorityChangeHandler(handler);
     return this;
@@ -166,18 +161,6 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   @Override
   public HttpClientStream closeHandler(Handler<Void> handler) {
     delegate.closeHandler(handler);
-    return this;
-  }
-
-  @Override
-  public HttpClientStream pause() {
-    delegate.pause();
-    return this;
-  }
-
-  @Override
-  public HttpClientStream fetch(long amount) {
-    delegate.fetch(amount);
     return this;
   }
 

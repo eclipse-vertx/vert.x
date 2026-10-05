@@ -51,6 +51,8 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -494,14 +496,14 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       return trace;
     }
 
-    public HttpClientStream pause() {
+    public StreamImpl pause() {
       queue.pause();
-      return (HttpClientStream)this;
+      return (StreamImpl)this;
     }
 
-    public HttpClientStream fetch(long amount) {
+    public StreamImpl fetch(long amount) {
       queue.fetch(amount);
-      return (HttpClientStream)this;
+      return (StreamImpl)this;
     }
 
     void onException(Throwable err) {
@@ -571,11 +573,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
    * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
    * state managed by the connection and this class defines the state managed by the stream implementation
    */
-  private static class StreamImpl extends Stream implements HttpClientStream {
+  private static class StreamImpl extends Stream implements HttpClientStream, FlowController {
 
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
-    private Handler<Buffer> chunkHandler;
-    private Handler<Void> endHandler;
     private Handler<MultiMap> trailerHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
@@ -585,8 +585,22 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private Handler<Void> closeHandler;
     private boolean trailersDispatched;
 
+    private ContentDecoder contentDecoder;
+    boolean inHead;
+    boolean decoderInitialized;
+
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
+    }
+
+    @Override
+    public HttpClientStream contentDecoder(ContentDecoder decoder) {
+      contentDecoder = decoder;
+      if (decoder != null && inHead && !decoderInitialized) {
+        decoderInitialized = true;
+        decoder.init(this);
+      }
+      return this;
     }
 
     @Override
@@ -756,20 +770,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
-      chunkHandler = handler;
-      return this;
-    }
-
-    @Override
     public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
       trailerHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpStream endHandler(Handler<Void> handler) {
-      endHandler = handler;
       return this;
     }
 
@@ -785,9 +787,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           handler.handle(trailers);
         }
       }
-      Handler<Void> handler = endHandler;
-      if (handler != null) {
-        handler.handle(null);
+      ContentDecoder decoder = contentDecoder;
+      if (decoder != null) {
+        decoder.handleEnd();
       }
     }
 
@@ -804,11 +806,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleChunk(ByteBuf chunk) {
-      Handler<Buffer> handler = chunkHandler;
-      if (handler != null) {
-        ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(chunk.readableBytes());
-        buffer.writeBytes(chunk, chunk.readerIndex(), chunk.readableBytes());
-        handler.handle(BufferInternal.buffer(buffer));
+      Handler<ByteBuf> decoder = contentDecoder;
+      if (decoder != null) {
+        decoder.handle(chunk);
       }
     }
 
@@ -828,9 +828,19 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
-      Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
-      if (handler != null) {
-        handler.handle(response);
+      inHead = true;
+      try {
+        Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
+        if (handler != null) {
+          handler.handle(response);
+        }
+        ContentDecoder decoder = contentDecoder;
+        if (decoder != null && !decoderInitialized) {
+          decoderInitialized = true;
+          decoder.init(this);
+        }
+      } finally {
+        inHead = false;
       }
     }
 

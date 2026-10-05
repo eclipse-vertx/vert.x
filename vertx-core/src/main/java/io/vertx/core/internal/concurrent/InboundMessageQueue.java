@@ -302,6 +302,10 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     if (!draining) {
       needsDrain = releaseMessages();
     }
+    handleConsumerClosed();
+  }
+
+  protected void handleConsumerClosed() {
   }
 
   private boolean releaseMessages() {

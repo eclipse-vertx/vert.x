@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.http.stream;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -19,10 +20,11 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.impl.HttpResponseHead;
-import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.http.impl.*;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfigurator;
@@ -33,6 +35,8 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import static org.junit.Assert.*;
 
 public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
 
@@ -83,17 +87,23 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testHandleResponseChunks(Checkpoint checkpoint) throws Exception {
+  public void testContentDecoderEvents(Checkpoint checkpoint) throws Exception {
     int numChunks = 128;
     String expectedChunk = TestUtils.randomAlphaString(128);
     handler = stream -> {
       AtomicInteger count = new AtomicInteger();
-      stream.dataHandler(chunk -> {
-        count.addAndGet(chunk.length());
-      });
-      stream.endHandler(v -> {
-        Assert.assertEquals(numChunks * expectedChunk.length(), count.get());
-        checkpoint.succeed();
+      stream.contentDecoder(new ContentDecoderBase() {
+        @Override
+        public void handle(ByteBuf chunk) {
+          count.addAndGet(chunk.readableBytes());
+        }
+        @Override
+        public void handleEnd() {
+          vertx.setTimer(250, id -> {
+            assertEquals(numChunks * expectedChunk.length(), count.get());
+            checkpoint.succeed();
+          });
+        }
       });
     };
     startServer(testAddress);
@@ -103,6 +113,70 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       request.write(expectedChunk).await();
     }
     request.end();
+  }
+
+  @Test
+  public void testContentDecoderLifecycle(Checkpoint checkpoint) throws Exception {
+    String expectedChunk = TestUtils.randomAlphaString(128);
+    handler = stream -> {
+      AtomicInteger count = new AtomicInteger();
+      stream.contentDecoder(new ContentDecoderBase() {
+        @Override
+        public void handle(ByteBuf chunk) {
+          count.addAndGet(chunk.readableBytes());
+        }
+        @Override
+        public void handleClose() {
+          checkpoint.succeed();
+        }
+      });
+    };
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions).await();
+    request.write(expectedChunk).await();
+    request.connection().close().await();
+  }
+
+  @Test
+  public void testContentDecoderLifecycleWithFetch(Checkpoint checkpoint) throws Exception {
+    int numChunks = 10;
+    String expectedChunk = TestUtils.randomAlphaString(128);
+    handler = stream -> {
+      AtomicInteger count = new AtomicInteger();
+      AtomicInteger closed = new AtomicInteger();
+      stream.contentDecoder(new ContentDecoderBase() {
+        @Override
+        public void handle(ByteBuf chunk) {
+          int val = count.incrementAndGet();
+          if (val == 1) {
+            flowController.pause();
+          } else {
+            assertEquals(1, closed.get());
+            assertTrue(chunk.alloc() instanceof VertxByteBufAllocator);
+            if (val == numChunks) {
+              checkpoint.succeed();
+            }
+          }
+        }
+        @Override
+        public void handleEnd() {
+          fail();
+        }
+        @Override
+        public void handleClose() {
+          assertEquals(0, closed.getAndIncrement());
+          flowController.resume();
+        }
+      });
+    };
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions).await();
+    for (int i = 0;i < numChunks;i++) {
+      request.write(expectedChunk).await();
+    }
+    request.connection().close().await();
   }
 
   @Test
@@ -138,7 +212,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         Assert.assertTrue(sent.get());
         checkpoint.succeed();
       });
-      stream.endHandler(v -> {
+      stream.trailersHandler(trailers -> {
         vertx.setTimer(250, id -> {
           sent.set(true);
           h.accept(stream);
@@ -271,7 +345,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
 
   private void testHttpResponse(Consumer<HttpServerStream> consumer) throws Exception {
     handler = stream -> {
-      stream.endHandler(v -> {
+      stream.trailersHandler(trailers -> {
         consumer.accept(stream);
       });
     };
@@ -282,7 +356,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         .send()
         .compose(HttpClientResponse::body))
       .await();
-    Assert.assertEquals("Hello", body.toString());
+    assertEquals("Hello", body.toString());
   }
 
   @Test
@@ -305,8 +379,8 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         .send()
         .compose(response -> response.end().map(v -> response.trailers())))
       .await();
-    Assert.assertEquals(1, trailers.size());
-    Assert.assertEquals("trailer_value", trailers.get("trailer_key"));
+    assertEquals(1, trailers.size());
+    assertEquals("trailer_value", trailers.get("trailer_key"));
   }
 
   @Test
@@ -368,7 +442,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     handler = stream -> {
       stream.headHandler(head -> {
       });
-      stream.endHandler(v -> {
+      stream.trailersHandler(trailers -> {
         consumer.accept(stream);
       });
     };
@@ -377,5 +451,27 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       .request(requestOptions)
       .compose(HttpClientRequest::end)
       .await();
+  }
+
+  private static class ContentDecoderBase implements ContentDecoder {
+
+    protected FlowController flowController;
+
+    @Override
+    public void init(FlowController flowController) {
+      this.flowController = flowController;
+    }
+
+    @Override
+    public void handle(ByteBuf chunk) {
+    }
+
+    @Override
+    public void handleEnd() {
+    }
+
+    @Override
+    public void handleClose() {
+    }
   }
 }

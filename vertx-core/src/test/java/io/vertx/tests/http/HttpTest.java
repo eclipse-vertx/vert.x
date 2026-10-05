@@ -11,6 +11,7 @@
 
 package io.vertx.tests.http;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoop;
@@ -31,6 +32,9 @@ import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
+import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
@@ -6723,5 +6727,36 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       });
     }
     checkpoint.awaitSuccess();
+  }
+
+  @Test
+  public void testContentDecoder() throws Exception {
+
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
+
+    server.requestHandler(req -> {
+      ((HttpServerRequestInternal)req).contentDecoder(new ContentDecoder() {
+        @Override
+        public void init(FlowController flowController) {
+        }
+        @Override
+        public void handle(ByteBuf chunk) {
+        }
+        @Override
+        public void handleEnd() {
+          req.response().end();
+        }
+        @Override
+        public void handleClose() {
+        }
+      });
+    });
+
+    startServer();
+
+    client.request(requestOptions)
+      .compose(req -> req
+        .send(expected)
+        .compose(HttpClientResponse::body)).await();
   }
 }

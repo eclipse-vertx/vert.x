@@ -45,6 +45,15 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
   }
 
   /**
+   * Sets a decoder for the content of this request. The decoder must be set early in the lifecycle of the stream, before
+   * any chunk is received.
+   *
+   * @param decoder the decoder
+   * @return this request
+   */
+  public abstract HttpServerRequestInternal contentDecoder(ContentDecoder decoder);
+
+  /**
    * @return the request query param decoder, the {@code maxSize} and {@code useSemiColonAsDelimiter} reflect the default
    * configuration size of the decoder, the {@code charset} reflects the request charset set by {@link #setParamsCharset(String)}.
    */
