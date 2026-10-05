@@ -320,24 +320,61 @@ public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest
   @Test
   public void testCloseWhenDraining() {
     List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());;
-    List<Integer> dropped = Collections.synchronizedList(new ArrayList<>());
+    List<Integer> released = Collections.synchronizedList(new ArrayList<>());
     queue = new TestChannel(elt -> {
       emitted.add(elt);
       if (elt == 0) {
         queue.close();
-        assertEquals(Collections.emptyList(), dropped);
+        assertEquals(Collections.emptyList(), released);
       }
     }, 4, 4) {
       @Override
-      protected void handleDispose(Integer msg) {
-        dropped.add(msg);
+      protected Integer releaseMessage(Integer msg) {
+        released.add(msg);
+        return -msg;
       }
     };
     producerTask(() -> {
       queue.fill();
-      assertEquals(List.of(1, 2, 3), dropped);
-      assertEquals(List.of(0), emitted);
+      assertEquals(List.of(1, 2, 3), released);
+      assertEquals(List.of(0, -1, -2, -3), emitted);
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testCloseWhenDrainingNeedsDrain() {
+    List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());;
+    queue = new TestChannel(elt -> {
+      emitted.add(elt);
+      switch (elt) {
+        case 0:
+          queue.close();
+          break;
+        case -1:
+          queue.pause();
+          break;
+        case -2:
+          queue.pause();
+          queue.fetch(1);
+          break;
+        case -3:
+          testComplete();
+          break;
+        default:
+          break;
+      }
+    }, 4, 4) {
+      @Override
+      protected Integer releaseMessage(Integer msg) {
+        return -msg;
+      }
+    };
+    producerTask(() -> {
+      queue.fill();
+      assertEquals(List.of(0, -1), emitted);
+      queue.fetch(1);
     });
     await();
   }

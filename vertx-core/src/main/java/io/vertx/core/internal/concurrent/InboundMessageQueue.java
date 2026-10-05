@@ -14,6 +14,8 @@ import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.streams.impl.MessagePassingQueue;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
@@ -37,6 +39,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private boolean draining;
   private boolean needsDrain;
   private boolean consumerClosed;
+  private Deque<M> tail;
 
   // Any thread
   private volatile long demand = Long.MAX_VALUE;
@@ -78,16 +81,11 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     if (consumerClosed) {
       return false;
     } else {
-      while (true) {
-        long d = DEMAND_UPDATER.get(this);
-        if (d == 0L) {
-          return false;
-        } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
-          break;
-        }
+      boolean consumed = tryConsume();
+      if (consumed) {
+        handleMessage(msg);
       }
-      handleMessage(msg);
-      return true;
+      return consumed;
     }
   }
 
@@ -158,7 +156,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   @Override
   public void run() {
     assert consumer.inThread();
-    if (!draining && needsDrain) {
+    if (needsDrain) {
       drainInternal();
     }
   }
@@ -171,27 +169,60 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   private void drainInternal() {
-    if (consumerClosed) {
-      return;
-    }
     draining = true;
     try {
-      int res = mqp.drain();
       if (consumerClosed) {
-        releaseMessages();
+        needsDrain = drainTail();
       } else {
-        needsDrain = (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
-        if ((res & MessagePassingQueue.WRITABLE_MASK) != 0) {
-          if (producer.inThread()) {
-            tryResume();
+        int res = mqp.drain();
+        if (consumerClosed) {
+          if (releaseMessages()) {
+            needsDrain = drainTail();
           } else {
-            producer.execute(this::tryResume);
+            needsDrain = false;
+          }
+        } else {
+          needsDrain = (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
+          if ((res & MessagePassingQueue.WRITABLE_MASK) != 0) {
+            if (producer.inThread()) {
+              tryResume();
+            } else {
+              producer.execute(this::tryResume);
+            }
           }
         }
       }
     } finally {
       draining = false;
     }
+  }
+
+  private boolean tryConsume() {
+    while (true) {
+      long d = DEMAND_UPDATER.get(this);
+      if (d == 0L) {
+        return false;
+      } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
+        return true;
+      }
+    }
+  }
+
+  private boolean drainTail() {
+    Deque<M> pending = tail;
+    while (pending != null) {
+      if (tryConsume()) {
+        M elt = pending.poll();
+        if (pending.isEmpty()) {
+          pending = null;
+          tail = null;
+        }
+        handleMessage(elt);
+      } else {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -262,15 +293,29 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
     consumerClosed = true;
     if (!draining) {
-      releaseMessages();
+      needsDrain = releaseMessages();
     }
   }
 
-  private void releaseMessages() {
+  private boolean releaseMessages() {
     List<M> messages = mqp.clear();
+    Deque<M> l = null;
     for (M elt : messages) {
-      handleDispose(elt);
+      M m = releaseMessage(elt);
+      if (m != null) {
+        if (l == null) {
+          l = new ArrayDeque<>();
+        }
+        l.add(m);
+      }
     }
+    tail = l;
+    return l != null;
+  }
+
+  protected M releaseMessage(M message) {
+    handleDispose(message);
+    return null;
   }
 
   /**
@@ -299,7 +344,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    *
    * @param msg the message to dispose
    */
-  // Todo : try remove this
   protected void handleDispose(M msg) {
   }
 }
