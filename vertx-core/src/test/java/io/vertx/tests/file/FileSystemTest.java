@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -1364,6 +1366,52 @@ public class FileSystemTest extends VertxTestBase {
       });
     }));
     await();
+  }
+
+  @Test
+  public void testReadStreamHandlerExceptionReportedToContext() throws Exception {
+    testReadStreamHandlerExceptionReportedToContext(false);
+  }
+
+  @Test
+  public void testReadStreamEndHandlerExceptionReportedToContext() throws Exception {
+    testReadStreamHandlerExceptionReportedToContext(true);
+  }
+
+  private void testReadStreamHandlerExceptionReportedToContext(boolean fromEndHandler) throws Exception {
+    String fileName = "some-file.dat";
+    createFile(fileName, TestUtils.randomByteArray(1000));
+    RuntimeException failure = new RuntimeException("boom");
+    List<Throwable> reported = Collections.synchronizedList(new ArrayList<>());
+    AtomicBoolean ended = new AtomicBoolean();
+    AtomicBoolean streamExceptionHandlerCalled = new AtomicBoolean();
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
+      // The file is bound to the current context: a failure of a handler must be reported there
+      Vertx.currentContext().exceptionHandler(err -> {
+        reported.add(err);
+        if (fromEndHandler) {
+          testComplete();
+        }
+      });
+      rs.exceptionHandler(t -> streamExceptionHandlerCalled.set(true));
+      rs.handler(chunk -> {
+        if (!fromEndHandler) {
+          throw failure;
+        }
+      });
+      rs.endHandler(v -> {
+        ended.set(true);
+        if (fromEndHandler) {
+          throw failure;
+        }
+        testComplete();
+      });
+    }));
+    await();
+    // The failure is reported to the context, not to the stream exception handler, and does not prevent the stream from ending
+    Assert.assertEquals(Collections.singletonList(failure), reported);
+    Assert.assertTrue(ended.get());
+    Assert.assertFalse(streamExceptionHandlerCalled.get());
   }
 
   @Test

@@ -391,7 +391,7 @@ public class AsyncFileImpl implements AsyncFile {
     }
     if (handler != null) {
       checkContext();
-      handler.handle(buff);
+      context.dispatch(buff, handler);
     }
   }
 
@@ -403,7 +403,7 @@ public class AsyncFileImpl implements AsyncFile {
     }
     if (endHandler != null) {
       checkContext();
-      endHandler.handle(null);
+      context.dispatch(endHandler);
     }
   }
 
