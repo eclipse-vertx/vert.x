@@ -381,7 +381,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
       .await();
     Future<HttpClientResponse> response = request.send(ClientMultipartForm
       .multipartForm()
-      .textFileUpload("file", "nonexistentFilename", "nonexistentPathname", "text/plain"));
+      .textFileUpload("file", "nonexistentFilename", "text/plain", "nonexistentPathname"));
     try {
       response
           .expecting(HttpResponseExpectation.SC_OK)
