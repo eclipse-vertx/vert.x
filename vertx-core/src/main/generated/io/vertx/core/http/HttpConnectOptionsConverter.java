@@ -47,6 +47,11 @@ public class HttpConnectOptionsConverter {
             obj.setConnectTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "localAddress":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setLocalAddress(io.vertx.core.net.SocketAddress.fromJson((JsonObject)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -75,5 +80,8 @@ public class HttpConnectOptionsConverter {
       json.put("sslOptions", obj.getSslOptions().toJson());
     }
     json.put("connectTimeout", obj.getConnectTimeout());
+    if (obj.getLocalAddress() != null) {
+      json.put("localAddress", obj.getLocalAddress().toJson());
+    }
   }
 }
