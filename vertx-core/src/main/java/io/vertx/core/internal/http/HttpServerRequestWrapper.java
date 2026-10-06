@@ -107,6 +107,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public String connectProtocol() {
+    return delegate.connectProtocol();
+  }
+
+  @Override
   public boolean isValidAuthority() {
     return delegate.isValidAuthority();
   }

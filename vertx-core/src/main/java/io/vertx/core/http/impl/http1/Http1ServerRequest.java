@@ -288,6 +288,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   @Override
+  public String connectProtocol() {
+    return null;
+  }
+
+  @Override
   public long bytesRead() {
     synchronized (conn) {
       return bytesRead;

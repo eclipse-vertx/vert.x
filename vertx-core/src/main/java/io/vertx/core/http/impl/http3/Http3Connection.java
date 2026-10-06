@@ -68,15 +68,19 @@ public abstract class Http3Connection implements HttpConnection {
 
   io.netty.handler.codec.http3.Http3Settings nettyLocalSettings() {
     io.netty.handler.codec.http3.Http3Settings nSettings = new io.netty.handler.codec.http3.Http3Settings();
-    Long val;
-    if ((val = localSettings.get(Http3Settings.MAX_FIELD_SECTION_SIZE)) != null) {
-      nSettings.maxFieldSectionSize(val);
+    Long lval;
+    if ((lval = localSettings.get(Http3Settings.MAX_FIELD_SECTION_SIZE)) != null) {
+      nSettings.maxFieldSectionSize(lval);
     }
-    if ((val = localSettings.get(Http3Settings.QPACK_BLOCKED_STREAMS)) != null) {
-      nSettings.qpackBlockedStreams(val);
+    if ((lval = localSettings.get(Http3Settings.QPACK_BLOCKED_STREAMS)) != null) {
+      nSettings.qpackBlockedStreams(lval);
     }
-    if ((val = localSettings.get(Http3Settings.QPACK_MAX_TABLE_CAPACITY)) != null) {
-      nSettings.qpackMaxTableCapacity(val);
+    if ((lval = localSettings.get(Http3Settings.QPACK_MAX_TABLE_CAPACITY)) != null) {
+      nSettings.qpackMaxTableCapacity(lval);
+    }
+    Boolean bval;
+    if ((bval = localSettings.get(HttpSettings.ENABLE_CONNECT_PROTOCOL)) != null) {
+      nSettings.enableConnectProtocol(bval);
     }
     return nSettings;
   }
@@ -249,6 +253,9 @@ public abstract class Http3Connection implements HttpConnection {
             break;
           case HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE:
             vSetting = Http3Settings.MAX_FIELD_SECTION_SIZE;
+            break;
+          case HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL:
+            vSetting = HttpSettings.ENABLE_CONNECT_PROTOCOL;
             break;
           default:
             continue;
