@@ -6652,4 +6652,44 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       })
       .await();
   }
+
+  @Test
+  public void testPausedCompleteResponseAfterConnectionClose() throws Exception {
+    Buffer expected = Buffer.buffer("response body");
+    Promise<HttpConnection> serverConn = Promise.promise();
+    server.requestHandler(req -> {
+      serverConn.complete(req.connection());
+      req.response().end(expected);
+    });
+    startServer(testAddress);
+
+    Promise<HttpClientResponse> paused = Promise.promise();
+    Promise<Throwable> requestFailure = Promise.promise();
+    AtomicBoolean responseEnded = new AtomicBoolean();
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .onComplete(TestUtils.onSuccess(request -> {
+        request.setChunked(true);
+        request.exceptionHandler(requestFailure::complete);
+        request.response().onComplete(TestUtils.onSuccess(response -> {
+          response.pause();
+          response.endHandler(v -> responseEnded.set(true));
+          response.body();
+          paused.complete(response);
+        }));
+        request.write("unfinished request");
+      }));
+    HttpClientResponse response = paused.future().await();
+    serverConn
+      .future()
+      .await()
+      .close()
+      .await();
+    Throwable throwable = requestFailure.future().await();
+    assertTrue(throwable instanceof HttpClosedException);
+    Future<Buffer> responseBody = response.body();
+    response.resume();
+    Buffer body = responseBody.await();
+    assertEquals(expected, body);
+    assertTrue(responseEnded.get());
+  }
 }

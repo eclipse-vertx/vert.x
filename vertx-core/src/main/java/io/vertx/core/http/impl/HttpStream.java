@@ -57,6 +57,7 @@ public interface HttpStream {
   HttpStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpStream closeHandler(Handler<Void> handler);
   HttpStream drainHandler(Handler<Void> handler);
+  HttpStream endHandler(Handler<Void> handler);
 
   boolean isWritable();
 

@@ -103,6 +103,12 @@ public class Http3Test extends HttpTest {
   public void testCancelPartialServerResponse(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
   }
 
+  @Ignore("Requires QUIC-level inbound message queue to buffer data across connection close")
+  @Test
+  @Override
+  public void testPausedCompleteResponseAfterConnectionClose() throws Exception {
+  }
+
   @Test
   public void testByteBufLeak(Checkpoint checkpoint) throws Exception {
     List<ByteBuf> buffers = Collections.synchronizedList(new ArrayList<>());
