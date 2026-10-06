@@ -123,7 +123,7 @@ public class Http1xTest extends HttpTest {
           "\r\nConnection: close\r\n\r\n").appendBuffer(expected));
       });
     });
-    backend.listen(testAddress).toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    backend.listen(testAddress).await();
     CompletableFuture<HttpClientResponse> paused = new CompletableFuture<>();
     CompletableFuture<Throwable> requestFailure = new CompletableFuture<>();
     AtomicReference<Throwable> responseFailure = new AtomicReference<>();
