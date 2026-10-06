@@ -12,7 +12,6 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.ArrayList;
@@ -145,7 +144,7 @@ public class FutureImpl<T> extends FutureBase<T> {
 
   public final boolean tryFail(Throwable cause) {
     if (cause == null) {
-      cause = new NoStackTraceThrowable(null);
+      cause = VertxException.noStackTrace((String) null);
     }
     return completeInternal(null, cause);
   }
