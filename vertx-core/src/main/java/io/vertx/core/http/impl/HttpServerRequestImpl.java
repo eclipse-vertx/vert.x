@@ -96,6 +96,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
     stream.closeHandler(this::handleClosed);
     stream.dataHandler(this::handleData);
     stream.trailersHandler(this::handleTrailers);
+    stream.endHandler(this::handleEnd);
     stream.drainHandler(response::handleWriteQueueDrained);
   }
 
@@ -187,6 +188,9 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   }
 
   public void handleTrailers(MultiMap trailers) {
+  }
+
+  public void handleEnd(Void v) {
     HttpEventHandler handler;
     synchronized (connection) {
       ended = true;

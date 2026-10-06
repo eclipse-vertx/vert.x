@@ -58,9 +58,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private int readable; // When negative : redeem inbound buffers immediately, otherwise the value of cumulation of
                         // inbound buffers bytes to redeem when resuming
 
-  // Written by event-loop and read by context thread with an happens-before
-  private HttpHeaders trailers;
-
   // Client context
   private StreamPriority priority;
   private long bytesRead;
@@ -78,6 +75,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> priorityChangeHandler;
   private Handler<Void> drainHandler;
+  private Handler<Void> endHandler;
 
   DefaultHttp2Stream(Http2Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
@@ -102,9 +100,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       @Override
       protected void handleMessage(Buffer data) {
         if (data == HttpUtils.END_OF_STREAM) {
-          HttpHeaders map = trailers;
-          trailers = null;
-          handleTrailers(map);
+          handleEnd();
         } else {
           handleData(data);
         }
@@ -275,7 +271,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       observer.observeInboundTrailers(bytesRead);
     }
     connection.flushBytesRead();
-    trailers = received;
+    context.emit(received, this::handleTrailers);
     inboundQueue.write(HttpUtils.END_OF_STREAM);
   }
 
@@ -527,7 +523,19 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private void handleTrailers(MultiMap trailers) {
     Handler<MultiMap> handler = trailersHandler;
     if (handler != null) {
-      context.dispatch(trailers, handler);
+      handler.handle(trailers);
+    }
+  }
+
+  public S endHandler(Handler<Void> handler) {
+    endHandler = handler;
+    return (S)this;
+  }
+
+  private void handleEnd() {
+    Handler<Void> handler = endHandler;
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 

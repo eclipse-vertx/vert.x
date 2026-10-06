@@ -64,6 +64,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
         response.handleChunk(chunk);
       });
       stream.trailersHandler(response::handleTrailers);
+      stream.endHandler(response::handleEnd);
       stream.priorityChangeHandler(response::handlePriorityChange);
       stream.customFrameHandler(response::handleUnknownFrame);
       handleResponse(response);
