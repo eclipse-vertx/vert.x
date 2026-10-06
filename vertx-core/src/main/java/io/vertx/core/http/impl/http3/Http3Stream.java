@@ -55,6 +55,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private int bytesWritten;
   private Http3Headers headers;
   private Handler<MultiMap> trailersHandler;
+  private Handler<Void> endHandler;
   private Handler<Buffer> dataHandler;
   private Handler<HttpFrame> unknownFrameHandler;
   private Handler<Long> resetHandler;
@@ -113,15 +114,19 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     if (observer != null) {
       observer.observeInboundTrailers(bytesRead());
     }
-    Handler<MultiMap> handler = trailersHandler;
-    if (handler != null) {
+    Handler<MultiMap> trailHandler = trailersHandler;
+    if (trailHandler != null) {
       MultiMap trailers;
       if (headers != null) {
         trailers = new HttpHeaders(headers);
       } else {
         trailers = EMPTY;
       }
-      context.dispatch(trailers, handler);
+      context.dispatch(trailers, trailHandler);
+    }
+    Handler<Void> handler = endHandler;
+    if (handler != null) {
+      context.dispatch(null, handler);
     }
   }
 
@@ -223,6 +228,11 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   public final S trailersHandler(Handler<MultiMap> handler) {
     this.trailersHandler = handler;
+    return (S)this;
+  }
+
+  public final S endHandler(Handler<Void> handler) {
+    this.endHandler = handler;
     return (S)this;
   }
 
