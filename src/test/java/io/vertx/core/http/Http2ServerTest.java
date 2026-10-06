@@ -306,7 +306,17 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testServerInitialSettings() throws Exception {
+    testServerInitialSettings(TestUtils.randomHttp2Settings());
+  }
+
+  @Test
+  public void testServerInitialSettingsUnlimitedMaxConcurrentStreams() throws Exception {
     io.vertx.core.http.Http2Settings settings = TestUtils.randomHttp2Settings();
+    settings.setMaxConcurrentStreams(0xFFFFFFFFL);
+    testServerInitialSettings(settings);
+  }
+
+  private void testServerInitialSettings(io.vertx.core.http.Http2Settings settings) throws Exception {
     server.close();
     server = vertx.createHttpServer(serverOptions.setInitialSettings(settings));
     server.requestHandler(req -> fail());

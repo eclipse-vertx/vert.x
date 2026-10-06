@@ -44,9 +44,9 @@ public class Http2Settings {
   public static final boolean DEFAULT_ENABLE_PUSH = true;
 
   /**
-   * Default HTTP/2 spec value for {@link #getMaxConcurrentStreams} : {@code 0xFFFFFFFFL}
+   * Default HTTP/2 spec value for {@link #getMaxConcurrentStreams} : {@code 100}
    */
-  public static final long DEFAULT_MAX_CONCURRENT_STREAMS = 0xFFFFFFFFL;
+  public static final long DEFAULT_MAX_CONCURRENT_STREAMS = 100;
 
   /**
    * Default HTTP/2 spec value for {@link #getInitialWindowSize} : {@code 65535}
