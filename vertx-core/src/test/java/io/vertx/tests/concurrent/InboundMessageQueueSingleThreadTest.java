@@ -318,6 +318,38 @@ public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest
   }
 
   @Test
+  public void testCloseInResumeCallback() {
+    List<Integer> emitted = new ArrayList<>();
+    AtomicBoolean resumed = new AtomicBoolean();
+    queue = new TestChannel(elt -> {
+      emitted.add(elt);
+      if (elt == 2) {
+        queue.pause();
+      }
+    }, 2, 4) {
+      @Override
+      protected void handleResume() {
+        super.handleResume();
+        if (!resumed.getAndSet(true)) {
+          emit();
+          close();
+        }
+      }
+      @Override
+      protected Integer releaseMessage(Integer msg) {
+        return -msg;
+      }
+    };
+    producerTask(() -> {
+      queue.fill();
+      assertEquals(List.of(0, 1, 2), emitted);
+      queue.fetch(2);
+    });
+    assertWaitUntil(() -> emitted.size() == 5);
+    assertEquals(List.of(0, 1, 2, -3, -4), emitted);
+  }
+
+  @Test
   public void testCloseWhenDraining() {
     List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());;
     List<Integer> released = Collections.synchronizedList(new ArrayList<>());
