@@ -175,20 +175,22 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
         needsDrain = drainTail();
       } else {
         int res = mqp.drain();
-        if (consumerClosed) {
-          if (releaseMessages()) {
-            needsDrain = drainTail();
-          } else {
-            needsDrain = false;
-          }
-        } else {
+        if (!consumerClosed) {
           needsDrain = (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
           if ((res & MessagePassingQueue.WRITABLE_MASK) != 0) {
             if (producer.inThread()) {
               tryResume();
             } else {
               producer.execute(this::tryResume);
+              return;
             }
+          }
+        }
+        if (consumerClosed) {
+          if (releaseMessages()) {
+            needsDrain = drainTail();
+          } else {
+            needsDrain = false;
           }
         }
       }
