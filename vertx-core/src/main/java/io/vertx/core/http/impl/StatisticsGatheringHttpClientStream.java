@@ -152,6 +152,12 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public HttpStream endHandler(Handler<Void> handler) {
+    delegate.endHandler(handler);
+    return this;
+  }
+
+  @Override
   public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
     delegate.priorityChangeHandler(handler);
     return this;

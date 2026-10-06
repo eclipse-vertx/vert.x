@@ -435,9 +435,6 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private boolean reset;
     private boolean closed;
 
-    // Written by event-loop and read by context thread with an happens-before
-    private MultiMap trailers;
-
     Stream(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       this.context = context;
       this.id = id;
@@ -455,7 +452,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         @Override
         protected void handleMessage(Buffer item) {
           if (item == HttpUtils.END_OF_STREAM) {
-            handleEnd(trailers);
+            handleEnd();
           } else {
             handleChunk(item);
           }
@@ -508,7 +505,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     void onEnd(LastHttpContent trailer) {
-      trailers = new HeadersAdaptor(trailer.trailingHeaders());
+      context.emit(new HeadersAdaptor(trailer.trailingHeaders()), this::handleTrailers);
       queue.write(HttpUtils.END_OF_STREAM);
     }
 
@@ -516,7 +513,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       queue.write(buff);
     }
 
-    abstract void handleEnd(MultiMap trailer);
+    abstract void handleEnd();
+    abstract void handleTrailers(MultiMap trailers);
     abstract void handleChunk(Buffer chunk);
     abstract void handleContinue(Void v);
     abstract void handleEarlyHints(MultiMap headers);
@@ -549,6 +547,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
+    private Handler<Void> endHandler;
     private Handler<MultiMap> trailerHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
@@ -740,10 +739,24 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    void handleEnd(MultiMap trailer) {
+    public HttpStream endHandler(Handler<Void> handler) {
+      endHandler = handler;
+      return this;
+    }
+
+    @Override
+    void handleEnd() {
+      Handler<Void> handler = endHandler;
+      if (handler != null) {
+        handler.handle(null);
+      }
+    }
+
+    @Override
+    void handleTrailers(MultiMap trailers) {
       Handler<MultiMap> handler = trailerHandler;
       if (handler != null) {
-        handler.handle(trailer);
+        handler.handle(trailers);
       }
     }
 
@@ -978,7 +991,6 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
-    boolean check;
     io.vertx.core.http.impl.HttpResponseHead response;
     HttpVersion version;
     synchronized (this) {

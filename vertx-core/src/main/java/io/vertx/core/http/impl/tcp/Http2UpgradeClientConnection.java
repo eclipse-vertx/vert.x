@@ -223,6 +223,12 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public HttpStream endHandler(Handler<Void> handler) {
+      delegate.endHandler(handler);
+      return this;
+    }
+
+    @Override
     public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
       delegate.priorityChangeHandler(handler);
       return this;
@@ -308,6 +314,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradedStream.headHandler(headHandler);
       upgradedStream.dataHandler(chunkHandler);
       upgradedStream.trailersHandler(trailersHandler);
+      upgradedStream.endHandler(endHandler);
       upgradedStream.priorityChangeHandler(priorityHandler);
       upgradedStream.exceptionHandler(exceptionHandler);
       upgradedStream.resetHandler(resetHandler);
@@ -320,6 +327,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradingStream.headHandler(null);
       upgradingStream.dataHandler(null);
       upgradingStream.trailersHandler(null);
+      upgradingStream.endHandler(null);
       upgradingStream.priorityChangeHandler(null);
       upgradingStream.exceptionHandler(null);
       upgradingStream.drainHandler(null);
@@ -331,6 +339,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       headHandler = null;
       chunkHandler = null;
       trailersHandler = null;
+      endHandler = null;
       priorityHandler = null;
       exceptionHandler = null;
       resetHandler = null;
@@ -380,6 +389,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private Handler<HttpClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
+    private Handler<Void> endHandler;
 
     UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, ClientMetrics<?, ?, ?> clientMetrics,
                     Http2ChannelUpgrade upgrade, Http1ClientConnection upgradingConnection) {
@@ -590,6 +600,17 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       } else {
         upgradingStream.trailersHandler(handler);
         trailersHandler = handler;
+      }
+      return this;
+    }
+
+    @Override
+    public HttpStream endHandler(Handler<Void> handler) {
+      if (upgradedStream != null) {
+        upgradedStream.endHandler(handler);
+      } else {
+        upgradingStream.endHandler(handler);
+        endHandler = handler;
       }
       return this;
     }

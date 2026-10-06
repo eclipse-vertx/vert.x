@@ -52,6 +52,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   // Cache these for performance
   private final MultiMap headers;
+  private boolean trailersReceived;
   private MultiMap trailers;
   private List<String> cookies;
   private NetSocket netSocket;
@@ -280,20 +281,22 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleTrailers(MultiMap trailers) {
-    HttpEventHandler handler;
-    Throwable wasEnded;
+  void handleTrailers(MultiMap map) {
     synchronized (conn) {
-      wasEnded = this.ended;
-      if (wasEnded != null) {
-        return;
+      MultiMap t = trailers;
+      if (t != null) {
+        t.setAll(map);
+      } else {
+        trailers = map;
       }
-      if (this.trailers == null) {
-        this.trailers = trailers;
-      } else if (this.trailers != trailers) {
-        this.trailers.setAll(trailers);
-      }
-      this.ended = ENDED_SENTINEL;
+      trailersReceived = true;
+    }
+  }
+
+  void handleEnd(Void v) {
+    HttpEventHandler handler;
+    synchronized (conn) {
+      ended = ENDED_SENTINEL;
       handler = eventHandler;
     }
     endFuture.tryComplete();
@@ -302,22 +305,20 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleException(Throwable e) {
+  void handleException(Throwable err) {
     HttpEventHandler handler;
-    Throwable wasEnded;
     synchronized (conn) {
-      wasEnded = this.ended;
-      if (wasEnded != null) {
+      if (trailersReceived) {
         return;
       }
-      this.ended = e;
+      ended = err;
       handler = eventHandler;
     }
-    endFuture.tryFail(e);
+    endFuture.tryFail(err);
     if (handler != null) {
-      handler.handleException(e);
+      handler.handleException(err);
     } else {
-      log.error(e.getMessage(), e);
+      log.error(err.getMessage(), err);
     }
   }
 
