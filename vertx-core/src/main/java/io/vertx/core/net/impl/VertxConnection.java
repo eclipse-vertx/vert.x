@@ -69,7 +69,6 @@ public class VertxConnection extends ConnectionBase {
   private boolean draining;
   private boolean channelWritable;
   private boolean paused;
-  private boolean autoRead;
 
   // State accessed exclusively from the event loop thread
   private ScheduledFuture<?> shutdownTimeout;
@@ -94,7 +93,6 @@ public class VertxConnection extends ConnectionBase {
     this.channelWritable = chctx.channel().isWritable();
     this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
-    this.autoRead = true;
   }
 
   /**
@@ -304,18 +302,24 @@ public class VertxConnection extends ConnectionBase {
       reportBytesRead(msg);
     }
     read = true;
-    if (!reentrant && !paused && (pending == null || pending.isEmpty())) {
+    if (!reentrant) {
       // Fast path
       reentrant = true;
       try {
-        handleMessage(msg);
+        do {
+          handleMessage(msg);
+        }
+        while (pending != null && (msg = pending.poll()) != null);
       } finally {
         reentrant = false;
       }
       // The pending queue could be not empty at this stage if a pending message was added by calling handleMessage
       // Subsequent calls to read or readComplete will take care of these messages
     } else {
-      addPending(msg);
+      if (pending == null) {
+        pending = new ArrayDeque<>();
+      }
+      pending.add(msg);
     }
   }
 
@@ -323,28 +327,14 @@ public class VertxConnection extends ConnectionBase {
     read = false;
   }
 
-  private void addPending(Object msg) {
-    if (pending == null) {
-      pending = new ArrayDeque<>();
-    }
-    pending.add(msg);
-    if (!reentrant) {
-      checkPendingMessages();
-    }
-  }
-
   /**
    * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
    */
   final void readComplete() {
     if (read) {
-      if (pending != null) {
-        checkPendingMessages();
-      }
       handleReadComplete();
       read = false;
       checkFlush();
-      checkAutoRead();
     }
   }
 
@@ -362,27 +352,17 @@ public class VertxConnection extends ConnectionBase {
 
   public final void doPause() {
     assert chctx.executor().inEventLoop();
-    paused = true;
+    if (!paused) {
+      paused = true;
+      chctx.channel().config().setAutoRead(false);
+    }
   }
 
   public final void doResume() {
     assert chctx.executor().inEventLoop();
-    if (!paused) {
-      return;
-    }
-    paused = false;
-    if (!read && pending != null && !pending.isEmpty()) {
-      read = true;
-      try {
-        checkPendingMessages();
-        handleReadComplete();
-      } finally {
-        read = false;
-        if (!draining) {
-          checkFlush();
-        }
-        checkAutoRead();
-      }
+    if (paused) {
+      paused = false;
+      chctx.channel().config().setAutoRead(true);
     }
   }
 
@@ -390,20 +370,6 @@ public class VertxConnection extends ConnectionBase {
     if (needsFlush) {
       needsFlush = false;
       chctx.flush();
-    }
-  }
-
-  private void checkAutoRead() {
-    if (autoRead) {
-      if (pending != null && pending.size() >= 8) {
-        autoRead = false;
-        chctx.channel().config().setAutoRead(false);
-      }
-    } else {
-      if (pending == null || pending.isEmpty()) {
-        autoRead = true;
-        chctx.channel().config().setAutoRead(true);
-      }
     }
   }
 

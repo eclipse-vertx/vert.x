@@ -297,7 +297,6 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
   }
 
   protected void handleEnded() {
-    doResume();
     read(InboundBuffer.END_SENTINEL);
     endRead();
   }

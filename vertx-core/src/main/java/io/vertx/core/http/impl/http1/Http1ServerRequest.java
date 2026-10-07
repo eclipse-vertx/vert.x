@@ -66,6 +66,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   Object metric;
   Object trace;
   boolean reportMetricsFailed;
+  Http1ServerRequest next;
 
   private Http1ServerResponse response;
 
@@ -110,7 +111,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
             }
             @Override
             protected void handleResume() {
-              conn.doResume();
+              conn.resumeRequest(Http1ServerRequest.this);
             }
             @Override
             protected void handlePause() {
