@@ -216,6 +216,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       }
       requestInProgress = req;
       if (responseInProgress != null) {
+        req.pause();
+        enqueueRequest(req);
         doPause();
         return;
       }
@@ -253,10 +255,9 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   }
 
   private void onEnd() {
-    boolean tryClose;
     Http1ServerRequest request = requestInProgress;
     requestInProgress = null;
-    tryClose = (wantClose || shutdownInitiated != null) && responseInProgress == null;
+    boolean tryClose = (wantClose || shutdownInitiated != null) && responseInProgress == null;
     request.handleEnd();
     if (tryClose) {
       closeInternal();
@@ -292,7 +293,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
         if (requestInProgress == request) {
           // Deferred
         } else {
-          Http1ServerRequest next = requestInProgress;
+          Http1ServerRequest next = request.next;
           if (next != null) {
             // Handle pipelined request
             handleNext(next);
@@ -315,11 +316,26 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     responseInProgress = next;
     wantClose |= !keepAlive;
     next.handleBegin(keepAlive);
+    next.resume();
     next.context.emit(next, next_ -> {
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       handler.handle(next_);
     });
     doResume();
+  }
+
+  void resumeRequest(Http1ServerRequest request) {
+    if (responseInProgress == request) {
+      doResume();
+    }
+  }
+
+  private void enqueueRequest(Http1ServerRequest req) {
+    Http1ServerRequest tail = responseInProgress;
+    while (tail.next != null) {
+      tail = tail.next;
+    }
+    tail.next = req;
   }
 
   private void reportResponseComplete() {
@@ -510,11 +526,13 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
 
   protected void handleClosed() {
     Http1ServerRequest responseInProgress = this.responseInProgress;
-    if (responseInProgress != null) {
-      responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-    }
     Http1ServerRequest requestInProgress = this.requestInProgress;
-    if (requestInProgress != null && requestInProgress != responseInProgress && requestInProgress.response() != null) {
+    for (Http1ServerRequest req = responseInProgress; req != null;req = req.next) {
+      if (req.response() != null) {
+        req.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+      }
+    }
+    if (requestInProgress != null && responseInProgress == null && requestInProgress.response() != null) {
       requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
     super.handleClosed();
@@ -525,13 +543,15 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     boolean ret = super.handleException(t);
     Http1ServerRequest responseInProgress = this.responseInProgress;
     Http1ServerRequest requestInProgress = this.requestInProgress;
-    if (requestInProgress != null && requestInProgress.response() != null) {
+    for (Http1ServerRequest req = responseInProgress;req != null;req = req.next) {
+      if (req.response() != null) {
+        req.reportMetricsFailed = true;
+        req.handleException(t);
+      }
+    }
+    if (requestInProgress != null && responseInProgress == null && requestInProgress.response() != null) {
       requestInProgress.reportMetricsFailed = true;
       requestInProgress.handleException(t);
-    }
-    if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.reportMetricsFailed = true;
-      responseInProgress.handleException(t);
     }
     return ret;
   }

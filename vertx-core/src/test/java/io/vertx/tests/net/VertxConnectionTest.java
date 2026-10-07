@@ -39,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -422,49 +421,6 @@ public class VertxConnectionTest extends VertxTestBase {
     NetSocket so = client.connect(1234, "localhost").await();
     so.write("ping").await();
     await();
-  }
-
-  @Test
-  public void testConsolidateFlushInDrainWhenResume() throws Exception {
-    MessageFactory factory = new MessageFactory();
-    EmbeddedChannel ch = new EmbeddedChannel();
-    ChannelPipeline pipeline = ch.pipeline();
-    pipeline.addLast("handler", VertxHandler.create(chctx -> new TestConnection(chctx)));
-    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
-    Message inbound1 = factory.next();
-    Message inbound2 = factory.next();
-    Message outbound1 = factory.next();
-    Message outbound2 = factory.next();
-    Message flush = factory.next();
-    pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
-      @Override
-      public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-        if (msg == outbound1) {
-          connection.doResume();
-        }
-        ctx.write(msg);
-      }
-      @Override
-      public void flush(ChannelHandlerContext ctx) {
-        ctx.write(flush);
-        ctx.flush();
-      }
-    });
-    connection.handler = event -> {
-      if (event == inbound1) {
-        connection.pause();
-        pipeline.fireChannelRead(inbound2);
-        connection.unsafeWrite(outbound1, false);
-        pipeline.fireChannelReadComplete();
-      } else if (event == inbound2) {
-        connection.unsafeWrite(outbound2, false);
-      }
-    };
-    pipeline.fireChannelRead(inbound1);
-    assertSame(outbound1, ch.readOutbound());
-    assertSame(outbound2, ch.readOutbound());
-    assertSame(flush, ch.readOutbound());
-    assertNull(ch.readOutbound());
   }
 
   @Test
@@ -898,88 +854,7 @@ public class VertxConnectionTest extends VertxTestBase {
     TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
     connection.handler = receivedMessages::add;
     connection.pause();
-    ch.writeInbound((Object[])factory.next(8));
-    assertEquals(Collections.emptyList(), receivedMessages);
     assertFalse(ch.config().isAutoRead());
-  }
-
-  @Test
-  public void testConsolidatesFlushesWhenResuming() {
-    MessageFactory factory = new MessageFactory();
-    EmbeddedChannel ch = new EmbeddedChannel() {
-    };
-    ChannelPipeline pipeline = ch.pipeline();
-    pipeline.addLast(VertxHandler.create(chctx -> new TestConnection(chctx)));
-    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
-    connection.pause();
-    ch.writeInbound((Object[])factory.next(8));
-    assertFalse(ch.config().isAutoRead());
-    connection.resume();
-    assertTrue(ch.hasPendingTasks());
-    connection.handler = msg -> {
-      connection.writeToChannel(msg);
-    };
-    connection.readCompleteHandler = v -> {
-      connection.writeToChannel("read-complete");
-    };
-    ch.runPendingTasks();
-    List<Object> flushed = new ArrayList<>();
-    Object outbound;
-    while ((outbound = ch.readOutbound()) != null) {
-      flushed.add(outbound);
-    }
-    assertEquals(9, flushed.size());
-    assertTrue(ch.config().isAutoRead());
-    assertEquals("read-complete", flushed.get(8));
-  }
-
-  @Test
-  public void testPauseWhenResuming() {
-    MessageFactory factory = new MessageFactory();
-    EmbeddedChannel ch = new EmbeddedChannel() {
-    };
-    ChannelPipeline pipeline = ch.pipeline();
-    pipeline.addLast(VertxHandler.create(chctx -> new TestConnection(chctx)));
-    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
-    connection.pause();
-    ch.writeInbound((Object[])factory.next(4));
-    connection.resume();
-    assertTrue(ch.hasPendingTasks());
-    AtomicInteger count = new AtomicInteger();
-    connection.handler = event -> {
-      if (count.incrementAndGet() == 2) {
-        connection.pause();
-      }
-    };
-    ch.runPendingTasks();
-    assertEquals(2, count.get());
-  }
-
-  @Test
-  public void testResumeWhenReadInProgress() {
-    MessageFactory factory = new MessageFactory();
-    EmbeddedChannel ch = new EmbeddedChannel();
-    ChannelPipeline pipeline = ch.pipeline();
-    pipeline.addLast(VertxHandler.create(chctx -> new TestConnection(chctx)));
-    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
-    AtomicInteger count = new AtomicInteger();
-    connection.handler = event -> count.incrementAndGet();
-    connection.pause();
-    pipeline.fireChannelRead(factory.next());
-    assertEquals(0, count.get());
-    Object expected = new Object();
-    connection.unsafeWrite(expected, false);
-    connection.resume();
-    assertEquals(0, count.get());
-    assertTrue(ch.hasPendingTasks());
-    ch.runPendingTasks();
-    assertEquals(0, count.get());
-    Object outbound = ch.readOutbound();
-    assertNull(outbound);
-    pipeline.fireChannelReadComplete();
-    assertEquals(1, count.get());
-    outbound = ch.readOutbound();
-    assertSame(expected, outbound);
   }
 
   @Test

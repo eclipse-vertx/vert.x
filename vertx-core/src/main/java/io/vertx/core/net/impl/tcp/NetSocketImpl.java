@@ -20,6 +20,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
@@ -123,6 +124,16 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
     } else if (remoteAddress == null && !(sslOptions instanceof ServerSSLOptions)) {
       return context.failedFuture("Server socket upgrade must use ServerSSLOptions");
     }
+    Promise<Void> ret = context.promise();
+    if (channel.eventLoop().inEventLoop()) {
+      sslUpgrade(serverName, sslOptions, msg, ret);
+    } else {
+      channel.eventLoop().execute(() -> sslUpgrade(serverName, sslOptions, msg, ret));
+    }
+    return ret.future();
+  }
+
+  private void sslUpgrade(String serverName, SSLOptions sslOptions, ByteBuf msg, Promise<Void> p2) {
     List<String> applicationProtocols;
     if (sslOptions.isUseAlpn()) {
       applicationProtocols = sslOptions.getApplicationLayerProtocols();
@@ -130,7 +141,7 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
       applicationProtocols = null;
     }
     if (chctx.pipeline().get("ssl") == null) {
-      chctx.channel().config().setAutoRead(false);
+      doPause();
       Future<SslChannelProvider> f;
       if (sslOptions instanceof ClientSSLOptions) {
         ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
@@ -145,7 +156,7 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
         f = serverSslContextManager.resolveSslContextProvider(serverSSLOptions, context)
           .map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni(), resolvedGroups));
       }
-      return f.compose(provider -> {
+      f.compose(provider -> {
         PromiseInternal<Void> p = context.promise();
         ChannelPromise promise = chctx.newPromise();
         writeToChannel(msg, true, promise);
@@ -185,9 +196,9 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
       }).transform(ar -> {
         doResume();
         return (Future<Void>) ar;
-      });
+      }).onComplete(p2);
     } else {
-      throw new IllegalStateException(); // ???
+      p2.fail("Channel is already using SSL");
     }
   }
 
