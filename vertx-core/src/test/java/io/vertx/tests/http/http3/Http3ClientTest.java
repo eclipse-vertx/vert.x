@@ -102,6 +102,35 @@ public class Http3ClientTest extends VertxTestBase {
   }
 
   @Test
+  public void testChunkedTransferEncodingHeaderIsSanitized() {
+    // The transfer encoding header is a connection specific header forbidden by HTTP/3, a client
+    // setting it manually (like it would for HTTP/1.1) should not have it sent on the wire
+    AtomicReference<String> transferEncoding = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.bodyHandler(buff -> {
+        transferEncoding.set(req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+        req.response().end(buff);
+      });
+    });
+    server.listen(8443, "localhost").await();
+
+    HttpClientConnection connection = client.connect(new HttpConnectOptions()
+      .setHost("localhost")
+      .setPort(8443)).await();
+
+    Buffer response = connection.request(HttpMethod.POST, 8443, "localhost", "/")
+      .compose(request -> request
+        .putHeader(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED)
+        .send("Hello World"))
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .await();
+
+    Assert.assertEquals("Hello World", response.toString());
+    Assert.assertNull(transferEncoding.get());
+  }
+
+  @Test
   public void testResponseTrailers() throws Exception {
     server.requestHandler(req -> {
       req.response()

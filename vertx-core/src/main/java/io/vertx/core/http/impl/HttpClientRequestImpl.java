@@ -327,6 +327,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           // Bug ?
           continue;
         }
+      } else if (header.getKey().equalsIgnoreCase(TRANSFER_ENCODING.toString())) {
+        // The encoder produces an HTTP/1.1 request: a chunked transfer encoding must be translated
+        // to a chunked request instead of copying the header, since HTTP/2 and HTTP/3 forbid it
+        if (CHUNKED.toString().equalsIgnoreCase(header.getValue())) {
+          setChunked(true);
+        }
+        continue;
       }
       putHeader(header.getKey(), header.getValue());
     }

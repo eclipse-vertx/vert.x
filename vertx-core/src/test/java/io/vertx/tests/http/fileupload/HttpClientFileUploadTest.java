@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
@@ -291,6 +292,8 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     List<Upload> toUpload,
     Consumer<HttpServerRequest> checker) throws Exception {
     List<Upload> uploads = Collections.synchronizedList(new ArrayList<>());
+    AtomicReference<HttpVersion> requestVersion = new AtomicReference<>();
+    AtomicReference<String> requestTransferEncoding = new AtomicReference<>();
     File[] testFiles = new File[toUpload.size()];
     for (int i = 0;i < testFiles.length;i++) {
       Upload upload = toUpload.get(i);
@@ -315,6 +318,8 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
         });
       });
       req.endHandler(v -> {
+        requestVersion.set(req.version());
+        requestTransferEncoding.set(req.getHeader(HttpHeaders.TRANSFER_ENCODING));
         req.response().end();
         checker.accept(req);
       });
@@ -327,6 +332,20 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .await();
+
+    switch (requestVersion.get()) {
+      case HTTP_1_1:
+        // Chunked file uploads are streamed with the chunked transfer encoding
+        Assert.assertEquals("chunked", requestTransferEncoding.get());
+        break;
+      case HTTP_2:
+      case HTTP_3:
+        // Transfer encoding is a connection specific header forbidden by HTTP/2 and HTTP/3
+        Assert.assertNull(requestTransferEncoding.get());
+        break;
+      default:
+        break;
+    }
 
     return uploads;
   }
