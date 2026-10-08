@@ -4561,6 +4561,30 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testCloseHandlerWithQueuedIncompleteRequest() throws Exception {
+    AtomicInteger requests = new AtomicInteger();
+    server.connectionHandler(conn -> conn.closeHandler(v -> {
+      assertEquals(1, requests.get());
+      testComplete();
+    }));
+    server.requestHandler(req -> requests.incrementAndGet());
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1));
+    client.request(requestOptions).onComplete(onSuccess(first -> {
+      first.end()
+        .compose(v -> client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)))
+        .compose(second -> {
+          assertSame(first.connection(), second.connection());
+          // Leave the body incomplete so the queued request is still in progress on close.
+          return second.putHeader("Content-Length", "1").sendHead();
+        })
+        .onComplete(onSuccess(v -> first.connection().close()));
+    }));
+    await();
+  }
+
+  @Test
   public void testPipelinedPostRequestStartedByResponseSent() throws Exception {
     String chunk1 = TestUtils.randomAlphaString(1024);
     String chunk2 = TestUtils.randomAlphaString(1024);
