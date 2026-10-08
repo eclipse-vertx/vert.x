@@ -31,6 +31,7 @@ import javax.security.cert.X509Certificate;
 import java.nio.channels.ClosedChannelException;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -348,6 +349,11 @@ class HttpNetSocket implements NetSocket {
   @Override
   public String indicatedServerName() {
     return conn.indicatedServerName();
+  }
+
+  @Override
+  public List<Map.Entry<Buffer, Buffer>> proxyProtocolV2HeaderTLVs() {
+    return conn.proxyProtocolV2HeaderTLVs();
   }
 
   @Override

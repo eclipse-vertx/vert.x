@@ -4509,6 +4509,8 @@ public class NetTest extends VertxTestBase {
             proxy.getConnectionRemoteAddress() :
             local,
           so.localAddress());
+        assertProxyProtocolTLVs(header, so.proxyProtocolV2HeaderTLVs());
+        assertTrue(so.proxyProtocolV2HeaderTLVs().isEmpty());
         complete();
       });
     startServer();
@@ -4523,6 +4525,18 @@ public class NetTest extends VertxTestBase {
     } finally {
       proxy.stop();
     }
+  }
+
+  private void assertProxyProtocolTLVs(Buffer header, List<Map.Entry<Buffer, Buffer>> tlvs) {
+    if (header.length() < 14 || header.getByte(12) != 0x21 || header.getByte(13) == 0x00) {
+      assertTrue(tlvs.isEmpty());
+      return;
+    }
+    assertEquals(1, tlvs.size());
+    assertEquals((byte) 0x05, tlvs.get(0).getKey().getByte(0));
+    Buffer value = tlvs.get(0).getValue();
+    assertEquals(UUID.fromString("1f29a3b5-7cc4-4592-a8f1-879ff1f47124"),
+      new UUID(value.getLong(0), value.getLong(Long.BYTES)));
   }
 
   @Test
