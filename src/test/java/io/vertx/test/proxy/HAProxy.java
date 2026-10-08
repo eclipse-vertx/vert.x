@@ -9,6 +9,7 @@ import io.vertx.core.streams.Pump;
 
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -172,7 +173,7 @@ public class HAProxy {
 
 
   private static Buffer createVersion2ProtocolHeader(byte protocolByte, Buffer address) {
-    byte[] header = new byte[15];
+    byte[] header = new byte[14];
     header[0] = 0x0D;        // Binary Prefix
     header[1] = 0x0A;        // -----
     header[2] = 0x0D;        // -----
@@ -189,10 +190,14 @@ public class HAProxy {
     header[12] = 0x21;        // v2, cmd=PROXY
     header[13] = protocolByte;
 
-    header[14] = 0x00;        // Remaining Bytes
-
+    UUID uuid = UUID.fromString("1f29a3b5-7cc4-4592-a8f1-879ff1f47124");
+    Buffer uniqueId = Buffer.buffer().appendByte((byte) 0x05)
+      .appendUnsignedShort(Long.BYTES * 2)
+      .appendLong(uuid.getMostSignificantBits())
+      .appendLong(uuid.getLeastSignificantBits());
     return Buffer.buffer(header)
-      .appendByte((byte) address.length())
-      .appendBuffer(address);
+      .appendUnsignedShort(address.length() + uniqueId.length())
+      .appendBuffer(address)
+      .appendBuffer(uniqueId);
   }
 }

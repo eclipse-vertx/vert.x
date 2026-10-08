@@ -22,7 +22,9 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -355,5 +357,14 @@ public interface HttpConnection {
    * @return the indicated server name
    */
   String indicatedServerName();
+
+  /**
+   * @return the type-length-values present in the HAProxy Protocol v2 header, in their original order.
+   * Each entry contains the type as its key and the value as its value. The values are available once per connection.
+   */
+  @GenIgnore
+  default List<Map.Entry<Buffer, Buffer>> proxyProtocolV2HeaderTLVs() {
+    return Collections.emptyList();
+  }
 
 }

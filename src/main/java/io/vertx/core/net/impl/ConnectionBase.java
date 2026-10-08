@@ -23,6 +23,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -40,7 +41,9 @@ import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -68,6 +71,8 @@ public abstract class ConnectionBase {
   public static final VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
   public static final AttributeKey<SocketAddress> REMOTE_ADDRESS_OVERRIDE = AttributeKey.valueOf("RemoteAddressOverride");
   public static final AttributeKey<SocketAddress> LOCAL_ADDRESS_OVERRIDE = AttributeKey.valueOf("LocalAddressOverride");
+  public static final AttributeKey<List<Map.Entry<Buffer, Buffer>>> PROXY_PROTOCOL_V2_HEADER_TLVS =
+    AttributeKey.valueOf("proxyProtocolV2HeaderTLVs");
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
@@ -678,6 +683,12 @@ public abstract class ConnectionBase {
     } else {
       return localAddress();
     }
+  }
+
+  public List<Map.Entry<Buffer, Buffer>> proxyProtocolV2HeaderTLVs() {
+    List<Map.Entry<Buffer, Buffer>> tlvs = chctx.channel().attr(PROXY_PROTOCOL_V2_HEADER_TLVS)
+      .getAndSet(Collections.emptyList());
+    return tlvs != null ? tlvs : Collections.emptyList();
   }
 
   protected void handleMessage(Object msg) {

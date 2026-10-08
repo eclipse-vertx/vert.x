@@ -38,6 +38,7 @@ import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -988,5 +989,10 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   @Override
   public String indicatedServerName() {
     return current.indicatedServerName();
+  }
+
+  @Override
+  public List<Map.Entry<Buffer, Buffer>> proxyProtocolV2HeaderTLVs() {
+    return current.proxyProtocolV2HeaderTLVs();
   }
 }

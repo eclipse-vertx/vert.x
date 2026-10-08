@@ -1,19 +1,26 @@
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
+import io.netty.handler.codec.haproxy.HAProxyTLV;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class HAProxyMessageCompletionHandler extends MessageToMessageDecoder<HAProxyMessage> {
   //Public because its used in tests
@@ -70,6 +77,19 @@ public class HAProxyMessageCompletionHandler extends MessageToMessageDecoder<HAP
         if (msg.destinationAddress() != null) {
           ctx.channel().attr(ConnectionBase.LOCAL_ADDRESS_OVERRIDE)
             .set(createAddress(protocol, msg.destinationAddress(), msg.destinationPort()));
+        }
+
+        List<HAProxyTLV> headerTlvs = msg.tlvs();
+        if (headerTlvs != null && !headerTlvs.isEmpty()) {
+          List<Map.Entry<Buffer, Buffer>> tlvs = new ArrayList<>(headerTlvs.size());
+          for (HAProxyTLV tlv : headerTlvs) {
+            if (tlv != null) {
+              tlvs.add(new AbstractMap.SimpleImmutableEntry<>(
+                Buffer.buffer().appendByte(tlv.typeByteValue()),
+                Buffer.buffer(ByteBufUtil.getBytes(tlv.content()))));
+            }
+          }
+          ctx.channel().attr(ConnectionBase.PROXY_PROTOCOL_V2_HEADER_TLVS).set(Collections.unmodifiableList(tlvs));
         }
       }
       ctx.pipeline().remove(this);
