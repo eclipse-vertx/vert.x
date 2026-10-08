@@ -2707,7 +2707,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @Test
   public void testClearPausedBuffersWhenResponseEnds() throws Exception {
-    Buffer data = TestUtils.randomBuffer(20);
+    Buffer data = Buffer.buffer(TestUtils.randomAlphaString(20));
     int num = 10;
     server.requestHandler(req -> {
       req.response().end(data);

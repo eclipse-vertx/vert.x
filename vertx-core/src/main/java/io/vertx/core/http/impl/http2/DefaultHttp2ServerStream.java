@@ -176,7 +176,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     return promise.future();
   }
 
-  public void routed(String route) {
+  public HttpServerStream routed(String route) {
     if (METRICS_ENABLED) {
       EventLoop eventLoop = vertx.getOrCreateContext().nettyEventLoop();
       if (!eventLoop.inEventLoop()) {
@@ -185,6 +185,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
         observeRoute(route);
       }
     }
+    return this;
   }
 
   public Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority) {

@@ -450,7 +450,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
                            Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeHead(head, chunked, buf, end, priority, connect);
+        upgradingStream.writeHead(head, chunked, buf, end, priority, connect)
+          .onComplete(promise);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES_EVENT);
