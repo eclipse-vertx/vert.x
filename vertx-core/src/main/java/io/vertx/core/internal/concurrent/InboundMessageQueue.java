@@ -259,7 +259,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Close the queue.
+   * Close the queue, see also {@link #closeProducer()}
    */
   public final void close() {
     if (!producer.inThread()) {
@@ -275,7 +275,8 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Close the producer side, this must be called from the producer thread
+   * Close the producer side, this must be called from the producer thread.
+   * If the producer was paused, it will be resumed via {@link #handleResume()}.
    */
   public final void closeProducer() {
     assert producer.inThread();
@@ -283,6 +284,10 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
       return;
     }
     producerClosed = true;
+    if (paused) {
+      paused = false;
+      handleResume();
+    }
   }
 
   /**

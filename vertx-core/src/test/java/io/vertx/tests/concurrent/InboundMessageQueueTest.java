@@ -530,6 +530,30 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
   }
 
   @Test
+  public void testCloseProducerResumes() {
+    AtomicInteger resumed = new AtomicInteger();
+    queue = new TestChannel(elt -> {
+    }, 4, 4) {
+      @Override
+      protected void handleResume() {
+        super.handleResume();
+        resumed.incrementAndGet();
+      }
+    };
+    producerTask(() -> {
+      queue.pause();
+      queue.fill();
+      assertFalse(queue.isWritable());
+      assertEquals(0, resumed.get());
+      queue.closeProducer();
+      assertTrue(queue.isWritable());
+      assertEquals(1, resumed.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testClose() {
     List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());
     List<Integer> disposed = Collections.synchronizedList(new ArrayList<>());
