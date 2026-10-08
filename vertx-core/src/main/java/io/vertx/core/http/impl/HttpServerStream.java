@@ -27,7 +27,7 @@ import io.vertx.core.net.HostAndPort;
  */
 public interface HttpServerStream extends HttpStream {
 
-  void routed(String route);
+  HttpServerStream routed(String route);
   long bytesWritten();
   long bytesRead();
 

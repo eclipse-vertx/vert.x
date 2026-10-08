@@ -305,6 +305,9 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public Future<Void> write(Buffer chunk, boolean end) {
+    if (!headWritten) {
+      return context.failedFuture("Headers must be sent before sending a message");
+    }
     if (outboundReceived) {
       throw new UnsupportedOperationException("handle me");
     }

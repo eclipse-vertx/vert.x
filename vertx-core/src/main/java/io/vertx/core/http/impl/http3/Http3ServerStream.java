@@ -89,10 +89,11 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
   }
 
   @Override
-  public void routed(String route) {
+  public HttpServerStream routed(String route) {
     if (observer != null) {
       observer.observeRoute(route);
     }
+    return this;
   }
 
   @Override

@@ -513,7 +513,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   @Override
-  public HttpConnection connection() {
+  public HttpServerConnection connection() {
     return conn;
   }
 

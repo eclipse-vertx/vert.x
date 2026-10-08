@@ -429,6 +429,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       promise.fail(failure);
       return;
     }
+    if (!headersSent) {
+      promise.fail("Headers must be sent before sending a message");
+      return;
+    }
     ByteBuf chunk;
     if (buf == null && end) {
       chunk = Unpooled.EMPTY_BUFFER;

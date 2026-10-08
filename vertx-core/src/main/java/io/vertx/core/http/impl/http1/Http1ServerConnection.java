@@ -30,6 +30,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
@@ -90,6 +91,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private boolean wantClose;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
+  private boolean createStream;
 
   public final HttpServerMetrics httpMetrics;
   private final TransportMetrics<?> transportMetrics;
@@ -163,7 +165,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
 
   @Override
   public MultiMap newHeaders() {
-    throw new UnsupportedOperationException();
+    return Http1xHeaders.httpHeaders();
   }
 
   @Override
@@ -177,7 +179,18 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
 
   @Override
   public HttpServerConnection streamHandler(Handler<HttpServerStream> handler) {
-    // This feature is not available for HTTP/1.1
+    if (handler != null) {
+      createStream = true;
+      requestHandler = request -> {
+        Http1ServerStream stream = (Http1ServerStream)request;
+        stream.init();
+        handler.handle(stream);
+        stream.handleHead();
+      };
+    } else {
+      createStream = false;
+      requestHandler = null;
+    }
     return this;
   }
 
@@ -209,7 +222,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       // fast path type check vs concrete class
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       ContextInternal requestCtx = streamContextSupplier.get();
-      Http1ServerRequest req = new Http1ServerRequest(this, request, requestCtx);
+      Http1ServerRequest req = createStream ? new Http1ServerStream(this, request, requestCtx) : new Http1ServerRequest(this, request, requestCtx);
       if (eagerCreateRequestQueue) {
         req.resume();
       }
