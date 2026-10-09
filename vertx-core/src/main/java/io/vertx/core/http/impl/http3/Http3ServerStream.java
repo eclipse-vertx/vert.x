@@ -109,8 +109,8 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
   }
 
   @Override
-  public Future<Void> writeHeaders(MultiMap headers, boolean end) {
-    return writeHeaders((HttpHeaders) headers, null, end);
+  public Future<Void> end(MultiMap headers) {
+    return writeHeaders((HttpHeaders) headers, null, true);
   }
 
   @Override
