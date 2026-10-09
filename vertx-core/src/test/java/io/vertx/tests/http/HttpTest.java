@@ -30,6 +30,7 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
@@ -6648,5 +6649,37 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     Buffer body = responseBody.await();
     assertEquals(expected, body);
     assertTrue(responseEnded.get());
+  }
+
+  @Test
+  public void testTrailersRace(Checkpoint checkpoint) throws Exception {
+
+    server.requestHandler(req -> {
+      req.response()
+        .setChunked(true)
+        .putTrailer("my-trailer", "trailer-value")
+        .end(Buffer.buffer("hello"));
+    });
+
+    startServer();
+
+    int n = 8;
+    CountDownLatch latch = checkpoint.asLatch(n);
+
+    for (int i = 0; i < n;i++) {
+      ContextInternal ctx = ((VertxInternal) vertx).createEventLoopContext();
+      ctx.runOnContext(v -> {
+        client.request(requestOptions)
+          .onComplete(TestUtils.onSuccess(req -> {
+            req.send().onComplete(TestUtils.onSuccess(resp -> {
+              resp.endHandler(v2 -> {
+                assertNotNull(resp.getTrailer("my-trailer"));
+                latch.countDown();
+              });
+            }));
+          }));
+      });
+    }
+    checkpoint.awaitSuccess();
   }
 }
