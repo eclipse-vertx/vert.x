@@ -435,6 +435,10 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private boolean reset;
     private boolean closed;
 
+    // Written by event-loop thread and read by context thread
+    // with an HB relationship
+    MultiMap trailers;
+
     Stream(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       this.context = context;
       this.id = id;
@@ -505,7 +509,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     void onEnd(LastHttpContent trailer) {
-      context.emit(new HeadersAdaptor(trailer.trailingHeaders()), this::handleTrailers);
+      trailers = new HeadersAdaptor(trailer.trailingHeaders());
+      context.emit(null, this::handleTrailers);
       queue.write(HttpUtils.END_OF_STREAM);
     }
 
@@ -514,7 +519,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     abstract void handleEnd();
-    abstract void handleTrailers(MultiMap trailers);
+    abstract void handleTrailers(Void v);
     abstract void handleChunk(Buffer chunk);
     abstract void handleContinue(Void v);
     abstract void handleEarlyHints(MultiMap headers);
@@ -555,6 +560,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private Handler<MultiMap> earlyHintsHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> closeHandler;
+    private boolean trailersDispatched;
 
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
@@ -746,6 +752,16 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleEnd() {
+      // Trailers are delivered before end handler is called: handleTrailers is emitted via a task before submitting the last message to the inbound queue
+      // However it is possible that when an on-going drain is in progress, the last message submitted will be executed before the trailers task executes
+      // and thus we need to recover from this race here
+      if (!trailersDispatched) {
+        trailersDispatched = true;
+        Handler<MultiMap> handler = trailerHandler;
+        if (handler != null) {
+          handler.handle(trailers);
+        }
+      }
       Handler<Void> handler = endHandler;
       if (handler != null) {
         handler.handle(null);
@@ -753,10 +769,13 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    void handleTrailers(MultiMap trailers) {
-      Handler<MultiMap> handler = trailerHandler;
-      if (handler != null) {
-        handler.handle(trailers);
+    void handleTrailers(Void v) {
+      if (!trailersDispatched) {
+        trailersDispatched = true;
+        Handler<MultiMap> handler = trailerHandler;
+        if (handler != null) {
+          handler.handle(trailers);
+        }
       }
     }
 

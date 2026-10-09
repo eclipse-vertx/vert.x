@@ -58,6 +58,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private int readable; // When negative : redeem inbound buffers immediately, otherwise the value of cumulation of
                         // inbound buffers bytes to redeem when resuming
 
+  // Written by event-loop thread and read by context thread
+  // with an HB relationship
+  private HttpHeaders trailers;
+
   // Client context
   private StreamPriority priority;
   private long bytesRead;
@@ -65,6 +69,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private Throwable failure;
   private long reset = -1L;
   private boolean first_ = true;
+  private boolean trailersDispatched;
 
   // Handlers
   private Handler<Long> resetHandler;
@@ -271,7 +276,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       observer.observeInboundTrailers(bytesRead);
     }
     connection.flushBytesRead();
-    context.emit(received, this::handleTrailers);
+    trailers = received;
+    context.emit(null, this::handleTrailers);
     inboundQueue.write(HttpUtils.END_OF_STREAM);
   }
 
@@ -520,10 +526,13 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return (S)this;
   }
 
-  private void handleTrailers(MultiMap trailers) {
-    Handler<MultiMap> handler = trailersHandler;
-    if (handler != null) {
-      handler.handle(trailers);
+  private void handleTrailers(Void v) {
+    if (!trailersDispatched) {
+      trailersDispatched = true;
+      Handler<MultiMap> handler = trailersHandler;
+      if (handler != null) {
+        handler.handle(trailers);
+      }
     }
   }
 
@@ -533,6 +542,16 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   private void handleEnd() {
+    // Trailers are delivered before end handler is called: handleTrailers is emitted via a task before submitting the last message to the inbound queue
+    // However it is possible that when an on-going drain is in progress, the last message submitted will be executed before the trailers task executes
+    // and thus we need to recover from this race here
+    if (!trailersDispatched) {
+      trailersDispatched = true;
+      Handler<MultiMap> handler = trailersHandler;
+      if (handler != null) {
+        handler.handle(trailers);
+      }
+    }
     Handler<Void> handler = endHandler;
     if (handler != null) {
       handler.handle(null);
