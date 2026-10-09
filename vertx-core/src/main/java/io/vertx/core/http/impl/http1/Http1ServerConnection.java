@@ -18,7 +18,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
@@ -163,7 +162,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   }
 
   @Override
-  public Headers<CharSequence, CharSequence, ?> newHeaders() {
+  public MultiMap newHeaders() {
     throw new UnsupportedOperationException();
   }
 

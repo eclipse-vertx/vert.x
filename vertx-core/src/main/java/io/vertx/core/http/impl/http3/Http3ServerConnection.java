@@ -11,14 +11,15 @@
 package io.vertx.core.http.impl.http3;
 
 import io.netty.channel.*;
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.QuicConnectionInternal;
@@ -101,8 +102,8 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
   }
 
   @Override
-  public Headers<CharSequence, CharSequence, ?> newHeaders() {
-    return new DefaultHttp3Headers();
+  public MultiMap newHeaders() {
+    return new HttpResponseHeaders(new DefaultHttp3Headers());
   }
 
   @Override
