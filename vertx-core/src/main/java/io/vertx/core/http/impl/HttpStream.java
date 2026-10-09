@@ -43,7 +43,17 @@ public interface HttpStream {
   ContextInternal context();
   ByteBufAllocator allocator();
 
-  Future<Void> writeChunk(Buffer buf, boolean end);
+  Future<Void> write(Buffer buf, boolean end);
+  default Future<Void> write(Buffer buff) {
+    return write(buff, false);
+  }
+  default Future<Void> end(Buffer buff) {
+    return write(buff, true);
+  }
+  default Future<Void> end() {
+    return write(null, true);
+  }
+
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);
 

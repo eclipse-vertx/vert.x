@@ -171,8 +171,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public Future<Void> writeChunk(Buffer buf, boolean end) {
-      return delegate.writeChunk(buf, end);
+    public Future<Void> write(Buffer buf, boolean end) {
+      return delegate.write(buf, end);
     }
 
     @Override
@@ -657,10 +657,10 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public Future<Void> writeChunk(Buffer buf, boolean end) {
+    public Future<Void> write(Buffer buf, boolean end) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        Future<Void> future = upgradingStream.writeChunk(buf, end);
+        Future<Void> future = upgradingStream.write(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           future = future.andThen(ar -> {
@@ -673,7 +673,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       } else {
         Promise<Void> promise = upgradingStream.context().promise();
         exec.execute(() -> {
-          Future<Void> future = writeChunk(buf, end);
+          Future<Void> future = write(buf, end);
           future.onComplete(promise);
         });
         return promise.future();

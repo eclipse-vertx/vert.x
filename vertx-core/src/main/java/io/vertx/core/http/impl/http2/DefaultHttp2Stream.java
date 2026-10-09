@@ -317,9 +317,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return promise.future();
   }
 
-  public final Future<Void> writeHeaders(MultiMap headers, boolean end) {
+  public final Future<Void> end(MultiMap headers) {
     Promise<Void> promise = context.promise();
-    writeHeaders((HttpHeaders) headers, end, true, promise);
+    writeHeaders((HttpHeaders) headers, true, true, promise);
     return promise.future();
   }
 
@@ -395,7 +395,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final Future<Void> writeChunk(Buffer chunk, boolean end) {
+  public final Future<Void> write(Buffer chunk, boolean end) {
     Promise<Void> promise = context.promise();
     writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end, promise);
     return promise.future();

@@ -304,7 +304,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return fut;
   }
 
-  public Future<Void> writeChunk(Buffer chunk, boolean end) {
+  public Future<Void> write(Buffer chunk, boolean end) {
     if (outboundReceived) {
       throw new UnsupportedOperationException("handle me");
     }

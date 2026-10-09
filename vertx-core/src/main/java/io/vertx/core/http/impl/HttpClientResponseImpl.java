@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -21,7 +20,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -94,15 +92,15 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         }
         @Override
         public Future<Void> write(Buffer data) {
-          return stream.writeChunk(data, false);
+          return stream.write(data);
         }
         @Override
         public Future<Void> end(Buffer data) {
-          return stream.writeChunk(data, true);
+          return stream.end(data);
         }
         @Override
         public Future<Void> end() {
-          return stream.writeChunk(BufferInternal.buffer(Unpooled.EMPTY_BUFFER), true);
+          return stream.end();
         }
         @Override
         public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {

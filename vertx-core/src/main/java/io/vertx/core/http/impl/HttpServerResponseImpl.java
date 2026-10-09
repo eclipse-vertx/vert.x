@@ -375,7 +375,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     Future<Void> future = write_(chunk, end && trailedMap == null);
     if (end) {
       if (trailedMap != null) {
-        future = stream.writeHeaders(trailedMap, true);
+        future = stream.end(trailedMap);
       }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
@@ -404,7 +404,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (sendHeaders) {
       return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, end);
     } else {
-      return stream.writeChunk(chunk, end);
+      return stream.write(chunk, end);
     }
   }
 
