@@ -13,7 +13,6 @@ package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -29,6 +28,7 @@ import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
@@ -266,8 +266,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public Headers<CharSequence, CharSequence, ?> newHeaders() {
-    return new DefaultHttp2Headers();
+  public MultiMap newHeaders() {
+    return new HttpResponseHeaders(new DefaultHttp2Headers());
   }
 
   @Override

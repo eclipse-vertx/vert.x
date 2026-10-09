@@ -24,8 +24,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.HttpResponseHeaders;
-import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -50,7 +48,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private final HttpServerConnection conn;
   private final ContextInternal context;
   private final boolean push;
-  private final HttpResponseHeaders headersMap;
+  private final MultiMap headersMap;
   private MultiMap trailedMap;
   private boolean chunked;
   private boolean headWritten;
@@ -77,7 +75,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     this.context = context;
     this.conn = stream.connection();
     this.push = push;
-    this.headersMap = new HttpResponseHeaders(conn.newHeaders());
+    this.headersMap = conn.newHeaders();
   }
 
   void init(HttpRequestHead head) {
@@ -231,7 +229,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public MultiMap trailers() {
     MultiMap ret = trailedMap;
     if (ret == null) {
-      ret = new HttpHeaders(conn.newHeaders());
+      ret = conn.newHeaders();
       trailedMap = ret;
     }
     return ret;
@@ -300,7 +298,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), new HttpResponseHeaders(conn.newHeaders())), null, false);
+    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()), null, false);
   }
 
   @Override
@@ -313,7 +311,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
-    HttpResponseHeaders http2Headers = new HttpResponseHeaders(conn.newHeaders());
+    MultiMap http2Headers = conn.newHeaders();
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
     }
