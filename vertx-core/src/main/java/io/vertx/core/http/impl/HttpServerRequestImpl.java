@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
@@ -23,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
@@ -39,7 +41,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerRequestImpl extends HttpServerRequestBase {
+public class HttpServerRequestImpl extends HttpServerRequestBase implements ContentDecoder {
 
   private final ContextInternal context;
   private final HttpServerStream stream;
@@ -66,6 +68,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   private Handler<HttpServerFileUpload> uploadHandler;
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
+  private FlowController flowController;
 
   public HttpServerRequestImpl(Handler<HttpServerRequest> handler,
                                HttpServerStream stream,
@@ -94,10 +97,27 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
     stream.resetHandler(this::handleReset);
     stream.exceptionHandler(this::handleException);
     stream.closeHandler(this::handleClosed);
-    stream.dataHandler(this::handleData);
+    stream.contentDecoder(this);
     stream.trailersHandler(this::handleTrailers);
-    stream.endHandler(this::handleEnd);
     stream.drainHandler(response::handleWriteQueueDrained);
+  }
+
+  @Override
+  public void init(FlowController flowController) {
+    this.flowController = flowController;
+  }
+
+  @Override
+  public void handle(ByteBuf chunk) {
+    ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(chunk.readableBytes());
+    buffer.writeBytes(chunk, chunk.readerIndex(), chunk.readableBytes());
+    Buffer buff = BufferInternal.buffer(buffer);
+    handleData(buff);
+  }
+
+  @Override
+  public void destroy() {
+
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -190,7 +210,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   public void handleTrailers(MultiMap trailers) {
   }
 
-  public void handleEnd(Void v) {
+  public void handleEnd() {
     HttpEventHandler handler;
     synchronized (connection) {
       ended = true;
@@ -293,8 +313,8 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   public HttpServerRequest pause() {
     synchronized (connection) {
       checkEnded();
-      stream.pause();
     }
+    flowController.pause();
     return this;
   }
 
@@ -307,8 +327,8 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   public HttpServerRequest fetch(long amount) {
     synchronized (connection) {
       checkEnded();
-      stream.fetch(amount);
     }
+    flowController.fetch(amount);
     return this;
   }
 

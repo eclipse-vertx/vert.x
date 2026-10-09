@@ -23,11 +23,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpFrameImpl;
-import io.vertx.core.http.impl.HttpStream;
-import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -35,15 +34,17 @@ import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
 
+import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream {
+abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream, FlowController {
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
-  private final InboundMessageQueue<Buffer> inboundQueue;
+  private final InboundMessageQueue<ByteBuf> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -75,12 +76,15 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private Handler<Long> resetHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private Handler<Buffer> dataHandler;
   private Handler<MultiMap> trailersHandler;
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> priorityChangeHandler;
   private Handler<Void> drainHandler;
-  private Handler<Void> endHandler;
+
+  // Content
+  private ContentDecoder contentDecoder;
+  boolean inHead;
+  boolean decoderInitialized;
 
   DefaultHttp2Stream(Http2Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
@@ -91,26 +95,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.vertx = context.owner();
     this.context = context;
     this.id = id_;
-    this.inboundQueue = new InboundMessageQueue<>(connection.context().eventLoop(), context.executor()) {
-      @Override
-      protected void handleResume() {
-        int len = readable;
-        readable = -1;
-        connection.consumeCredits(id, len);
-      }
-      @Override
-      protected void handlePause() {
-        readable = 0;
-      }
-      @Override
-      protected void handleMessage(Buffer data) {
-        if (data == HttpUtils.END_OF_STREAM) {
-          handleEnd();
-        } else {
-          handleData(data);
-        }
-      }
-    };
+    this.inboundQueue = new Blah(connection, context);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = writable;
     this.readable = -1;
@@ -205,6 +190,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.flushBytesWritten();
     context.execute(v -> handleClose());
     outboundQueue.close();
+    inboundQueue.close();
   }
 
   public void onReset(long code) {
@@ -225,7 +211,21 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     if (observer != null) {
       observer.observeInboundHeaders(headers);
     }
-    context.execute(headers, this::handleHeader);
+    context.execute(headers, this::handleHeader2);
+  }
+
+  private void handleHeader2(HttpHeaders headers) {
+    inHead = true;
+    try {
+      ContentDecoder decoder = contentDecoder;
+      if (decoder != null && !decoderInitialized) {
+        decoderInitialized = true;
+        decoder.init(this);
+      }
+      handleHeader(headers);
+    } finally {
+      inHead = false;
+    }
   }
 
   public void onException(Throwable cause) {
@@ -244,8 +244,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     context.execute(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
-  public void onData(Buffer data) {
-    int len = data.length();
+  public void onData(ByteBuf data) {
+    data.retain();
+    int len = data.readableBytes();
     bytesRead += len;
     inboundQueue.write(data);
     if (readable < 0) {
@@ -278,7 +279,17 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.flushBytesRead();
     trailers = received;
     context.emit(null, this::handleTrailers);
-    inboundQueue.write(HttpUtils.END_OF_STREAM);
+    inboundQueue.write(END_OF_STREAM_2);
+  }
+
+  @Override
+  public S contentDecoder(ContentDecoder decoder) {
+    this.contentDecoder = decoder;
+    if (decoder != null && inHead && !decoderInitialized) {
+      decoderInitialized = true;
+      decoder.init(this);
+    }
+    return (S)this;
   }
 
   public final long id() {
@@ -497,15 +508,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
   }
 
-  public S dataHandler(Handler<Buffer> handler) {
-    dataHandler = handler;
-    return (S)this;
-  }
-
-  private void handleData(Buffer buf) {
-    Handler<Buffer> handler = dataHandler;
-    if (handler != null) {
-      context.dispatch(buf, handler);
+  private void handleData(ByteBuf buf) {
+    ContentDecoder decoder = contentDecoder;
+    if (decoder != null) {
+      context.dispatch(buf, decoder);
     }
   }
 
@@ -536,11 +542,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
   }
 
-  public S endHandler(Handler<Void> handler) {
-    endHandler = handler;
-    return (S)this;
-  }
-
   private void handleEnd() {
     // Trailers are delivered before end handler is called: handleTrailers is emitted via a task before submitting the last message to the inbound queue
     // However it is possible that when an on-going drain is in progress, the last message submitted will be executed before the trailers task executes
@@ -552,9 +553,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         handler.handle(trailers);
       }
     }
-    Handler<Void> handler = endHandler;
-    if (handler != null) {
-      handler.handle(null);
+    ContentDecoder decoder = contentDecoder;
+    if (decoder != null) {
+      decoder.handleEnd();
     }
   }
 
@@ -620,4 +621,53 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   abstract StreamObserver observer();
 
+  private class Blah extends InboundMessageQueue<ByteBuf> {
+    private final Http2Connection connection;
+
+    public Blah(Http2Connection connection, ContextInternal context) {
+      super(connection.context().eventLoop(), context.executor());
+      this.connection = connection;
+    }
+
+    @Override
+    protected void handleResume() {
+      int len = readable;
+      readable = -1;
+      connection.consumeCredits(id, len);
+    }
+
+    @Override
+    protected void handlePause() {
+      readable = 0;
+    }
+
+    @Override
+    protected void handleMessage(ByteBuf data) {
+      if (data == END_OF_STREAM_2) {
+        handleEnd();
+      } else {
+        try {
+          handleData(data);
+        } finally {
+          // No-op for VertxHeapByteBuf
+          data.release();
+        }
+      }
+    }
+
+    @Override
+    protected ByteBuf releaseMessage(ByteBuf buf) {
+      if (buf == END_OF_STREAM_2) {
+        return END_OF_STREAM_2;
+      } else {
+        try {
+          ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
+          buffer.writeBytes(buf, buf.readerIndex(), buf.readableBytes());
+          return buffer;
+        } finally {
+          buf.release();
+        }
+      }
+    }
+  }
 }

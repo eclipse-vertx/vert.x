@@ -300,9 +300,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
     Http2Stream stream = stream(streamId);
     if (stream != null) {
-      data = safeBuffer(data);
-      Buffer buff = BufferInternal.buffer(data);
-      stream.onData(buff);
+      stream.onData(data);
       if (endOfStream) {
         stream.onTrailers();
       }

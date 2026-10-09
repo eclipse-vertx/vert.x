@@ -211,20 +211,14 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
-      delegate.dataHandler(handler);
+    public HttpClientStream contentDecoder(ContentDecoder decoder) {
+      delegate.contentDecoder(decoder);
       return this;
     }
 
     @Override
     public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
       delegate.trailersHandler(handler);
-      return this;
-    }
-
-    @Override
-    public HttpStream endHandler(Handler<Void> handler) {
-      delegate.endHandler(handler);
       return this;
     }
 
@@ -237,18 +231,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     @Override
     public HttpClientStream closeHandler(Handler<Void> handler) {
       delegate.closeHandler(handler);
-      return this;
-    }
-
-    @Override
-    public HttpClientStream pause() {
-      delegate.pause();
-      return this;
-    }
-
-    @Override
-    public HttpClientStream fetch(long amount) {
-      delegate.fetch(amount);
       return this;
     }
 
@@ -312,9 +294,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     void handleUpgrade(io.vertx.core.http.impl.HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
       upgradedStream.headHandler(headHandler);
-      upgradedStream.dataHandler(chunkHandler);
       upgradedStream.trailersHandler(trailersHandler);
-      upgradedStream.endHandler(endHandler);
       upgradedStream.priorityChangeHandler(priorityHandler);
       upgradedStream.exceptionHandler(exceptionHandler);
       upgradedStream.resetHandler(resetHandler);
@@ -324,10 +304,9 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradedStream.pushHandler(pushHandler);
       upgradedStream.customFrameHandler(unknownFrameHandler);
       upgradedStream.closeHandler(closeHandler);
+      upgradedStream.contentDecoder(contentDecoder);
       upgradingStream.headHandler(null);
-      upgradingStream.dataHandler(null);
       upgradingStream.trailersHandler(null);
-      upgradingStream.endHandler(null);
       upgradingStream.priorityChangeHandler(null);
       upgradingStream.exceptionHandler(null);
       upgradingStream.drainHandler(null);
@@ -336,10 +315,9 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradingStream.pushHandler(null);
       upgradingStream.customFrameHandler(null);
       upgradingStream.closeHandler(null);
+      upgradingStream.contentDecoder(null);
       headHandler = null;
-      chunkHandler = null;
       trailersHandler = null;
-      endHandler = null;
       priorityHandler = null;
       exceptionHandler = null;
       resetHandler = null;
@@ -378,7 +356,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private final ClientMetrics<?, ?, ?> clientMetrics;
     private HttpClientStream upgradedStream;
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
-    private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailersHandler;
     private Handler<StreamPriority> priorityHandler;
     private Handler<Throwable> exceptionHandler;
@@ -389,7 +366,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private Handler<HttpClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
-    private Handler<Void> endHandler;
+    private ContentDecoder contentDecoder;
 
     UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, ClientMetrics<?, ?, ?> clientMetrics,
                     Http2ChannelUpgrade upgrade, Http1ClientConnection upgradingConnection) {
@@ -583,12 +560,12 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
+    public HttpClientStream contentDecoder(ContentDecoder decoder) {
       if (upgradedStream != null) {
-        upgradedStream.dataHandler(handler);
+        upgradedStream.contentDecoder(decoder);
       } else {
-        upgradingStream.dataHandler(handler);
-        chunkHandler = handler;
+        upgradingStream.contentDecoder(decoder);
+        contentDecoder = decoder;
       }
       return this;
     }
@@ -600,17 +577,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       } else {
         upgradingStream.trailersHandler(handler);
         trailersHandler = handler;
-      }
-      return this;
-    }
-
-    @Override
-    public HttpStream endHandler(Handler<Void> handler) {
-      if (upgradedStream != null) {
-        upgradedStream.endHandler(handler);
-      } else {
-        upgradingStream.endHandler(handler);
-        endHandler = handler;
       }
       return this;
     }
@@ -687,26 +653,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       } else {
         return upgradingStream.writeFrame(type, flags, payload);
       }
-    }
-
-    @Override
-    public HttpClientStream pause() {
-      if (upgradedStream != null) {
-        upgradedStream.pause();
-      } else {
-        upgradingStream.pause();
-      }
-      return this;
-    }
-
-    @Override
-    public HttpClientStream fetch(long amount) {
-      if (upgradedStream != null) {
-        upgradedStream.fetch(amount);
-      } else {
-        upgradingStream.fetch(amount);
-      }
-      return this;
     }
 
     @Override

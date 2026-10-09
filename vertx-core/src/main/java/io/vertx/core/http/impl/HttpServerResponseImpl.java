@@ -736,7 +736,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     });
   }
 
-  private static class PushStreamHandler {
+  private static class PushStreamHandler implements ContentDecoder {
 
     protected final ContextInternal context;
     protected final HttpServerStream stream;
@@ -753,11 +753,31 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       stream.resetHandler(this::handleReset);
       stream.exceptionHandler(this::handleException);
       stream.closeHandler(response::handleClose);
-      stream.dataHandler(this::handleData);
       stream.trailersHandler(this::handleTrailers);
       stream.customFrameHandler(this::handleCustomFrame);
       stream.priorityChangeHandler(this::handlePriorityChange);
       stream.drainHandler(response::handleWriteQueueDrained);
+      stream.contentDecoder(this);
+    }
+
+    @Override
+    public void init(FlowController flowController) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handle(ByteBuf chunk) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleEnd() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void destroy() {
+      throw new UnsupportedOperationException();
     }
 
     public void handleHeaders(HttpRequestHead headers) {

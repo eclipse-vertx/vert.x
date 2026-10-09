@@ -15,10 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 
 /**
@@ -59,21 +56,26 @@ public interface HttpStream {
 
   Future<Boolean> cancel();
 
+  /**
+   * Sets a decoder for the content of this stream. The decoder should be set early in the lifecycle of the stream, before
+   * any chunk is received.
+   *
+   * @param decoder the decoder
+   * @return this stream
+   */
+  HttpStream contentDecoder(ContentDecoder decoder);
+
   HttpStream resetHandler(Handler<Long> handler);
   HttpStream exceptionHandler(Handler<Throwable> handler);
   HttpStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpStream dataHandler(Handler<Buffer> handler);
   HttpStream trailersHandler(Handler<MultiMap> handler);
   HttpStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpStream closeHandler(Handler<Void> handler);
   HttpStream drainHandler(Handler<Void> handler);
-  HttpStream endHandler(Handler<Void> handler);
 
   boolean isWritable();
 
   HttpStream setWriteQueueMaxSize(int maxSize);
-  HttpStream pause();
-  HttpStream fetch(long amount);
 
   StreamPriority priority();
   HttpStream updatePriority(StreamPriority streamPriority);
