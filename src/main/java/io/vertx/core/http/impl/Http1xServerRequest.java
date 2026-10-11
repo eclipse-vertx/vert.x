@@ -710,7 +710,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
           upload = decoder.currentPartialHttpData();
         }
       }
-      if (!response.ended()) {
+      if (response != null && !response.ended()) {
         if (METRICS_ENABLED) {
           reportRequestReset(t);
         }
