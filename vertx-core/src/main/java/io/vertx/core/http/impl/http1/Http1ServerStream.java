@@ -47,7 +47,7 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   void handleHead() {
     Handler<HttpRequestHead> h = headHandler;
     if (h != null) {
-      h.handle(new HttpRequestHead(scheme(), method(), uri(), headers(), authority(), absoluteURI(), null));
+      h.handle(new HttpRequestHead(scheme(), method(), uri(), headers(), authority(), null));
     }
   }
 

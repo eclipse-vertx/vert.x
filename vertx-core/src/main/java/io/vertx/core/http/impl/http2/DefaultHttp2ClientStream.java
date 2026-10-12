@@ -210,7 +210,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   public void onPush(DefaultHttp2ClientStream pushStream, int promisedStreamId, HttpRequestHeaders headers, boolean writable) {
-    HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.scheme(), headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
+    HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.scheme(), headers.method(), headers.path(), headers, headers.authority(), null), pushStream);
     pushStream.init(promisedStreamId, writable);
     if (pushStream.observable != null) {
       pushStream.observable.observePush(headers);

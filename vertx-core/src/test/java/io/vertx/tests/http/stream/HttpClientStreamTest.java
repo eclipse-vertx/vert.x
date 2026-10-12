@@ -64,7 +64,6 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       "/",
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
-      "https://localhost:" + testAddress.port() + "/",
       null);
     stream.writeHead(head, Buffer.buffer(), true);
   }

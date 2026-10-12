@@ -154,7 +154,6 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
       requestHeaders.path(),
       map,
       requestHeaders.authority(),
-      null,
       null
     );
     map.sanitize();

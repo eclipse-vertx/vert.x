@@ -24,29 +24,19 @@ public class HttpRequestHead {
   public final String uri;
   public final MultiMap headers;
   public final HostAndPort authority;
-  public final String absoluteURI;
   public final String traceOperation;
 
-  public HttpRequestHead(String scheme, HttpMethod method, String uri, MultiMap headers, HostAndPort authority, String absoluteURI, String traceOperation) {
+  public HttpRequestHead(String scheme, HttpMethod method, String uri, MultiMap headers, HostAndPort authority, String traceOperation) {
     this.scheme = scheme;
     this.method = method;
     this.uri = uri;
     this.headers = headers;
     this.authority = authority;
-    this.absoluteURI = absoluteURI;
     this.traceOperation = traceOperation;
   }
 
   public MultiMap headers() {
     return headers;
-  }
-
-  public String absoluteURI() {
-    return absoluteURI;
-  }
-
-  public int id() {
-    return 1;
   }
 
   public String uri() {

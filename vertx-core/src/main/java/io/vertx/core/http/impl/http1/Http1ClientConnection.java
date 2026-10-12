@@ -1162,7 +1162,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
           if (webSocketMetrics != null) {
             ws.setMetric(webSocketMetrics.connected(new ObservableRequest(new HttpRequestHead(
-              ssl ? "https" : "http", HttpMethod.GET, requestURI, headers, authority, "/", null
+              ssl ? "https" : "http", HttpMethod.GET, requestURI, headers, authority, null
             ))));
           }
           ws.pause();
@@ -1470,7 +1470,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
     @Override
     public String absoluteURI() {
-      return request.absoluteURI;
+      return request.scheme + "://" + request.authority + request.uri;
     }
     @Override
     public HttpMethod method() {
