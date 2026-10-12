@@ -2224,6 +2224,26 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testStreamPriorityBeforeRequestIsSent() throws Exception {
+    server.requestHandler(req -> {
+      StreamPriority received = req.streamPriority();
+      req.response().end(received.getDependency() + ":" + received.getWeight() + ":" + received.isExclusive());
+    });
+    startServer();
+    StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    Buffer body = client.request(requestOptions)
+      .compose(request -> {
+        request.setStreamPriority(streamPriority);
+        Assert.assertEquals(streamPriority, request.getStreamPriority());
+        return request
+          .send()
+          .compose(HttpClientResponse::body);
+      })
+      .await();
+    Assert.assertEquals("123:45:true", body.toString());
+  }
+
+  @Test
   public void testStreamPriorityChange() throws Exception {
     StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     StreamPriority requestStreamPriority2 = new StreamPriority().setDependency(223).setWeight((short)145).setExclusive(false);

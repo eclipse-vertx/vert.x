@@ -123,7 +123,7 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, Buffer chunk, boolean end, StreamPriority priority) {
+  public Future<Void> writeHead(HttpRequestHead request, Buffer chunk, boolean end) {
     HttpRequestHeaders headers = ((HttpRequestHeaders)request.headers());
     headers.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
     headers.authority(request.authority);

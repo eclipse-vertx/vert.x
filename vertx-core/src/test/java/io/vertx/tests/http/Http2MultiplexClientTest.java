@@ -31,6 +31,13 @@ public class Http2MultiplexClientTest extends Http2ClientTest {
   @Test
   @Ignore
   @Override
+  public void testStreamPriorityBeforeRequestIsSent() throws Exception {
+    super.testStreamPriorityBeforeRequestIsSent();
+  }
+
+  @Test
+  @Ignore
+  @Override
   public void testStreamPriorityChange() throws Exception {
     super.testStreamPriorityChange();
   }
