@@ -418,7 +418,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
               stream.exceptionHandler(future::tryFail);
               HttpRequestHead request = new HttpRequestHead("http", OPTIONS, "/", HttpHeaders.headers(), HostAndPort.authority(server.host(), server.port()),
                 "http://" + server + "/", null);
-              stream.writeHead(request, false, null, true, null);
+              stream.writeHead(request, null, true, null);
             } else {
               future.fail(ar.cause());
             }

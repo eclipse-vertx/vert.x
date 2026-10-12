@@ -535,7 +535,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Future<Void> doWrite(Buffer buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
-    boolean chunked;
     synchronized (this) {
       if (reset != null) {
         return context.failedFuture(reset);
@@ -570,8 +569,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
               headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
             }
           } else if (requiresContentLength) {
+            chunked = true;
+          }
+          if (chunked) {
             headers.set(TRANSFER_ENCODING, CHUNKED);
-            this.chunked = true;
           }
         }
         headersSent = true;
@@ -580,7 +581,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         writeHead = false;
       }
-      chunked = this.chunked;
       writeEnd = !isConnect && end;
       trailersSent = end;
     }
@@ -593,7 +593,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         uri = "/";
       }
       HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), absoluteURI(), traceOperation);
-      future = stream.writeHead(head, chunked, buff, writeEnd, priority);
+      future = stream.writeHead(head, buff, writeEnd, priority);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();

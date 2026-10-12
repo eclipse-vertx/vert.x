@@ -17,6 +17,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http3.Http3DataFrame;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpServerRequestImpl;
 import io.vertx.core.http.impl.http3.Http3ServerStream;
 import io.vertx.core.internal.net.QuicStreamInternal;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Http3Test extends HttpTest {
 
@@ -142,5 +144,34 @@ public class Http3Test extends HttpTest {
     Assert.assertTrue(buffer.refCnt() > 0);
     request.connection().close().await();
     TestUtils.assertWaitUntil(() -> buffer.refCnt() == 0);
+  }
+
+  @Test
+  public void testChunkedRequestDoesNotSendTransferEncoding() throws Exception {
+    testRequestDoesNotSendTransferEncoding(req -> req.setChunked(true));
+  }
+
+  @Test
+  public void testStreamedRequestDoesNotSendTransferEncoding() throws Exception {
+    testRequestDoesNotSendTransferEncoding(req -> {});
+  }
+
+  private void testRequestDoesNotSendTransferEncoding(Consumer<HttpClientRequest> configurator) throws Exception {
+    server.requestHandler(req -> req.body().onComplete(TestUtils.onSuccess(body -> req
+      .response()
+      .putHeader("x-transfer-encoding", String.valueOf(req.getHeader(HttpHeaders.TRANSFER_ENCODING)))
+      .end(body))));
+    startServer(testAddress);
+    HttpClientRequest request = client.request(requestOptions).await();
+    configurator.accept(request);
+    request.writeHead().await();
+    request.end("hello");
+    Buffer body = request.response()
+      .compose(response -> {
+        Assert.assertEquals("null", response.getHeader("x-transfer-encoding"));
+        return response.body();
+      })
+      .await();
+    Assert.assertEquals("hello", body.toString());
   }
 }
