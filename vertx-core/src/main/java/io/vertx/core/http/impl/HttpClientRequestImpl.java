@@ -341,6 +341,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<HttpClientResponse> connect() {
+    synchronized (this) {
+      if (chunked || headers.contains(CONTENT_LENGTH) || headers.contains(TRANSFER_ENCODING)) {
+        return context.failedFuture(new IllegalStateException("A tunnel request cannot declare content-length or transfer-encoding"));
+      }
+    }
     doWrite(null, false, true);
     return response();
   }
@@ -588,7 +593,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         uri = "/";
       }
       HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), absoluteURI(), traceOperation);
-      future = stream.writeHead(head, chunked, buff, writeEnd, priority, connect);
+      future = stream.writeHead(head, chunked, buff, writeEnd, priority);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();

@@ -276,7 +276,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return Zstd.isAvailable();
   }
 
-  private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
+  private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, Promise<Void> promise) {
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
@@ -285,7 +285,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       assert stream == removed;
       current = removed;
       inflight.addLast(stream);
-      this.isConnect = connect;
+      // A head without end and without body framing (no chunked, no content-length) has no HTTP body, what follows is a tunnel
+      isConnect = !end && !chunked && (request.headers == null || !request.headers.contains(CONTENT_LENGTH));
       if (clientMetrics != null) {
         ObservableRequest observable = new ObservableRequest(request);
         clientMetrics.requestBegin(stream.metric, request.uri, observable);
@@ -378,7 +379,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return removed;
   }
 
-  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> listener) {
+  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, Promise<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
@@ -387,7 +388,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           return;
         }
         stream.request = request;
-        beginRequest(stream, request, chunked, buf, end, connect, listener);
+        beginRequest(stream, request, chunked, buf, end, listener);
       }
       @Override
       public void cancel(Throwable cause) {
@@ -672,9 +673,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority) {
       PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, connect, promise);
+      conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
       return promise.future();
     }
 
