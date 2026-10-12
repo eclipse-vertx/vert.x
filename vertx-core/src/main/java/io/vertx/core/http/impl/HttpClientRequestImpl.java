@@ -58,7 +58,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private final MultiMap headers;
   private boolean trailersSent;
   private boolean headersSent;
-  private StreamPriority priority;
   private boolean isConnect;
   private String traceOperation;
   private int maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
@@ -69,7 +68,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
-    this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.numberOfRedirections = 0;
     this.headers = stream.connection().newHttpRequestHeaders();
 
@@ -593,7 +591,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         uri = "/";
       }
       HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), absoluteURI(), traceOperation);
-      future = stream.writeHead(head, buff, writeEnd, priority);
+      future = stream.writeHead(head, buff, writeEnd);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();
@@ -614,11 +612,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest setStreamPriority(StreamPriority priority) {
-    if (headersSent) {
-      stream.updatePriority(priority);
-    } else {
-      this.priority = priority;
-    }
+    stream.updatePriority(priority);
     return this;
   }
 

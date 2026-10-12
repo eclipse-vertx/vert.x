@@ -22,7 +22,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.headers.HttpHeaders;
@@ -112,9 +111,8 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end, StreamPriority priority) {
+  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end) {
     PromiseInternal<Void> promise = context.promise();
-    priority(priority);
     scheme = request.scheme;
     authority = request.authority;
     write(new HeadersWrite(request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
@@ -124,11 +122,6 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   @Override
   public HttpClientStream setWriteQueueMaxSize(int maxSize) {
     return this;
-  }
-
-  void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
-    priority(priority);
-    write(new HeadersWrite(request, buf, end, promise));
   }
 
   private class HeadersWrite implements MessageWrite {

@@ -674,7 +674,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end, StreamPriority priority) {
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
       PromiseInternal<Void> promise = context.promise();
       conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
       return promise.future();

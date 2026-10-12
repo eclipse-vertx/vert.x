@@ -74,12 +74,12 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end, StreamPriority priority) {
+  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end) {
     endpointRequest.reportRequestBegin();
     if (end) {
       endpointRequest.reportRequestEnd();
     }
-    return delegate.writeHead(request, buf, end, priority);
+    return delegate.writeHead(request, buf, end);
   }
 
   @Override
