@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   private static final Object END_SENTINEL = new Object();
+  private static final Object ERR_SENTINEL = new Object();
 
   static class Op<T> {
     final T item;
@@ -143,10 +144,21 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   }
 
   public synchronized void fail(Throwable err) {
-    Handler<Throwable> handler = exceptionHandler;
-    if (handler != null) {
-      exceptionHandler.handle(err);
+    synchronized(this) {
+      if (ended) {
+        throw new IllegalStateException();
+      }
+      ended = true;
+      Promise<Void> promise = Promise.promise();
+      promise.future().onComplete(ar -> {
+        Handler<Throwable> handler = exceptionHandler;
+        if (handler != null) {
+          handler.handle(err);
+        }
+      });
+      pending.add(new Op<>((T)ERR_SENTINEL, promise));
     }
+    checkPending();
   }
 
   @Override
@@ -178,6 +190,8 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
       }
       if (op.item == END_SENTINEL) {
         end.onComplete(op.ack);
+      } else if(op.item == ERR_SENTINEL) {
+        op.ack.complete();
       } else {
         Handler<T> handler = itemHandler;
         try {
