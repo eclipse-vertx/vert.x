@@ -32,10 +32,15 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableHttpClient extends CleanableResource<HttpClientInternal> implements HttpClientInternal {
+public class CleanableHttpClient extends CleanableResource<HttpClientImpl> implements HttpClientInternal {
 
-  public CleanableHttpClient(Cleaner cleaner, CloseableResource<? extends HttpClientInternal> dispose) {
+  public CleanableHttpClient(Cleaner cleaner, CloseableResource<? extends HttpClientImpl> dispose) {
     super(cleaner, dispose);
+  }
+
+  // Until stream API gets internal
+  public Future<HttpClientStream> openStream(RequestOptions options) {
+    return getOrDie().openStream(options);
   }
 
   @Override

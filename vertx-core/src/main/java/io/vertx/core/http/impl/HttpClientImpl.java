@@ -400,8 +400,53 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       .map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 
+  private RequestOptions prepare(RequestOptions request) {
+
+    request = new RequestOptions(request);
+
+    HttpMethod method = request.getMethod();
+    String requestURI = request.getURI();
+    Objects.requireNonNull(method, "no null method accepted");
+    Objects.requireNonNull(requestURI, "no null requestURI accepted");
+
+    long connectTimeout = 0L;
+    long idleTimeout = 0L;
+    if (request.getTimeout() >= 0L) {
+      connectTimeout = request.getTimeout();
+      idleTimeout = request.getTimeout();
+    }
+    if (request.getConnectTimeout() >= 0L) {
+      connectTimeout = request.getConnectTimeout();
+    }
+    if (request.getIdleTimeout() >= 0L) {
+      idleTimeout = request.getIdleTimeout();
+    }
+    request.setConnectTimeout(connectTimeout);
+    request.setIdleTimeout(idleTimeout);
+
+    HttpVersion protocolVersion = request.getProtocolVersion();
+    if (protocolVersion == null && versions.size() == 1) {
+      protocolVersion = versions.get(0);
+    }
+    request.setProtocolVersion(protocolVersion);
+
+    return request;
+  }
+
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
+    request = prepare(request);
+    Future<ConnectionObtainedResult> fut = doRequest(request);
+    return toRequest(request.getMethod(), request.getURI(), request.getHeaders(), request.getTraceOperation(), request.getIdleTimeout(), request.getFollowRedirects(), fut);
+  }
+
+  public Future<HttpClientStream> openStream(RequestOptions request) {
+    request = prepare(request);
+    Future<ConnectionObtainedResult> fut = doRequest(request);
+    return toStream(fut);
+  }
+
+  private Future<ConnectionObtainedResult> doRequest(RequestOptions request) {
     HttpVersion version = request.getProtocolVersion();
     HttpClientTransport transport;
     if (version == null) {
@@ -459,29 +504,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return doRequest(transport, addr, port, host, request);
   }
 
-  private Future<HttpClientRequest> doRequest(HttpClientTransport transport, Address server, Integer port, String host, RequestOptions request) {
+  private Future<ConnectionObtainedResult> doRequest(HttpClientTransport transport, Address server, Integer port, String host, RequestOptions request) {
     if (server == null) {
       throw new NullPointerException();
     }
-    HttpMethod method = request.getMethod();
-    String requestURI = request.getURI();
     Boolean ssl = request.isSsl();
-    MultiMap headers = request.getHeaders();
-    long connectTimeout = 0L;
-    long idleTimeout = 0L;
-    if (request.getTimeout() >= 0L) {
-      connectTimeout = request.getTimeout();
-      idleTimeout = request.getTimeout();
-    }
-    if (request.getConnectTimeout() >= 0L) {
-      connectTimeout = request.getConnectTimeout();
-    }
-    if (request.getIdleTimeout() >= 0L) {
-      idleTimeout = request.getIdleTimeout();
-    }
-    Boolean followRedirects = request.getFollowRedirects();
-    Objects.requireNonNull(method, "no null method accepted");
-    Objects.requireNonNull(requestURI, "no null requestURI accepted");
     checkClosed();
     HostAndPort authority;
     if (host != null && port != null) {
@@ -493,27 +520,23 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       authority = null;
     }
-    HttpVersion protocolVersion = request.getProtocolVersion();
-    if (protocolVersion == null && versions.size() == 1) {
-      protocolVersion = versions.get(0);
-    }
     ClientSSLOptions sslOptions = sslOptions(verifyHost, request, this.sslOptions);
     if (server instanceof SocketAddress) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
       if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
         boolean useSSL = ssl != null ? ssl : defaultSsl;
-        return doRequestDirectly(transport, protocolVersion, method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
-          sslOptions, authority, connectTimeout);
+        return doRequestDirectly(transport, request.getProtocolVersion(), proxyOptions, serverSocketAddress, useSSL,
+          sslOptions, authority, request.getConnectTimeout());
       }
     }
     boolean useSSL;
     HttpProtocol protocol;
-    if (protocolVersion == null) {
+    if (request.getProtocolVersion() == null) {
       protocol = null;
       useSSL = ssl != null ? ssl : defaultSsl;
     } else {
-      switch (protocolVersion) {
+      switch (request.getProtocolVersion()) {
         case HTTP_1_0:
           useSSL = ssl != null ? ssl : defaultSsl;
           protocol = HttpProtocol.HTTP_1_0;
@@ -534,18 +557,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           throw new AssertionError();
       }
     }
-    return doRequest(transport, protocol, method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), request.getRoutingKey(), connectTimeout, idleTimeout, followRedirects, sslOptions);
+    return doRequest(protocol, authority, server, useSSL, request.getRoutingKey(), request.getConnectTimeout(), sslOptions);
   }
 
-  private Future<HttpClientRequest> doRequestDirectly(
+  private Future<ConnectionObtainedResult> doRequestDirectly(
     HttpClientTransport transport,
     HttpVersion protocol,
-    HttpMethod httpMethod,
-    String requestURI,
-    MultiMap headers,
-    String traceOperation,
-    long idleTimeout,
-    boolean followRedirects,
     ProxyOptions proxyOptions,
     SocketAddress server,
     boolean useSSL,
@@ -559,7 +576,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       key = new EndpointKey(useSSL, protocol, sslOptions, server, authority);
     }
-    Future<ConnectionObtainedResult> fut2 = resourceManager.withResourceAsync(key, httpEndpointProvider(false, server, proxyOptions, transport), (endpoint, created) -> {
+    return resourceManager.withResourceAsync(key, httpEndpointProvider(false, server, proxyOptions, transport), (endpoint, created) -> {
       Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
       return fut.compose(lease -> {
         HttpClientConnection conn = lease.get();
@@ -567,89 +584,59 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           stream.closeHandler(v -> {
             lease.recycle();
           });
-          return new ConnectionObtainedResult(stream, lease, null);
+          return new ConnectionObtainedResult(stream, lease, authority, null, proxyOptions);
         });
       });
     });
-    return wrap(authority, httpMethod, requestURI, headers, traceOperation, idleTimeout, followRedirects, proxyOptions, fut2);
   }
 
-  private Future<HttpClientRequest> doRequest(
-    HttpClientTransport transport,
+  private Future<ConnectionObtainedResult> doRequest(
     HttpProtocol protocol,
-    HttpMethod method,
     HostAndPort authority,
     Address server,
     boolean useSSL,
-    String requestURI,
-    MultiMap headers,
-    String traceOperation,
     String routingKey,
     long connectTimeout,
-    long idleTimeout,
-    Boolean followRedirects,
     ClientSSLOptions sslOptions) {
     if (server instanceof SocketAddress && (resolver == null || !resolver.resolves(server))) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
       return doRequest(
         originResolver,
-        transport,
         protocol,
-        method,
         authority,
         new Origin(useSSL ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port()),
         useSSL,
-        requestURI,
-        headers,
-        traceOperation,
         routingKey,
         connectTimeout,
-        idleTimeout,
-        followRedirects,
         sslOptions
       );
     } else {
       return doRequest(
         resolver,
-        transport,
         protocol,
-        method,
         authority,
         server,
         useSSL,
-        requestURI,
-        headers,
-        traceOperation,
         routingKey,
         connectTimeout,
-        idleTimeout,
-        followRedirects,
         sslOptions
       );
     }
   }
 
-  private Future<HttpClientRequest> doRequest(
+  private Future<ConnectionObtainedResult> doRequest(
     EndpointResolverInternal resolver,
-    HttpClientTransport transport,
     HttpProtocol protocol_,
-    HttpMethod method,
     HostAndPort authority,
     Address server,
     boolean useSSL,
-    String requestURI,
-    MultiMap headers,
-    String traceOperation,
     String routingKey,
     long connectTimeout,
-    long idleTimeout,
-    Boolean followRedirects,
     ClientSSLOptions sslOptions) {
     ContextInternal streamCtx = vertx.getOrCreateContext();
-    Future<ConnectionObtainedResult> future;
     PromiseInternal<Endpoint> promise = vertx.promise();
     resolver.lookupEndpoint(server, promise);
-    future = promise.future()
+    return promise.future()
       .compose(endpoint -> {
         ServerEndpoint lookup;
         HttpProtocol protocol;
@@ -732,18 +719,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                 return conn.createStream(streamCtx).map(stream -> {
                   HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
                   wrapped.closeHandler(v -> lease.recycle());
-                  return new ConnectionObtainedResult(wrapped, lease, altUsed);
+                  return new ConnectionObtainedResult(wrapped, lease, authority, altUsed, null);
                 });
               });
             }
           });
       });
-    if (future == null) {
-      // I think this is not possible - so remove it
-      return streamCtx.failedFuture("Cannot resolve address " + server);
-    } else {
-      return wrap(authority, method, requestURI, headers, traceOperation, idleTimeout, followRedirects, null, future);
-    }
   }
 
   Future<?> checkConnect(OriginServer primary, OriginAlternative alternative, OriginServer server, ClientSSLOptions sslOptions) {
@@ -788,26 +769,34 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return resourceManager.withResourceAsync(key, provider, (group, created) -> function.apply(group));
   }
 
-  private Future<HttpClientRequest> wrap(HostAndPort authority,
-                                         HttpMethod method,
-                                         String requestURI,
-                                         MultiMap headers,
-                                         String traceOperation,
-                                         long idleTimeout,
-                                         Boolean followRedirects,
-                                         ProxyOptions proxyOptions,
-                                         Future<ConnectionObtainedResult> future) {
+  private Future<HttpClientStream> toStream(Future<ConnectionObtainedResult> future) {
+    return future.map(res -> {
+      HttpClientStream stream = res.stream;
+      stream.closeHandler(v -> {
+        res.lease.recycle();
+      });
+      return stream;
+    });
+  }
+
+  private Future<HttpClientRequest> toRequest(HttpMethod method,
+                                              String requestURI,
+                                              MultiMap headers,
+                                              String traceOperation,
+                                              long idleTimeout,
+                                              Boolean followRedirects,
+                                              Future<ConnectionObtainedResult> future) {
     return future.map(res -> {
       RequestOptions options = new RequestOptions();
       options.setMethod(method);
       options.setHeaders(headers);
       options.setURI(requestURI);
-      options.setProxyOptions(proxyOptions);
+      options.setProxyOptions(res.proxyOptions);
       options.setIdleTimeout(idleTimeout);
       options.setFollowRedirects(followRedirects);
       options.setTraceOperation(traceOperation);
       HttpClientStream stream = res.stream;
-      HttpClientRequestImpl request = createRequest(authority, stream.connection(), stream, options);
+      HttpClientRequestImpl request = createRequest(res.authority, stream.connection(), stream, options);
       if (res.alternative != null) {
         String altUsedValue;
         int defaultPort = stream.connection().isSsl() ? 443 : 80;
@@ -826,15 +815,18 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     });
   }
 
-
   private static class ConnectionObtainedResult {
     private final HttpClientStream stream;
     private final Lease<HttpClientConnection> lease;
+    private final HostAndPort authority;
     private final HostAndPort alternative;
-    public ConnectionObtainedResult(HttpClientStream stream, Lease<HttpClientConnection> lease, HostAndPort alternative) {
+    private final ProxyOptions proxyOptions;
+    public ConnectionObtainedResult(HttpClientStream stream, Lease<HttpClientConnection> lease, HostAndPort authority, HostAndPort alternative, ProxyOptions proxyOptions) {
       this.stream = stream;
       this.lease = lease;
+      this.authority = authority;
       this.alternative = alternative;
+      this.proxyOptions = proxyOptions;
     }
   }
 
