@@ -26,7 +26,7 @@ public interface HttpClientStream extends HttpStream {
 
   HttpClientConnection connection();
 
-  Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect);
+  Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority);
 
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream resetHandler(Handler<Long> handler);

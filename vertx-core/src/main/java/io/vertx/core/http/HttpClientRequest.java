@@ -339,7 +339,10 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for interacting
    * more conveniently with the server.
    *
-   * <p> HTTP/1.1 pipe-lined requests are not supported.f
+   * <p> HTTP/1.1 pipe-lined requests are not supported.
+   *
+   * <p> The request must not have content: the returned future is failed when the request is chunked or declares
+   * a {@code content-length} or {@code transfer-encoding} header.
    *
    * @return a future notified with the server response
    */

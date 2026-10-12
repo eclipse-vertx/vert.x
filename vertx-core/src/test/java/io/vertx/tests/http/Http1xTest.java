@@ -5054,6 +5054,31 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testConnectMethodWithStreamedBodyIsNotATunnel() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.CONNECT, req.method());
+      assertEquals("chunked", req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+      req.body().onComplete(TestUtils.onSuccess(body -> {
+        req.response().setStatusCode(400).end(body);
+      }));
+    });
+    startServer(testAddress);
+    Buffer body = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
+      .compose(req -> {
+        req.writeHead();
+        req.write("hello ");
+        req.end("world");
+        return req.response();
+      })
+      .compose(resp -> {
+        assertEquals(400, resp.statusCode());
+        return resp.body();
+      })
+      .await();
+    assertEquals("hello world", body.toString());
+  }
+
+  @Test
   public void testServerResponseReset(Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
       req.response().reset();
@@ -5071,37 +5096,20 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testNetSocketUpgradeSuccess(Checkpoint checkpoint) {
-    testNetSocketUpgradeSuccess(checkpoint,  null);
-  }
-
-  @Test
-  public void testNetSocketUpgradeSuccessWithPayload(Checkpoint checkpoint) {
-    testNetSocketUpgradeSuccess(checkpoint, Buffer.buffer("the-payload"));
-  }
-
-  private void testNetSocketUpgradeSuccess(Checkpoint checkpoint, Buffer payload) {
     server.requestHandler(req -> {
-      req.body().onComplete(TestUtils.onSuccess(body -> {
-        if (payload != null) {
-          assertEquals(payload, body);
-        }
-        req.response().setStatusCode(101);
-        req.toNetSocket().onComplete(TestUtils.onSuccess(so -> {
-          so.handler(buff -> {
-            assertEquals("ping", buff.toString());
-            so.write("pong");
-            so.close();
-          });
-        }));
+      req.response().setStatusCode(101);
+      req.toNetSocket().onComplete(TestUtils.onSuccess(so -> {
+        so.handler(buff -> {
+          assertEquals("ping", buff.toString());
+          so.write("pong");
+          so.close();
+        });
       }));
     });
     server.listen(testAddress).onComplete(TestUtils.onSuccess(s -> {
       RequestOptions request = new RequestOptions(requestOptions)
         .setMethod(HttpMethod.GET)
         .addHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
-      if (payload != null) {
-        request.addHeader(HttpHeaders.CONTENT_LENGTH, "" + payload.length());
-      }
       client.request(request
       ).onComplete(TestUtils.onSuccess(req -> {
         req.connect().onComplete(TestUtils.onSuccess(resp -> {
@@ -5113,11 +5121,33 @@ public class Http1xTest extends HttpTest {
               .onComplete(checkpoint);
           });
         }));
-        if (payload != null) {
-          req.end(payload);
-        }
       }));
     }));
+  }
+
+  @Test
+  public void testConnectRejectsContentLength() throws Exception {
+    testConnectRejectsBodyFraming(req -> req.putHeader(HttpHeaders.CONTENT_LENGTH, "11"));
+  }
+
+  @Test
+  public void testConnectRejectsTransferEncoding() throws Exception {
+    testConnectRejectsBodyFraming(req -> req.putHeader(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED));
+  }
+
+  @Test
+  public void testConnectRejectsChunked() throws Exception {
+    testConnectRejectsBodyFraming(req -> req.setChunked(true));
+  }
+
+  private void testConnectRejectsBodyFraming(Consumer<HttpClientRequest> configurator) throws Exception {
+    server.requestHandler(req -> fail());
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions)
+      .setMethod(HttpMethod.GET)
+      .addHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE)).await();
+    configurator.accept(req);
+    assertThatThrownBy(() -> req.connect().await()).isInstanceOf(IllegalStateException.class);
   }
 
   @Test
