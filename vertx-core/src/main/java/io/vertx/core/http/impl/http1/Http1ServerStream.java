@@ -97,11 +97,6 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public long bytesWritten() {
-    return response().bytesWritten();
-  }
-
-  @Override
   public Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
     if (headersSent) {
       return context.failedFuture("Headers already sent");

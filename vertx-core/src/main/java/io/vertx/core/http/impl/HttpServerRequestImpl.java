@@ -66,6 +66,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   private Handler<HttpServerFileUpload> uploadHandler;
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
+  private long bytesRead;
 
   public HttpServerRequestImpl(Handler<HttpServerRequest> handler,
                                HttpServerStream stream,
@@ -170,6 +171,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   }
 
   public void handleData(Buffer data) {
+    bytesRead += data.length();
     if (postRequestDecoder != null) {
       try {
         postRequestDecoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
@@ -371,7 +373,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
 
   @Override
   public long bytesRead() {
-    return stream.bytesRead();
+    return bytesRead;
   }
 
   @Override

@@ -54,6 +54,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
+  private long bytesWritten;
   private CookieJar cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
@@ -396,6 +397,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         throw new IllegalStateException("Response has already been written");
       }
       ended = end;
+      if (chunk != null) {
+        bytesWritten += chunk.length();
+      }
       if (end && !headWritten && requiresContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
       }
@@ -641,7 +645,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
     checkSendHeaders();
     Promise<Void> promise = context.promise();
-    ended = true;
+    synchronized (conn) {
+      ended = true;
+      bytesWritten += file.length();
+    }
     stream.sendFile(file, promise);
     Future<Void> future = promise.future();
     Handler<Void> bodyEndHandler = this.bodyEndHandler;
@@ -695,7 +702,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public long bytesWritten() {
-    return stream.bytesWritten();
+    return bytesWritten;
   }
 
   @Override
