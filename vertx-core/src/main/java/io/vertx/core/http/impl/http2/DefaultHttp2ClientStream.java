@@ -112,7 +112,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority) {
+  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end, StreamPriority priority) {
     PromiseInternal<Void> promise = context.promise();
     priority(priority);
     scheme = request.scheme;

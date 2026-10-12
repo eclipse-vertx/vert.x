@@ -276,8 +276,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return Zstd.isAvailable();
   }
 
-  private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, Promise<Void> promise) {
+  private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> promise) {
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
+    boolean chunked = request.headers != null && request.headers.contains(TRANSFER_ENCODING, CHUNKED, true);
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
       assert current == null;
@@ -379,7 +380,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return removed;
   }
 
-  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, Promise<Void> listener) {
+  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
@@ -388,7 +389,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           return;
         }
         stream.request = request;
-        beginRequest(stream, request, chunked, buf, end, listener);
+        beginRequest(stream, request, buf, end, listener);
       }
       @Override
       public void cancel(Throwable cause) {
@@ -673,9 +674,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority) {
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end, StreamPriority priority) {
       PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
+      conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
       return promise.future();
     }
 

@@ -166,8 +166,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority) {
-      return delegate.writeHead(request, chunked, buf, end, priority);
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end, StreamPriority priority) {
+      return delegate.writeHead(request, buf, end, priority);
     }
 
     @Override
@@ -410,7 +410,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
      */
     @Override
     public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request,
-                                  boolean chunked,
                                   Buffer buf,
                                   boolean end,
                                   StreamPriority priority) {
@@ -436,26 +435,25 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgrade.upgrade(upgradingStream, request, buf, end,
         upgradingConnection.channelHandlerContext().channel(), clientMetrics, blah);
       PromiseInternal<Void> promise = upgradingStream.context().promise();
-      writeHead(request, chunked, buf, end, priority, promise);
+      writeHead(request, buf, end, priority, promise);
       return promise.future();
     }
 
     private void writeHead(io.vertx.core.http.impl.HttpRequestHead head,
-                           boolean chunked,
                            Buffer buf,
                            boolean end,
                            StreamPriority priority,
                            Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeHead(head, chunked, buf, end, priority)
+        upgradingStream.writeHead(head, buf, end, priority)
           .onComplete(promise);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES_EVENT);
         }
       } else {
-        exec.execute(() -> writeHead(head, chunked, buf, end, priority, promise));
+        exec.execute(() -> writeHead(head, buf, end, priority, promise));
       }
     }
 

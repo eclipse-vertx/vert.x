@@ -5126,6 +5126,23 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testTransferEncodingHeaderSendsChunkedBody() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("chunked", req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+      assertNull(req.getHeader(HttpHeaders.CONTENT_LENGTH));
+      req.body().onComplete(TestUtils.onSuccess(body -> req.response().end(body)));
+    });
+    startServer(testAddress);
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req
+        .putHeader(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED)
+        .send("hello")
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals("hello", body.toString());
+  }
+
+  @Test
   public void testConnectRejectsContentLength() throws Exception {
     testConnectRejectsBodyFraming(req -> req.putHeader(HttpHeaders.CONTENT_LENGTH, "11"));
   }
