@@ -64,7 +64,6 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
         requestHeaders.path(),
         requestHeaders,
         requestHeaders.authority(),
-        null,
         null);
       Handler<HttpRequestHead> handler = headHandler;
       if (handler != null) {

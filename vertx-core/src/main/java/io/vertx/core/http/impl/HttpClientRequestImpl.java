@@ -590,7 +590,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (uri.isEmpty()) {
         uri = "/";
       }
-      HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), absoluteURI(), traceOperation);
+      HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), traceOperation);
       future = stream.writeHead(head, buff, writeEnd);
     } else {
       if (buff == null && !end) {
