@@ -112,7 +112,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   protected void handleEnd() {
     inboundReceived = true;
     if (observer != null) {
-      observer.observeInboundTrailers(bytesRead());
+      observer.observeInboundTrailers(bytesRead);
     }
     Handler<MultiMap> trailHandler = trailersHandler;
     if (trailHandler != null) {
@@ -364,14 +364,6 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   public final long id() {
     return stream.id();
-  }
-
-  public final long bytesWritten() {
-    return bytesWritten;
-  }
-
-  public final long bytesRead() {
-    return bytesRead;
   }
 
   public final ContextInternal context() {

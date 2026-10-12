@@ -285,14 +285,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return id;
   }
 
-  public final long bytesWritten() {
-    return bytesWritten;
-  }
-
-  public final long bytesRead() {
-    return bytesRead;
-  }
-
   public final boolean isWritable() {
     return outboundQueue.isWritable();
   }
