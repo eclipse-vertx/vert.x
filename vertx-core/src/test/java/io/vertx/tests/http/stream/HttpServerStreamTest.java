@@ -146,6 +146,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       AtomicInteger count = new AtomicInteger();
       AtomicInteger closed = new AtomicInteger();
       stream.contentDecoder(new ContentDecoderBase() {
+        long timerID;
         @Override
         public void handle(ByteBuf chunk) {
           int val = count.incrementAndGet();
@@ -154,8 +155,16 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           } else {
             assertEquals(1, closed.get());
             assertTrue(chunk.alloc() instanceof VertxByteBufAllocator);
-            if (val == numChunks) {
-              checkpoint.succeed();
+            if (val == 2) {
+              timerID = vertx.setTimer(20, id -> {
+                timerID = -1L;
+                checkpoint.succeed();
+              });
+            } else if (val == numChunks) {
+              long id = timerID;
+              if (id != -1L && vertx.cancelTimer(id)) {
+                checkpoint.succeed();
+              }
             }
           }
         }

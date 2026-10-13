@@ -563,7 +563,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
+      ContextInternal prev = context.beginDispatch();
       decoder.handleEnd();
+      context.endDispatch(prev);
     }
   }
 
@@ -679,10 +681,22 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
 
     @Override
+    protected void handleDispose(ByteBuf msg) {
+      if (msg != END_OF_STREAM_2) {
+        msg.release();
+      }
+    }
+
+    @Override
     protected void handleConsumerClosed() {
       ContentDecoder decoder = initializedDecoder;
       if (decoder != null) {
-        decoder.handleClose();
+        ContextInternal prev = context.beginDispatch();
+        try {
+          decoder.handleClose();
+        } finally {
+          context.endDispatch(prev);
+        }
       }
     }
   }

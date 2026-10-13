@@ -61,9 +61,6 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     if (handler != null) {
       handler.handle(t);
     }
-    if (t instanceof HttpClosedException) {
-      handleClose();
-    }
   }
 
   private void handleEnd(Void v) {
@@ -76,7 +73,8 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     checkCloseHandler();
   }
 
-  private void handleClose() {
+  protected void handleClosed() {
+    super.handleClosed();
     if (!closed) {
       closed = true;
       Handler<Void> handler = closeHandler;

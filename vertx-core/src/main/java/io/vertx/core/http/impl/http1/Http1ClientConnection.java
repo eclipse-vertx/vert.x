@@ -485,6 +485,19 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
             }
           }
         }
+        @Override
+        protected void handleDispose(ByteBuf msg) {
+          if (msg != END_OF_STREAM_2) {
+            msg.release();
+          }
+        }
+        @Override
+        protected void handleConsumerClosed() {
+          ContentDecoder decoder = ((StreamImpl)Stream.this).initializedDecoder;
+          if (decoder != null) {
+            decoder.handleClose();
+          }
+        }
       };
     }
 
@@ -586,8 +599,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private boolean trailersDispatched;
 
     private ContentDecoder contentDecoder;
+    private ContentDecoder initializedDecoder;
     boolean inHead;
-    boolean decoderInitialized;
 
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
@@ -595,10 +608,19 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     public HttpClientStream contentDecoder(ContentDecoder decoder) {
-      contentDecoder = decoder;
-      if (decoder != null && inHead && !decoderInitialized) {
-        decoderInitialized = true;
-        decoder.init(this);
+      if (inHead) {
+        ContentDecoder prev = initializedDecoder;
+        if (prev != null) {
+          initializedDecoder = null;
+          prev.handleClose();
+        }
+        if (decoder != null) {
+          decoder.init(this);
+          initializedDecoder = decoder;
+        }
+        contentDecoder = null;
+      } else {
+        contentDecoder = decoder;
       }
       return this;
     }
@@ -787,7 +809,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           handler.handle(trailers);
         }
       }
-      ContentDecoder decoder = contentDecoder;
+      ContentDecoder decoder = initializedDecoder;
       if (decoder != null) {
         decoder.handleEnd();
       }
@@ -806,7 +828,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleChunk(ByteBuf chunk) {
-      Handler<ByteBuf> decoder = contentDecoder;
+      Handler<ByteBuf> decoder = initializedDecoder;
       if (decoder != null) {
         decoder.handle(chunk);
       }
@@ -828,16 +850,17 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
+      ContentDecoder decoder = contentDecoder;
+      if (decoder != null) {
+        decoder.init(this);
+        initializedDecoder = decoder;
+        contentDecoder = null;
+      }
       inHead = true;
       try {
         Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
         if (handler != null) {
           handler.handle(response);
-        }
-        ContentDecoder decoder = contentDecoder;
-        if (decoder != null && !decoderInitialized) {
-          decoderInitialized = true;
-          decoder.init(this);
         }
       } finally {
         inHead = false;

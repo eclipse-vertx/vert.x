@@ -562,7 +562,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
-      decoder.handle(((BufferInternal)data).getByteBuf());
+      context.dispatch(((BufferInternal)data).getByteBuf(), decoder);
     }
     if (handler != null) {
       eventHandler.handleChunk(data);
@@ -584,12 +584,29 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
       initializedDecoder = null;
-      decoder.handleEnd();
-      decoder.handleClose();
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleEnd();
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handleEnd();
+    }
+  }
+
+  private void onClose() {
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
     }
   }
 
@@ -604,9 +621,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   @Override
   public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
     contentDecoder = decoder;
-    if (decoder != null) {
-      decoder.init(this);
-    }
     return this;
   }
 
@@ -654,7 +668,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
     InterfaceHttpData upload = null;
-    ContentDecoder contentDecoder;
     synchronized (conn) {
       if (!isEnded()) {
         handler = eventHandler;
@@ -668,7 +681,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
         }
         resp = response;
       }
-      contentDecoder = initializedDecoder;
     }
     if (resp != null) {
       resp.handleException(t);
@@ -676,12 +688,15 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload) upload).handleException(t);
     }
-    if (contentDecoder != null) {
-      contentDecoder.handleClose();
-    }
     if (handler != null) {
       handler.handleException(t);
     }
+  }
+
+  void handleClosed() {
+    handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+    response.handleClosed();
+    context.execute(this, Http1ServerRequest::onClose);
   }
 
   private void reportRequestReset(Throwable err) {

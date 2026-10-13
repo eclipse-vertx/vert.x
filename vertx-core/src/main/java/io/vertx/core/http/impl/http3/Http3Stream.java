@@ -157,7 +157,12 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     }
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
-      decoder.handleClose();
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
     }
     Handler<Void> handler = closeHandler;
     if (handler != null) {
