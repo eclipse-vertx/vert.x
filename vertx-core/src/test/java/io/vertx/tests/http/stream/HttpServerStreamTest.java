@@ -116,7 +116,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testContentDecoderLifecycle(Checkpoint checkpoint) throws Exception {
+  public void testContentDecoderLifecycle(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     String expectedChunk = TestUtils.randomAlphaString(128);
     handler = stream -> {
       AtomicInteger count = new AtomicInteger();
@@ -124,10 +124,11 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         @Override
         public void handle(ByteBuf chunk) {
           count.addAndGet(chunk.readableBytes());
+          checkpoint2.succeed();
         }
         @Override
         public void handleClose() {
-          checkpoint.succeed();
+          checkpoint1.succeed();
         }
       });
     };
@@ -135,6 +136,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     HttpClientRequest request = client
       .request(requestOptions).await();
     request.write(expectedChunk).await();
+    checkpoint2.awaitSuccess();
     request.connection().close().await();
   }
 
