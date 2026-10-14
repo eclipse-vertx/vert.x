@@ -630,6 +630,17 @@ public class TestUtils {
     assertSame(((ContextInternal)expected).nettyEventLoop(), ((ContextInternal)actual).nettyEventLoop());
   }
 
+  /**
+   * Assert the current thread is the thread of the {@code expected} context and the current context is {@code expected}.
+   */
+  public static void assertOnContext(Context expected) {
+    Context current = Vertx.currentContext();
+    if (!((ContextInternal) expected).inThread() || current != expected) {
+      throw new AssertionError("Expected to be called on " + expected + " but was called on thread "
+        + Thread.currentThread().getName() + " with context " + current);
+    }
+  }
+
   public static void assertOnIOContext(Context context) {
     Context current = Vertx.currentContext();
     assertNotNull(current);

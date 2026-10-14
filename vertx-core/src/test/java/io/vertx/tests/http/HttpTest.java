@@ -1540,13 +1540,24 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testServerExceptionHandlerOnClose(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3, Checkpoint checkpoint4) throws Exception {
+  public void testServerExceptionHandlerOnCloseEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3, Checkpoint checkpoint4) throws Exception {
+    testServerExceptionHandlerOnClose(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, checkpoint3, checkpoint4);
+  }
+
+  @Test
+  public void testServerExceptionHandlerOnCloseWorker(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3, Checkpoint checkpoint4) throws Exception {
+    testServerExceptionHandlerOnClose(ThreadingModel.WORKER, checkpoint1, checkpoint2, checkpoint3, checkpoint4);
+  }
+
+  private void testServerExceptionHandlerOnClose(ThreadingModel threadingModel, Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3, Checkpoint checkpoint4) throws Exception {
     AtomicInteger requestCount = new AtomicInteger();
     server.requestHandler(req -> {
+      Context ctx = Vertx.currentContext();
       HttpServerResponse resp = req.response();
       AtomicInteger requestExceptionHandlerCount = new AtomicInteger();
       req.exceptionHandler(err -> {
         if (err instanceof HttpClosedException) {
+          assertOnContext(ctx);
           assertEquals(1, requestExceptionHandlerCount.incrementAndGet());
           checkpoint1.succeed();
         }
@@ -1554,6 +1565,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       AtomicInteger responseExceptionHandlerCount = new AtomicInteger();
       resp.exceptionHandler(err -> {
         if (err instanceof HttpClosedException) {
+          assertOnContext(ctx);
           assertEquals(1, responseExceptionHandlerCount.incrementAndGet());
           checkpoint2.succeed();
         }
@@ -1562,6 +1574,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         Assert.fail();
       });
       resp.closeHandler(v -> {
+        assertOnContext(ctx);
         checkpoint3.succeed();
       });
       AtomicInteger closeHandlerCount = new AtomicInteger();
@@ -1572,7 +1585,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       requestCount.incrementAndGet();
     });
 
-    startServer(testAddress);
+    startServer(testAddress, ((VertxInternal) vertx).createContext(threadingModel));
 
     HttpClientRequest request = client.request(new RequestOptions(requestOptions).setMethod(PUT)).await();
     request.setChunked(true);
@@ -4588,14 +4601,25 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testCloseHandlerWhenConnectionEnds(Checkpoint checkpoint) throws Exception {
+  public void testCloseHandlerWhenConnectionEndsEventLoop(Checkpoint checkpoint) throws Exception {
+    testCloseHandlerWhenConnectionEnds(ThreadingModel.EVENT_LOOP, checkpoint);
+  }
+
+  @Test
+  public void testCloseHandlerWhenConnectionEndsWorker(Checkpoint checkpoint) throws Exception {
+    testCloseHandlerWhenConnectionEnds(ThreadingModel.WORKER, checkpoint);
+  }
+
+  private void testCloseHandlerWhenConnectionEnds(ThreadingModel threadingModel, Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
+      Context ctx = Vertx.currentContext();
       req.response().closeHandler(v -> {
+        assertOnContext(ctx);
         checkpoint.succeed();
       });
       req.response().setChunked(true).write("some-data");
     });
-    startServer(testAddress);
+    startServer(testAddress, ((VertxInternal) vertx).createContext(threadingModel));
     client.request(requestOptions)
       .onComplete(TestUtils.onSuccess(req -> {
         req.send().onComplete(TestUtils.onSuccess(resp -> {
