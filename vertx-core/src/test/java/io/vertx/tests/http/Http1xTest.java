@@ -1058,11 +1058,6 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.getKeyCertOptions() instanceof PemKeyCertOptions);
   }
 
-  @Test
-  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
-    testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(checkpoint, 0);
-  }
-
   // Extra tests
 
   @Test
@@ -1795,8 +1790,10 @@ public class Http1xTest extends HttpTest {
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       assertEquals("close", req.getHeader("Connection"));
-      req.response().end();
-      assertTrue(req.response().closed());
+      req.endHandler(v -> {
+        req.response().end();
+        assertTrue(req.response().closed());
+      });
     });
     startServer(testAddress);
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setKeepAlive(false));
@@ -1832,8 +1829,10 @@ public class Http1xTest extends HttpTest {
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_0, req.version());
       assertNull(req.getHeader("Connection"));
-      req.response().end();
-      assertTrue(req.response().closed());
+      req.endHandler(v -> {
+        req.response().end();
+        assertTrue(req.response().closed());
+      });
     });
     startServer(testAddress);
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false));

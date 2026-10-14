@@ -82,7 +82,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
-  private boolean ended;
+  private boolean decoderClosed;
   private long bytesRead;
   private volatile InboundMessageQueue<Buffer> queue;
   private ContentDecoder initializedDecoder;
@@ -517,7 +517,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return ended;
+      return response.trailersReceived;
     }
   }
 
@@ -578,16 +578,18 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       if (decoder != null) {
         endDecode();
       }
-      ended = true;
+      response.trailersReceived = true;
       handler = eventHandler;
     }
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
-      initializedDecoder = null;
       ContextInternal prev = context.beginDispatch();
       try {
         decoder.handleEnd();
-        decoder.handleClose();
+        if (!decoderClosed) {
+          decoderClosed = true;
+          decoder.handleClose();
+        }
       } finally {
         context.endDispatch(prev);
       }
@@ -595,6 +597,13 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handleEnd();
+    }
+    boolean close;
+    synchronized (conn) {
+      close = response.trailersSent;
+    }
+    if (close) {
+      response.tryClose();
     }
   }
 
@@ -691,9 +700,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   void onClosed() {
     onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-    response.onClosed();
+    response.tryClose();
     ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
+    if (decoder != null && !decoderClosed) {
+      decoderClosed = true;
       ContextInternal prev = context.beginDispatch();
       try {
         decoder.handleClose();
