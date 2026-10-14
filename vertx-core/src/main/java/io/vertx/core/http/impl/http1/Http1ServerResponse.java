@@ -629,36 +629,23 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   void handleException(Throwable t) {
-    if (t instanceof HttpClosedException) {
-      handleClosed();
-    } else {
-      Handler<Throwable> handler;
-      synchronized (conn) {
-        handler = exceptionHandler;
-        if (handler == null) {
-          return;
-        }
-      }
+    Handler<Throwable> handler;
+    synchronized (conn) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
       context.dispatch(t, handler);
     }
   }
 
-  private void handleClosed() {
-    Handler<Void> closedHandler;
-    Handler<Throwable> exceptionHandler;
+  void handleClosed() {
+    Handler<Void> handler;
     synchronized (conn) {
-      if (closed) {
-        return;
-      }
       closed = true;
-      exceptionHandler = written ? null : this.exceptionHandler;
-      closedHandler = this.closeHandler;
+      handler = closeHandler;
     }
-    if (exceptionHandler != null) {
-      context.dispatch(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
-    }
-    if (closedHandler != null) {
-      context.dispatch(null, closedHandler);
+    if (handler != null) {
+      context.dispatch(null, handler);
     }
   }
 

@@ -16,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.http.ContentDecoder;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -28,6 +29,8 @@ public interface HttpClientStream extends HttpStream {
 
   Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end);
 
+  HttpClientStream contentDecoder(ContentDecoder decoder);
+
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream resetHandler(Handler<Long> handler);
   HttpClientStream exceptionHandler(Handler<Throwable> handler);
@@ -35,15 +38,12 @@ public interface HttpClientStream extends HttpStream {
   HttpClientStream earlyHintsHandler(Handler<MultiMap> handler);
   HttpClientStream pushHandler(Handler<HttpClientPush> handler);
   HttpClientStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpClientStream dataHandler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);
   HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler);
   HttpClientStream closeHandler(Handler<Void> handler);
   HttpClientStream drainHandler(Handler<Void> handler);
 
   HttpClientStream setWriteQueueMaxSize(int maxSize);
-  HttpClientStream pause();
-  HttpClientStream fetch(long amount);
 
   HttpClientStream updatePriority(StreamPriority streamPriority);
 

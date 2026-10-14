@@ -46,10 +46,13 @@ import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.WebSocketConnectionImpl;
 import io.vertx.core.http.impl.websocket.WebSocketHandshakeInboundHandler;
 import io.vertx.core.http.impl.websocket.WebSocketImpl;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -72,6 +75,7 @@ import java.util.function.BiConsumer;
 
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
 import static io.vertx.core.http.HttpHeaders.*;
+import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -420,7 +424,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     private Promise<HttpClientStream> promise;
 
-    private final InboundMessageQueue<Buffer> queue;
+    private final InboundMessageQueue<ByteBuf> queue;
     protected final ContextInternal context;
     protected final Http1ClientConnection conn;
     protected final int id;
@@ -456,11 +460,42 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           conn.doPause();
         }
         @Override
-        protected void handleMessage(Buffer item) {
-          if (item == HttpUtils.END_OF_STREAM) {
+        protected void handleMessage(ByteBuf item) {
+          if (item == HttpUtils.END_OF_STREAM_2) {
             handleEnd();
           } else {
-            handleChunk(item);
+            try {
+              handleChunk(item);
+            } finally {
+              item.release();
+            }
+          }
+        }
+        @Override
+        protected ByteBuf releaseMessage(ByteBuf buf) {
+          if (buf == END_OF_STREAM_2) {
+            return END_OF_STREAM_2;
+          } else {
+            try {
+              ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
+              buffer.writeBytes(buf, buf.readerIndex(), buf.readableBytes());
+              return buffer;
+            } finally {
+              buf.release();
+            }
+          }
+        }
+        @Override
+        protected void handleDispose(ByteBuf msg) {
+          if (msg != END_OF_STREAM_2) {
+            msg.release();
+          }
+        }
+        @Override
+        protected void handleConsumerClosed() {
+          ContentDecoder decoder = ((StreamImpl)Stream.this).initializedDecoder;
+          if (decoder != null) {
+            decoder.handleClose();
           }
         }
       };
@@ -474,14 +509,14 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       return trace;
     }
 
-    public HttpClientStream pause() {
+    public StreamImpl pause() {
       queue.pause();
-      return (HttpClientStream)this;
+      return (StreamImpl)this;
     }
 
-    public HttpClientStream fetch(long amount) {
+    public StreamImpl fetch(long amount) {
       queue.fetch(amount);
-      return (HttpClientStream)this;
+      return (StreamImpl)this;
     }
 
     void onException(Throwable err) {
@@ -491,6 +526,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     void onClose() {
       if (!closed) {
         closed = true;
+        queue.close();
         if (!requestEnded || !responseEnded) {
           onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
         }
@@ -513,16 +549,16 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     void onEnd(LastHttpContent trailer) {
       trailers = new HeadersAdaptor(trailer.trailingHeaders());
       context.emit(null, this::handleTrailers);
-      queue.write(HttpUtils.END_OF_STREAM);
+      queue.write(HttpUtils.END_OF_STREAM_2);
     }
 
-    void onChunk(Buffer buff) {
+    void onChunk(ByteBuf buff) {
       queue.write(buff);
     }
 
     abstract void handleEnd();
     abstract void handleTrailers(Void v);
-    abstract void handleChunk(Buffer chunk);
+    abstract void handleChunk(ByteBuf chunk);
     abstract void handleContinue(Void v);
     abstract void handleEarlyHints(MultiMap headers);
     abstract void handleHead(io.vertx.core.http.impl.HttpResponseHead response);
@@ -550,11 +586,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
    * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
    * state managed by the connection and this class defines the state managed by the stream implementation
    */
-  private static class StreamImpl extends Stream implements HttpClientStream {
+  private static class StreamImpl extends Stream implements HttpClientStream, FlowController {
 
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
-    private Handler<Buffer> chunkHandler;
-    private Handler<Void> endHandler;
     private Handler<MultiMap> trailerHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
@@ -564,8 +598,31 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private Handler<Void> closeHandler;
     private boolean trailersDispatched;
 
+    private ContentDecoder contentDecoder;
+    private ContentDecoder initializedDecoder;
+    boolean inHead;
+
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
+    }
+
+    @Override
+    public HttpClientStream contentDecoder(ContentDecoder decoder) {
+      if (inHead) {
+        ContentDecoder prev = initializedDecoder;
+        if (prev != null) {
+          initializedDecoder = null;
+          prev.handleClose();
+        }
+        if (decoder != null) {
+          decoder.init(this);
+          initializedDecoder = decoder;
+        }
+        contentDecoder = null;
+      } else {
+        contentDecoder = decoder;
+      }
+      return this;
     }
 
     @Override
@@ -735,20 +792,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
-      chunkHandler = handler;
-      return this;
-    }
-
-    @Override
     public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
       trailerHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpStream endHandler(Handler<Void> handler) {
-      endHandler = handler;
       return this;
     }
 
@@ -764,9 +809,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           handler.handle(trailers);
         }
       }
-      Handler<Void> handler = endHandler;
-      if (handler != null) {
-        handler.handle(null);
+      ContentDecoder decoder = initializedDecoder;
+      if (decoder != null) {
+        decoder.handleEnd();
       }
     }
 
@@ -782,10 +827,10 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    void handleChunk(Buffer chunk) {
-      Handler<Buffer> handler = chunkHandler;
-      if (handler != null) {
-        handler.handle(chunk);
+    void handleChunk(ByteBuf chunk) {
+      Handler<ByteBuf> decoder = initializedDecoder;
+      if (decoder != null) {
+        decoder.handle(chunk);
       }
     }
 
@@ -805,9 +850,20 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
-      Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
-      if (handler != null) {
-        handler.handle(response);
+      ContentDecoder decoder = contentDecoder;
+      if (decoder != null) {
+        decoder.init(this);
+        initializedDecoder = decoder;
+        contentDecoder = null;
+      }
+      inHead = true;
+      try {
+        Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
+        if (handler != null) {
+          handler.handle(response);
+        }
+      } finally {
+        inHead = false;
       }
     }
 
@@ -919,6 +975,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
         handleResponseChunk(stream, chunk.content());
+      } else {
+        chunk.content().release();
       }
       if (!isConnect && chunk instanceof LastHttpContent) {
         handleResponseEnd(stream, (LastHttpContent) chunk);
@@ -1003,11 +1061,12 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.safeBuffer(chunk);
-    int len = buff.length();
+    int len = chunk.readableBytes();
     stream.bytesRead += len;
     if (!stream.reset) {
-      stream.onChunk(buff);
+      stream.onChunk(chunk);
+    } else {
+      chunk.release();
     }
   }
 

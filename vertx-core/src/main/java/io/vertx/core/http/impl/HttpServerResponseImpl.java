@@ -25,6 +25,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.UncloseableChunkedNioFile;
@@ -743,7 +745,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     });
   }
 
-  private static class PushStreamHandler {
+  private static class PushStreamHandler implements ContentDecoder {
 
     protected final ContextInternal context;
     protected final HttpServerStream stream;
@@ -760,11 +762,31 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       stream.resetHandler(this::handleReset);
       stream.exceptionHandler(this::handleException);
       stream.closeHandler(response::handleClose);
-      stream.dataHandler(this::handleData);
       stream.trailersHandler(this::handleTrailers);
       stream.customFrameHandler(this::handleCustomFrame);
       stream.priorityChangeHandler(this::handlePriorityChange);
       stream.drainHandler(response::handleWriteQueueDrained);
+      stream.contentDecoder(this);
+    }
+
+    @Override
+    public void init(FlowController flowController) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handle(ByteBuf chunk) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleEnd() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleClose() {
+      throw new UnsupportedOperationException();
     }
 
     public void handleHeaders(HttpRequestHead headers) {

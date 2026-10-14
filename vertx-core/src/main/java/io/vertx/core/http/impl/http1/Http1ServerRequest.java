@@ -30,6 +30,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
+import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -47,7 +50,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1ServerRequest extends HttpServerRequestBase implements io.vertx.core.spi.observability.HttpRequest {
+public class Http1ServerRequest extends HttpServerRequestBase implements io.vertx.core.spi.observability.HttpRequest, FlowController {
 
   private static final HostAndPort NULL_HOST_AND_PORT = HostAndPort.create("", -1);
 
@@ -82,6 +85,8 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private boolean ended;
   private long bytesRead;
   private volatile InboundMessageQueue<Buffer> queue;
+  private ContentDecoder initializedDecoder;
+  private ContentDecoder contentDecoder;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
     super(conn.queryParamDecoder());
@@ -145,6 +150,15 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     response = new Http1ServerResponse(context.owner(), context, conn, request, metric, keepAlive);
     if (conn.handle100ContinueAutomatically) {
       check100();
+    }
+  }
+
+  void initContentDecoder() {
+    ContentDecoder decoder = contentDecoder;
+    if (contentDecoder != null) {
+      contentDecoder = null;
+      decoder.init(this);
+      initializedDecoder = decoder;
     }
   }
 
@@ -341,19 +355,19 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   @Override
-  public HttpServerRequest pause() {
+  public Http1ServerRequest pause() {
     queue().pause();
     return this;
   }
 
   @Override
-  public HttpServerRequest fetch(long amount) {
+  public Http1ServerRequest fetch(long amount) {
     queue().fetch(amount);
     return this;
   }
 
   @Override
-  public HttpServerRequest resume() {
+  public Http1ServerRequest resume() {
     return fetch(Long.MAX_VALUE);
   }
 
@@ -546,6 +560,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       }
       handler = eventHandler;
     }
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      context.dispatch(((BufferInternal)data).getByteBuf(), decoder);
+    }
     if (handler != null) {
       eventHandler.handleChunk(data);
     }
@@ -563,9 +581,32 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       ended = true;
       handler = eventHandler;
     }
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      initializedDecoder = null;
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleEnd();
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
+    }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handleEnd();
+    }
+  }
+
+  private void onClose() {
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
     }
   }
 
@@ -575,6 +616,12 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       metrics.requestEnd(metric, this, bytesRead);
       conn.flushBytesRead();
     }
+  }
+
+  @Override
+  public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
+    contentDecoder = decoder;
+    return this;
   }
 
   private void reportRequestBegin() {
@@ -644,6 +691,12 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     if (handler != null) {
       handler.handleException(t);
     }
+  }
+
+  void handleClosed() {
+    handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+    response.handleClosed();
+    context.execute(this, Http1ServerRequest::onClose);
   }
 
   private void reportRequestReset(Throwable err) {

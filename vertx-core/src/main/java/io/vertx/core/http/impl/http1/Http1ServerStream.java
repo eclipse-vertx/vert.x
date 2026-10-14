@@ -16,20 +16,23 @@ import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
-import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http1ServerStream extends Http1ServerRequest implements HttpServerStream {
+public class Http1ServerStream extends Http1ServerRequest implements HttpServerStream, FlowController {
 
   private boolean headersSent;
   private Handler<HttpRequestHead> headHandler;
-  private Handler<Void> endHandler;
+  private Handler<MultiMap> trailersHandler;
   private Handler<Void> closeHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean requestEnded;
@@ -58,25 +61,20 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     if (handler != null) {
       handler.handle(t);
     }
-    if (t instanceof HttpClosedException) {
-      handleClose();
-    }
   }
 
   private void handleEnd(Void v) {
     super.exceptionHandler(null);
     requestEnded = true;
-    try {
-      Handler<Void> handler = endHandler;
-      if (handler != null) {
-        handler.handle(null);
-      }
-    } finally {
-      checkCloseHandler();
+    Handler<MultiMap> handler = trailersHandler;
+    if (handler != null) {
+      context.dispatch(Http1xHeaders.caseInsensitive(), handler);
     }
+    checkCloseHandler();
   }
 
-  private void handleClose() {
+  protected void handleClosed() {
+    super.handleClosed();
     if (!closed) {
       closed = true;
       Handler<Void> handler = closeHandler;
@@ -187,13 +185,8 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public HttpServerStream dataHandler(Handler<Buffer> handler) {
-    handler(handler);
-    return this;
-  }
-
-  @Override
   public HttpServerStream trailersHandler(Handler<MultiMap> handler) {
+    this.trailersHandler = handler;
     return this;
   }
 
@@ -267,6 +260,11 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
+  public Http1ServerStream resume() {
+    return (Http1ServerStream)super.resume();
+  }
+
+  @Override
   public Http1ServerStream pause() {
     return (Http1ServerStream)super.pause();
   }
@@ -277,14 +275,13 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public Http1ServerStream endHandler(Handler<Void> handler) {
-    this.endHandler = handler;
-    return this;
+  public Http1ServerStream customFrameHandler(Handler<HttpFrame> handler) {
+    return (Http1ServerStream)super.customFrameHandler(handler);
   }
 
   @Override
-  public Http1ServerStream customFrameHandler(Handler<HttpFrame> handler) {
-    return (Http1ServerStream)super.customFrameHandler(handler);
+  public Http1ServerStream contentDecoder(ContentDecoder decoder) {
+    return (Http1ServerStream) super.contentDecoder(decoder);
   }
 
   @Override

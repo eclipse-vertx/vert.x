@@ -237,8 +237,11 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       responseInProgress = requestInProgress;
       wantClose = !keepAlive;
       req.handleBegin(keepAlive);
-      Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
-      req.context.emit(req, handler);
+      req.context.emit(req, r -> {
+        Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
+        handler.handle(req);
+        req.initContentDecoder();
+      });
     } else {
       handleOther(msg);
     }
@@ -328,10 +331,11 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     responseInProgress = next;
     wantClose |= !keepAlive;
     next.handleBegin(keepAlive);
-    next.resume();
     next.context.emit(next, next_ -> {
+      next.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       handler.handle(next_);
+      next_.initContentDecoder();
     });
     doResume();
   }
@@ -541,11 +545,11 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     Http1ServerRequest requestInProgress = this.requestInProgress;
     for (Http1ServerRequest req = responseInProgress; req != null;req = req.next) {
       if (req.response() != null) {
-        req.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+        req.handleClosed();
       }
     }
     if (requestInProgress != null && responseInProgress == null && requestInProgress.response() != null) {
-      requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+      requestInProgress.handleClosed();
     }
     super.handleClosed();
   }

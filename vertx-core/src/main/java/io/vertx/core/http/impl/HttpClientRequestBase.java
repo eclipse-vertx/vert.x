@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http2.Http2Error;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -19,6 +20,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.http.HttpClientRequestInternal;
 import io.vertx.core.net.HostAndPort;
 
@@ -59,12 +62,26 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
     stream.pushHandler(this::handlePush);
     stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.dataHandler(chunk -> {
-        dataReceived();
-        response.handleChunk(chunk);
+      stream.contentDecoder(new ContentDecoder() {
+        @Override
+        public void init(FlowController flowController) {
+          response.init(flowController);
+        }
+        @Override
+        public void handle(ByteBuf chunk) {
+          dataReceived();
+          response.handle(chunk);
+        }
+        @Override
+        public void handleEnd() {
+          response.handleEnd();
+        }
+        @Override
+        public void handleClose() {
+          response.handleClose();
+        }
       });
       stream.trailersHandler(response::handleTrailers);
-      stream.endHandler(response::handleEnd);
       stream.priorityChangeHandler(response::handlePriorityChange);
       stream.customFrameHandler(response::handleUnknownFrame);
       handleResponse(response);

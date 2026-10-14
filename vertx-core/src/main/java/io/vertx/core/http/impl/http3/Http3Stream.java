@@ -21,6 +21,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
@@ -35,7 +37,7 @@ import io.vertx.core.net.impl.VertxHandler;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Connection> {
+public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Connection> implements FlowController {
 
   // Uses HTTP/2 instance for the moment
   static final HttpResponseHeaders EMPTY = new HttpResponseHeaders(EmptyHttp2Headers.INSTANCE);
@@ -55,12 +57,14 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private int bytesWritten;
   private Http3Headers headers;
   private Handler<MultiMap> trailersHandler;
-  private Handler<Void> endHandler;
-  private Handler<Buffer> dataHandler;
   private Handler<HttpFrame> unknownFrameHandler;
   private Handler<Long> resetHandler;
   private Handler<Void> closeHandler;
   private Handler<Throwable> exceptionHandler;
+
+  private ContentDecoder contentDecoder;
+  private ContentDecoder initializedDecoder;
+  private boolean inHead;
 
   public Http3Stream(C connection, QuicStreamInternal stream, ContextInternal context, StreamObserver observer) {
     this.stream = stream;
@@ -78,6 +82,12 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       if (observer != null) {
         observer.observeInboundHeaders(headers);
       }
+      ContentDecoder decoder = contentDecoder;
+      if (decoder != null) {
+        decoder.init(this);
+        contentDecoder = null;
+        initializedDecoder = decoder;
+      }
       return true;
     } else {
       throw new UnsupportedOperationException();
@@ -94,11 +104,11 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     }
   }
 
-  protected void handleData(Buffer buffer) {
-    bytesRead += buffer.length();
-    Handler<Buffer> handler = dataHandler;
-    if (handler != null) {
-      context.dispatch(buffer,  handler);
+  protected void handleData(ByteBuf buffer) {
+    bytesRead += buffer.readableBytes();
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      context.dispatch(buffer,  decoder);
     }
   }
 
@@ -124,9 +134,9 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       }
       context.dispatch(trailers, trailHandler);
     }
-    Handler<Void> handler = endHandler;
-    if (handler != null) {
-      context.dispatch(null, handler);
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      context.dispatch(null, v -> decoder.handleEnd());
     }
   }
 
@@ -144,6 +154,15 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       }
     } else {
       handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+    }
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
     }
     Handler<Void> handler = closeHandler;
     if (handler != null) {
@@ -171,7 +190,12 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
               Http3HeadersFrame http3HeadersFrame = (Http3HeadersFrame) http3Frame;
               if (!headReceived) {
                 HttpHeaders headers = headOf(http3HeadersFrame.headers());
-                headReceived = handleHead(headers);
+                inHead = true;
+                try {
+                  headReceived = handleHead(headers);
+                } finally {
+                  inHead = false;
+                }
               } else {
                 headers = http3HeadersFrame.headers();
                 handleHeaders(http3HeadersFrame.headers());
@@ -181,8 +205,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
               // Data frame
               Http3DataFrame http3DataFrame = (Http3DataFrame) http3Frame;
               content = http3DataFrame.content();
-              buffer = VertxHandler.copyBuffer(content);
-              handleData(BufferInternal.buffer(buffer));
+              handleData(content);
               break;
             default:
               if (http3Frame instanceof Http3UnknownFrame) {
@@ -228,16 +251,6 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   public final S trailersHandler(Handler<MultiMap> handler) {
     this.trailersHandler = handler;
-    return (S)this;
-  }
-
-  public final S endHandler(Handler<Void> handler) {
-    this.endHandler = handler;
-    return (S)this;
-  }
-
-  public final S dataHandler(Handler<Buffer> handler) {
-    this.dataHandler = handler;
     return (S)this;
   }
 
@@ -376,5 +389,23 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   public QuicStream quicStream() {
     return stream;
+  }
+
+  public S contentDecoder(ContentDecoder decoder) {
+    if (inHead) {
+      ContentDecoder prev = initializedDecoder;
+      if (prev != null) {
+        initializedDecoder = null;
+        prev.handleClose();
+      }
+      if (decoder != null) {
+        decoder.init(this);
+        initializedDecoder = decoder;
+      }
+      contentDecoder = null;
+    } else {
+      contentDecoder = decoder;
+    }
+    return (S)this;
   }
 }

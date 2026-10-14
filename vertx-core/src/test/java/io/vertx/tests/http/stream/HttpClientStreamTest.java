@@ -54,7 +54,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
     stream.headHandler(head -> {
       checkpoint1.succeed();
     });
-    stream.endHandler(v -> {
+    stream.trailersHandler(trailers -> {
       checkpoint2.succeed();
     });
     HttpClientConnection connection = stream.connection();
