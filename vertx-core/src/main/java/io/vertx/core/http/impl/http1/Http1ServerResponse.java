@@ -68,7 +68,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private final Object requestMetric;
 
   private boolean headWritten;
-  private boolean written;
+  boolean trailersSent;
+  boolean trailersReceived;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
@@ -394,11 +395,12 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
     checkThread();
+    boolean close;
     synchronized (conn) {
-      if (written) {
+      if (trailersSent) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
-      written = true;
+      trailersSent = true;
       ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
       VertxHttpObject msg;
@@ -417,9 +419,10 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       if (!closed && endHandler != null) {
         endHandler.handle(null);
       }
-      if (!keepAlive) {
-        closed = true; // ?????
-      }
+      close = trailersReceived;
+    }
+    if (close) {
+      tryClose();
     }
   }
 
@@ -428,11 +431,16 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       conn.httpMetrics.responseBegin(requestMetric, this);
     }
     setStatusCode(101);
+    boolean close;
     synchronized (conn) {
       headWritten = true;
-      written = true;
+      trailersSent = true;
+      close = trailersReceived;
     }
     conn.responseComplete();
+    if (close) {
+      context.execute(this, Http1ServerResponse::tryClose);
+    }
   }
 
   @Override
@@ -513,7 +521,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         // fail early before status code/headers are written to the response
         prepareHeaders(actualLength);
         bytesWritten = actualLength;
-        written = true;
+        trailersSent = true;
         conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
         FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
         ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
@@ -534,7 +542,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
             // signal end handler
             Handler<Void> end;
             synchronized (conn) {
-              end = !closed ? endHandler : null;
+              end = endHandler;
             }
             if (null != end) {
               ctx.emit(end);
@@ -542,6 +550,14 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
             // write an empty last content to let the http encoder know the response is complete
             conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
+
+            boolean trailersReceived;
+            synchronized (conn) {
+              trailersReceived = this.trailersReceived;
+            }
+            if (trailersReceived) {
+              context.execute(this, Http1ServerResponse::tryClose);
+            }
           } else {
             promise.fail(future.cause());
           }
@@ -577,7 +593,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public boolean ended() {
     synchronized (conn) {
-      return written;
+      return trailersSent;
     }
   }
 
@@ -638,9 +654,12 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void onClosed() {
+  void tryClose() {
     Handler<Void> handler;
     synchronized (conn) {
+      if (closed) {
+        return;
+      }
       closed = true;
       handler = closeHandler;
     }
@@ -650,7 +669,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void checkValid() {
-    if (written) {
+    if (trailersSent) {
       throw new IllegalStateException(RESPONSE_WRITTEN);
     }
   }
@@ -708,7 +727,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private Http1ServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
     checkThread();
     synchronized (conn) {
-      if (written) {
+      if (trailersSent) {
         throw new IllegalStateException("Response has already been written");
       } else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
@@ -730,6 +749,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
     checkThread();
+    boolean close;
     synchronized (conn) {
       if (netSocket == null) {
         if (headWritten) {
@@ -747,11 +767,17 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
         conn.write(new VertxAssembledHttpResponse(head, version, status, headers), upgradePromise);
-        written = true;
+        trailersSent = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();
         conn.netSocket(promise);
+        close = trailersReceived;
+      } else {
+        close = false;
       }
+    }
+    if (close) {
+      tryClose();
     }
     return netSocket;
   }
@@ -764,7 +790,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> reset(long code) {
     synchronized (conn) {
-      if (written) {
+      if (trailersSent) {
         return context.failedFuture("Response written");
       }
     }

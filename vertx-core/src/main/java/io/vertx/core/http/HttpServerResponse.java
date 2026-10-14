@@ -200,13 +200,9 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value);
 
   /**
-   * Set a close handler for the response, this is called when the underlying connection is closed and the response
-   * was still using the connection.
-   * <p>
-   * For HTTP/1.x it is called when the connection is closed before {@code end()} is called, therefore it is not
-   * guaranteed to be called.
-   * <p>
-   * For HTTP/2 it is called when the related stream is closed, and therefore it will be always be called.
+   * Set a close handler for the response, this is called once when the request/response exchange is closed: either
+   * when the request has been fully received and the response fully sent, or when the underlying connection or stream
+   * is closed before.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
@@ -513,7 +509,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   boolean ended();
 
   /**
-   * @return has the underlying TCP connection corresponding to the request already been closed?
+   * @return has the request/response exchange already been closed?
    */
   boolean closed();
 

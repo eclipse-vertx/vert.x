@@ -4692,7 +4692,8 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     }));
   }
 
-  protected void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(Checkpoint checkpoint, int expected) throws Exception {
+  @Test
+  public void testCloseHandlerCalledOnceWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
     AtomicInteger closeCount = new AtomicInteger();
     AtomicInteger endCount = new AtomicInteger();
     server.requestHandler(req -> {
@@ -4703,7 +4704,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         endCount.incrementAndGet();
       });
       req.connection().closeHandler(v -> {
-        assertEquals(expected, closeCount.get());
+        assertEquals(1, closeCount.get());
         assertEquals(1, endCount.get());
         checkpoint.succeed();
       });

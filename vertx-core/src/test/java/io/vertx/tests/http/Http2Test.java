@@ -90,11 +90,6 @@ public class Http2Test extends HttpTest {
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
   }
 
-  @Test
-  public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
-    testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(checkpoint, 1);
-  }
-
   // Extra test
 
   @Test
