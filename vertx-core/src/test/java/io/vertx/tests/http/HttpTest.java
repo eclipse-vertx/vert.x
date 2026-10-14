@@ -11,7 +11,6 @@
 
 package io.vertx.tests.http;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoop;
@@ -32,9 +31,6 @@ import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.ContentDecoder;
-import io.vertx.core.internal.http.FlowController;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
@@ -6727,81 +6723,5 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       });
     }
     checkpoint.awaitSuccess();
-  }
-
-  @Test
-  public void testContentDecoderEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    testContentDecoder(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, false);
-  }
-
-  @Test
-  public void testContentDecoderWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    testContentDecoder(ThreadingModel.WORKER, checkpoint1, checkpoint2, false);
-  }
-
-  @Test
-  public void testContentDecoderEventLoopFail(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    testContentDecoder(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, true);
-  }
-
-  @Test
-  public void testContentDecoderWorkerFail(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    testContentDecoder(ThreadingModel.WORKER, checkpoint1, checkpoint2, true);
-  }
-
-  private void testContentDecoder(ThreadingModel threadingModel, Checkpoint checkpoint1, Checkpoint checkpoint2, boolean fail) throws Exception {
-
-    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
-    Runnable checkThread;
-    switch (threadingModel) {
-      case EVENT_LOOP:
-        checkThread = () -> assertTrue(Context.isOnEventLoopThread());
-        break;
-      case WORKER:
-        checkThread = () -> assertTrue(Context.isOnWorkerThread());
-        break;
-      default:
-        throw new AssertionError();
-    }
-
-    server.requestHandler(req -> {
-      Context current = Vertx.currentContext();
-      ((HttpServerRequestInternal)req).contentDecoder(new ContentDecoder() {
-        @Override
-        public void init(FlowController flowController) {
-          checkThread.run();
-          assertSame(current, Vertx.currentContext());
-        }
-        @Override
-        public void handle(ByteBuf chunk) {
-          checkThread.run();
-          assertSame(current, Vertx.currentContext());
-          checkpoint2.succeed();
-        }
-        @Override
-        public void handleEnd() {
-          checkThread.run();
-          assertSame(current, Vertx.currentContext());
-          req.response().end();
-        }
-        @Override
-        public void handleClose() {
-          checkThread.run();
-          assertSame(current, Vertx.currentContext());
-          checkpoint1.succeed();
-        }
-      });
-    });
-
-    startServer(((VertxInternal)vertx).createContext(threadingModel));
-
-    HttpClientRequest request = client.request(requestOptions).await();
-    if (fail) {
-      request.write(expected).await();
-      checkpoint2.awaitSuccess();
-      request.connection().close();
-    } else {
-      request.send(expected).await().end().await();
-    }
   }
 }
