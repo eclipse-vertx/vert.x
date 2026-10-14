@@ -555,7 +555,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
                  HttpPostRequestDecoder.TooManyFormFieldsException e) {
           decoder.destroy();
           decoder = null;
-          handleException(e);
+          onException(e);
         }
       }
       handler = eventHandler;
@@ -598,18 +598,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
   }
 
-  private void onClose() {
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      ContextInternal prev = context.beginDispatch();
-      try {
-        decoder.handleClose();
-      } finally {
-        context.endDispatch(prev);
-      }
-    }
-  }
-
   private void reportRequestComplete() {
     HttpServerMetrics metrics = conn.httpMetrics;
     if (metrics != null) {
@@ -646,7 +634,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
             attributes().add(attr.getName(), attr.getValue());
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
-            handleException(e);
+            onException(e);
           } finally {
             attr.release();
           }
@@ -655,7 +643,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
              HttpPostRequestDecoder.TooLongFormFieldException |
              HttpPostRequestDecoder.TooManyFormFieldsException e) {
-      handleException(e);
+      onException(e);
     }  catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
       // ignore this as it is expected
     } finally {
@@ -665,6 +653,14 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   void handleException(Throwable t) {
+    context.execute(t, this::onException);
+  }
+
+  void handleClosed() {
+    context.execute(this, Http1ServerRequest::onClosed);
+  }
+
+  void onException(Throwable t) {
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
     InterfaceHttpData upload = null;
@@ -683,7 +679,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       }
     }
     if (resp != null) {
-      resp.handleException(t);
+      resp.onException(t);
     }
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload) upload).handleException(t);
@@ -693,10 +689,18 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
   }
 
-  void handleClosed() {
-    handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-    response.handleClosed();
-    context.execute(this, Http1ServerRequest::onClose);
+  void onClosed() {
+    onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+    response.onClosed();
+    ContentDecoder decoder = initializedDecoder;
+    if (decoder != null) {
+      ContextInternal prev = context.beginDispatch();
+      try {
+        decoder.handleClose();
+      } finally {
+        context.endDispatch(prev);
+      }
+    }
   }
 
   private void reportRequestReset(Throwable err) {

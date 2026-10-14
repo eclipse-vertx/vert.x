@@ -55,11 +55,11 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  void handleException(Throwable t) {
-    super.handleException(t);
+  void onException(Throwable t) {
+    super.onException(t);
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
-      handler.handle(t);
+      context.dispatch(t, handler);
     }
   }
 
@@ -73,13 +73,14 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     checkCloseHandler();
   }
 
-  protected void handleClosed() {
-    super.handleClosed();
+  @Override
+  void onClosed() {
+    super.onClosed();
     if (!closed) {
       closed = true;
       Handler<Void> handler = closeHandler;
       if (handler != null) {
-        handler.handle(null);
+        context.dispatch(null, handler);
       }
     }
   }

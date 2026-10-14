@@ -628,7 +628,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleException(Throwable t) {
+  void onException(Throwable t) {
     Handler<Throwable> handler;
     synchronized (conn) {
       handler = exceptionHandler;
@@ -638,7 +638,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleClosed() {
+  void onClosed() {
     Handler<Void> handler;
     synchronized (conn) {
       closed = true;
