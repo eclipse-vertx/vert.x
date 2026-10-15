@@ -371,17 +371,16 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     } else {
       msg = new VertxLastHttpContent(data, trailingHeaders);
     }
-    Handler<Void> bodyEndHandler = this.bodyEndHandler;
-    Handler<Void> endHandler = closed ? null : this.endHandler;
-    boolean close = trailersReceived;
     conn.write(msg, listener);
-    if (bodyEndHandler != null) {
-      context.dispatch(bodyEndHandler);
+    Handler<Void> handler = bodyEndHandler;
+    if (handler != null) {
+      context.dispatch(handler);
     }
-    if (endHandler != null) {
-      context.dispatch(endHandler);
+    handler = closed ? null : endHandler;
+    if (handler != null) {
+      context.dispatch(handler);
     }
-    if (close) {
+    if (trailersReceived) {
       tryClose();
     }
   }
@@ -395,10 +394,9 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       conn.httpMetrics.responseBegin(requestMetric, this);
     }
     setStatusCode(101);
-    boolean close;
+    boolean close = trailersReceived;
     headersSent = true;
     trailersSent = true;
-    close = trailersReceived;
     conn.responseComplete();
     if (close) {
       tryClose();
@@ -561,13 +559,13 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse headersEndHandler(Handler<Void> handler) {
-    this.headersEndHandler = handler;
+    headersEndHandler = handler;
     return this;
   }
 
   @Override
   public HttpServerResponse bodyEndHandler(Handler<Void> handler) {
-    this.bodyEndHandler = handler;
+    bodyEndHandler = handler;
     return this;
   }
 
