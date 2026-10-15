@@ -186,7 +186,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     p.addListener((ChannelFutureListener) future -> {
       if (future.isSuccess()) {
         // Response if fully written, update the response accordingly
-        response.completeHandshake();
+        response.handleHandshakeCompleted();
         // remove compressor as it's not needed anymore once connection was upgraded to websockets
         ChannelPipeline pipeline = channel.pipeline();
         ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);

@@ -445,7 +445,11 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  public void completeHandshake() {
+  public void handleHandshakeCompleted() {
+    context.execute(this, Http1ServerResponse::onHandshakeCompleted);
+  }
+
+  private void onHandshakeCompleted() {
     if (conn.httpMetrics != null) {
       conn.httpMetrics.responseBegin(requestMetric, this);
     }
@@ -458,7 +462,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
     conn.responseComplete();
     if (close) {
-      context.execute(this, Http1ServerResponse::tryClose);
+      tryClose();
     }
   }
 
@@ -552,35 +556,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         ret = promise.future();
         channelFuture.addListener(future -> {
           if (future.isSuccess()) {
-
-            // signal body end handler
-            Handler<Void> handler;
-            synchronized (conn) {
-              handler = bodyEndHandler;
-            }
-            if (handler != null) {
-              ctx.emit(handler);
-            }
-
-            // signal end handler
-            Handler<Void> end;
-            synchronized (conn) {
-              end = endHandler;
-            }
-            if (null != end) {
-              ctx.emit(end);
-            }
-
-            // write an empty last content to let the http encoder know the response is complete
-            conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
-
-            boolean trailersReceived;
-            synchronized (conn) {
-              trailersReceived = this.trailersReceived;
-            }
-            if (trailersReceived) {
-              context.execute(this, Http1ServerResponse::tryClose);
-            }
+            context.execute(promise, this::onSendFileCompleted);
           } else {
             promise.fail(future.cause());
           }
@@ -610,6 +586,30 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         } catch (IOException ignore) {
         }
       }
+    }
+  }
+
+  private void onSendFileCompleted(PromiseInternal<Void> promise) {
+    Handler<Void> bodyEndHandler;
+    Handler<Void> endHandler;
+    synchronized (conn) {
+      bodyEndHandler = this.bodyEndHandler;
+      endHandler = this.endHandler;
+    }
+    if (bodyEndHandler != null) {
+      context.dispatch(bodyEndHandler);
+    }
+    if (endHandler != null) {
+      context.dispatch(endHandler);
+    }
+    // write an empty last content to let the http encoder know the response is complete
+    conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
+    boolean close;
+    synchronized (conn) {
+      close = trailersReceived;
+    }
+    if (close) {
+      tryClose();
     }
   }
 
