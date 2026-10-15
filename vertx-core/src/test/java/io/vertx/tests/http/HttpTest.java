@@ -4746,6 +4746,37 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testCloseNeverOvertakesDataInvariantOnWorker(Checkpoint checkpoint, Checkpoint firstChunkReceived, Checkpoint connectionClosed) throws Exception {
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      req.connection().closeHandler(v -> connectionClosed.succeed());
+      req.handler(chunk -> {
+        events.add("data");
+        if (events.size() == 1) {
+          firstChunkReceived.succeed();
+          connectionClosed.await(Duration.ofSeconds(2));
+        }
+      });
+      req.endHandler(v -> events.add("end"));
+      req.response().closeHandler(v -> {
+        events.add("close");
+        vertx.setTimer(100, id -> {
+          assertEquals("data", events.get(0));
+          assertEquals(1, Collections.frequency(events, "close"));
+          assertEquals(events.size() - 1, events.indexOf("close"));
+          checkpoint.succeed();
+        });
+      });
+    });
+    startServer(testAddress, ((VertxInternal) vertx).createWorkerContext());
+    HttpClientRequest request = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).await();
+    request.write("chunk-1").await();
+    firstChunkReceived.awaitSuccess();
+    request.end("chunk-2").await();
+    request.connection().close().await();
+  }
+
+  @Test
   public void testClientDecompressionError() throws Exception {
     server.requestHandler(req -> {
       req.response()
