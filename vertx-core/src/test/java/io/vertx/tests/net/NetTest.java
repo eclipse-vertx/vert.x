@@ -2872,7 +2872,6 @@ public class NetTest {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
-          NetClient client = vertx.createNetClient();
           client.connect(testAddress)
             .onComplete(onSuccess(res -> {
             assertTrue(Vertx.currentContext().isWorkerContext());
@@ -3049,6 +3048,7 @@ public class NetTest {
       //Should not be able to connect
       checkpoint.succeed();
     }));
+    checkpoint.awaitSuccess();
   }
 
   // this test sets HostnameVerification but also trustAll, it fails if hostname is
@@ -3515,9 +3515,10 @@ public class NetTest {
     });
     startServer();
     vertx.deployVerticle(new AbstractVerticle() {
+      NetClient client;
       @Override
       public void start() {
-        NetClient client = vertx.createNetClient();
+        client = vertx.createNetClient();
         client.connect(testAddress).onComplete(onSuccess(so ->{
           assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();

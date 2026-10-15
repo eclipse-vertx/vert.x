@@ -36,12 +36,12 @@ public class HAProxyTest extends VertxTestBase {
     }
     Vertx vertx = Vertx.vertx();
     try {
+      HttpClient client = vertx.createHttpClient();
       vertx.createHttpServer(new HttpServerOptions().setUseProxyProtocol(true))
         .requestHandler(req -> {
           req.response().end("hello");
         })
         .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(s -> {
-          HttpClient client = vertx.createHttpClient();
           client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
             .compose(req -> req.send().compose(HttpClientResponse::body))
             .onComplete(onSuccess(body -> {

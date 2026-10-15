@@ -759,10 +759,10 @@ public class Http2Test extends HttpTest {
         }
       });
     startServer();
-    // Keeps a ref to the client with the following fut.await() statement
     NetClient client = vertx.createNetClient();
     Future<NetSocket> fut = client.connect(config.port(), config.host());
     NetSocket so = fut.await();
+    checkpoint.awaitSuccess();
   }
 
   @Test
