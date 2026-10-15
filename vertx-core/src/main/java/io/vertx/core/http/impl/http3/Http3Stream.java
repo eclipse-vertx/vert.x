@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.http3;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http3.*;
 import io.netty.util.ReferenceCountUtil;
@@ -53,6 +54,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private boolean trailersSent;
   private boolean reset;
   private boolean aborted;
+  private boolean inputShutdown;
   private int bytesRead;
   private int bytesWritten;
   private Http3Headers headers;
@@ -159,7 +161,11 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     if (decoder != null) {
       ContextInternal prev = context.beginDispatch();
       try {
-        decoder.handleClose();
+        boolean abrupt = !inputShutdown;
+        if (abrupt) {
+          initializedDecoder = null;
+        }
+        decoder.handleClose(abrupt);
       } finally {
         context.endDispatch(prev);
       }
@@ -229,6 +235,11 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     });
     stream.resetHandler(code -> {
       handleReset(code);
+    });
+    stream.eventHandler(event -> {
+      if (event == ChannelInputShutdownEvent.INSTANCE) {
+        inputShutdown = true;
+      }
     });
     stream.endHandler(v -> {
       handleEnd();
@@ -396,7 +407,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       ContentDecoder prev = initializedDecoder;
       if (prev != null) {
         initializedDecoder = null;
-        prev.handleClose();
+        prev.handleClose(false);
       }
       if (decoder != null) {
         decoder.init(this);

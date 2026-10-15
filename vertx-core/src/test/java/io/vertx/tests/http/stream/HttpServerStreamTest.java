@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.*;
-import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
@@ -127,7 +126,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint2.succeed();
         }
         @Override
-        public void handleClose() {
+        public void handleClose(boolean abrupt) {
           checkpoint1.succeed();
         }
       });
@@ -148,35 +147,65 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       AtomicInteger count = new AtomicInteger();
       AtomicInteger closed = new AtomicInteger();
       stream.contentDecoder(new ContentDecoderBase() {
-        long timerID;
         @Override
         public void handle(ByteBuf chunk) {
           int val = count.incrementAndGet();
           if (val == 1) {
             flowController.pause();
           } else {
-            assertEquals(1, closed.get());
-            assertTrue(chunk.alloc() instanceof VertxByteBufAllocator);
-            if (val == 2) {
-              timerID = vertx.setTimer(20, id -> {
-                timerID = -1L;
-                checkpoint.succeed();
-              });
-            } else if (val == numChunks) {
-              long id = timerID;
-              if (id != -1L && vertx.cancelTimer(id)) {
-                checkpoint.succeed();
-              }
-            }
+            checkpoint.fail(new AssertionError("chunk delivered after abrupt end"));
           }
         }
         @Override
         public void handleEnd() {
-          fail();
+          checkpoint.fail(new AssertionError("handleEnd delivered after abrupt close"));
         }
         @Override
-        public void handleClose() {
+        public void handleClose(boolean abrupt) {
           assertEquals(0, closed.getAndIncrement());
+          assertTrue(abrupt);
+          assertEquals(1, count.get());
+          flowController.resume();
+          vertx.setTimer(100, id -> checkpoint.succeed());
+        }
+      });
+    };
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions).await();
+    for (int i = 0;i < numChunks;i++) {
+      request.write(expectedChunk).await();
+    }
+    request.connection().close().await();
+  }
+
+  @Test
+  public void testContentDecoderEndReceivedWhilePaused(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    int numChunks = 10;
+    String expectedChunk = TestUtils.randomAlphaString(128);
+    handler = stream -> {
+      AtomicInteger bytes = new AtomicInteger();
+      AtomicBoolean closed = new AtomicBoolean();
+      stream.contentDecoder(new ContentDecoderBase() {
+        @Override
+        public void handle(ByteBuf chunk) {
+          if (bytes.getAndAdd(chunk.readableBytes()) == 0) {
+            flowController.pause();
+            checkpoint2.succeed();
+          } else {
+            assertTrue(closed.get());
+          }
+        }
+        @Override
+        public void handleEnd() {
+          assertTrue(closed.get());
+          assertEquals(numChunks * expectedChunk.length(), bytes.get());
+          checkpoint1.succeed();
+        }
+        @Override
+        public void handleClose(boolean abrupt) {
+          assertFalse(abrupt);
+          closed.set(true);
           flowController.resume();
         }
       });
@@ -187,6 +216,8 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     for (int i = 0;i < numChunks;i++) {
       request.write(expectedChunk).await();
     }
+    request.end().await();
+    checkpoint2.awaitSuccess();
     request.connection().close().await();
   }
 
@@ -482,7 +513,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     }
 
     @Override
-    public void handleClose() {
+    public void handleClose(boolean abrupt) {
     }
   }
 }

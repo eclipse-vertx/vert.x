@@ -120,7 +120,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   }
 
   @Override
-  public void handleClose() {
+  public void handleClose(boolean abrupt) {
   }
 
   @Override

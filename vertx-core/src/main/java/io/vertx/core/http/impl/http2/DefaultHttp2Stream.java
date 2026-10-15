@@ -291,7 +291,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       ContentDecoder prev = initializedDecoder;
       if (prev != null) {
         initializedDecoder = null;
-        prev.handleClose();
+        prev.handleClose(false);
       }
       if (decoder != null) {
         decoder.init(this);
@@ -696,7 +696,11 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       if (decoder != null) {
         ContextInternal prev = context.beginDispatch();
         try {
-          decoder.handleClose();
+          boolean abrupt = trailers == null;
+          if (abrupt) {
+            initializedDecoder = null;
+          }
+          decoder.handleClose(abrupt);
         } finally {
           context.endDispatch(prev);
         }

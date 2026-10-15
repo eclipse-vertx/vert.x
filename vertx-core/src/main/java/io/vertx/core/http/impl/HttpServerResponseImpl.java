@@ -829,7 +829,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
 
     @Override
-    public void handleClose() {
+    public void handleClose(boolean abrupt) {
       throw new UnsupportedOperationException();
     }
 

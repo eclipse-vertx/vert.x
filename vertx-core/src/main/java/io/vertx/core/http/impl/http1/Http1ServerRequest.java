@@ -88,6 +88,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private HttpPostRequestDecoder decoder;
   private ContentDecoder initializedDecoder;
   private boolean decoderClosed;
+  private boolean trailersReceived;
   boolean inHead;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
@@ -164,10 +165,15 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   void handleEnd() {
     InboundMessageQueue<Buffer> queue = queue(false);
     if (queue != null) {
+      context.execute(this, Http1ServerRequest::onTrailersReceived);
       handleEnd(queue);
     } else {
       context.execute(this, Http1ServerRequest::onEnd);
     }
+  }
+
+  private void onTrailersReceived() {
+    trailersReceived = true;
   }
 
   private void handleEnd(InboundMessageQueue<Buffer> queue) {
@@ -495,7 +501,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public boolean isEnded() {
-    return response.trailersReceived;
+    return response.requestEnded;
   }
 
   @Override
@@ -544,13 +550,14 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   private void onEnd() {
+    trailersReceived = true;
     if (METRICS_ENABLED) {
       reportRequestComplete();
     }
     if (decoder != null) {
       endDecode();
     }
-    response.trailersReceived = true;
+    response.requestEnded = true;
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
       ContextInternal prev = context.beginDispatch();
@@ -558,7 +565,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
         decoder.handleEnd();
         if (!decoderClosed) {
           decoderClosed = true;
-          decoder.handleClose();
+          decoder.handleClose(false);
         }
       } finally {
         context.endDispatch(prev);
@@ -587,7 +594,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       ContentDecoder prev = initializedDecoder;
       if (prev != null) {
         initializedDecoder = null;
-        prev.handleClose();
+        prev.handleClose(false);
       }
       if (decoder != null) {
         decoder.init(this);
@@ -680,7 +687,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       decoderClosed = true;
       ContextInternal prev = context.beginDispatch();
       try {
-        decoder.handleClose();
+        boolean abrupt = !trailersReceived;
+        if (abrupt) {
+          initializedDecoder = null;
+        }
+        decoder.handleClose(abrupt);
       } finally {
         context.endDispatch(prev);
       }
