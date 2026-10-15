@@ -56,13 +56,13 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
   @Test
   public void testContentDecoderLifecycleInvariantWhenConnectionClosedEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, true);
-    assertEquals(List.of("init", "handle", "handleClose"), events);
+    assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWhenConnectionClosedWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, true);
-    assertEquals(List.of("init", "handle", "handleClose"), events);
+    assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
   }
 
   private List<String> testContentDecoderLifecycleInvariant(ThreadingModel threadingModel, Checkpoint checkpoint1, Checkpoint checkpoint2, boolean fail) throws Exception {
@@ -107,10 +107,10 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
           req.response().end();
         }
         @Override
-        public void handleClose() {
+        public void handleClose(boolean abrupt) {
           checkThread.run();
           assertSame(current, Vertx.currentContext());
-          events.add("handleClose");
+          events.add(abrupt ? "handleClose(abrupt)" : "handleClose");
           vertx.setTimer(100, id -> checkpoint1.succeed());
         }
       });

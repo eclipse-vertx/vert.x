@@ -77,7 +77,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private long bytesWritten;
   boolean trailersSent;
-  boolean trailersReceived;
+  boolean requestEnded;
   private boolean closed;
   private Future<NetSocket> netSocket;
   private Handler<Void> headersEndHandler;
@@ -380,7 +380,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     if (handler != null) {
       context.dispatch(handler);
     }
-    if (trailersReceived) {
+    if (requestEnded) {
       tryClose();
     }
   }
@@ -394,7 +394,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       conn.httpMetrics.responseBegin(requestMetric, this);
     }
     setStatusCode(101);
-    boolean close = trailersReceived;
+    boolean close = requestEnded;
     headersSent = true;
     trailersSent = true;
     conn.responseComplete();
@@ -531,7 +531,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
     // write an empty last content to let the http encoder know the response is complete
     conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
-    boolean close = trailersReceived;
+    boolean close = requestEnded;
     if (close) {
       tryClose();
     }
@@ -691,7 +691,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     prepareHeaders(-1);
     PromiseInternal<Void> upgradePromise = context.promise();
     Promise<NetSocket> socketPromise = context.promise();
-    boolean close = trailersReceived;
+    boolean close = requestEnded;
     status = st;
     headersSent = true;
     trailersSent = true;

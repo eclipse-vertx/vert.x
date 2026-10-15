@@ -493,9 +493,14 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         }
         @Override
         protected void handleConsumerClosed() {
-          ContentDecoder decoder = ((StreamImpl)Stream.this).initializedDecoder;
+          StreamImpl stream = (StreamImpl)Stream.this;
+          ContentDecoder decoder = stream.initializedDecoder;
           if (decoder != null) {
-            decoder.handleClose();
+            boolean abrupt = trailers == null;
+            if (abrupt) {
+              stream.initializedDecoder = null;
+            }
+            decoder.handleClose(abrupt);
           }
         }
       };
@@ -612,7 +617,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         ContentDecoder prev = initializedDecoder;
         if (prev != null) {
           initializedDecoder = null;
-          prev.handleClose();
+          prev.handleClose(false);
         }
         if (decoder != null) {
           decoder.init(this);

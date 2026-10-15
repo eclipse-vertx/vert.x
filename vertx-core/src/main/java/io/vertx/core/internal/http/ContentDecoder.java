@@ -42,7 +42,10 @@ public interface ContentDecoder extends Handler<ByteBuf> {
 
   /**
    * Signals the underlying stream is closed, content chunks might still be delivered when the queue is paused.
+   *
+   * @param abrupt whether the stream closed without receiving the end, e.g. a reset or a connection close, in which case
+   *               nothing is delivered after this call
    */
-  void handleClose();
+  void handleClose(boolean abrupt);
 
 }
