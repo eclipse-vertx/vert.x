@@ -384,8 +384,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   }
 
   void createWebSocket(Http1ServerRequest request, FullHttpRequest fullRequest, PromiseInternal<ServerWebSocketHandshake> promise) {
-    wantClose = false;
     context.execute(() -> {
+      wantClose = false;
       if (request != responseInProgress) {
         promise.fail("Invalid request");
       } else {
