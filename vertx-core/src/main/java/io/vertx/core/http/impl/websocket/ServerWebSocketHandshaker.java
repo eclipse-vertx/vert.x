@@ -49,17 +49,20 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> implements ServerWebSocketHandshake, ServerWebSocket {
 
   private final Http1ServerRequest request;
+  private final FullHttpRequest fullRequest;
   private final WebSocketServerConfig config;
   private final WebSocketServerHandshaker handshaker;
   private final boolean registerWebSocketWriteHandlers;
   private boolean done;
 
   public ServerWebSocketHandshaker(Http1ServerRequest request,
+                                   FullHttpRequest fullRequest,
                                    WebSocketServerHandshaker handshaker,
                                    WebSocketServerConfig config,
                                    boolean registerWebSocketWriteHandlers) {
     super(request.context());
     this.request = request;
+    this.fullRequest = fullRequest;
     this.handshaker = handshaker;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.config = config;
@@ -166,8 +169,6 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     Channel channel = chctx.channel();
     Http1ServerResponse response = request.response();
     ChannelPromise p = channel.newPromise();
-    // We expect a full request - so the handshakes can use it
-    FullHttpRequest fullRequest = (FullHttpRequest) request.nettyRequest();
     try {
       handshaker.handshake(channel, fullRequest, (HttpHeaders) response.headers(), p);
     } catch (Exception e) {
@@ -185,7 +186,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     p.addListener((ChannelFutureListener) future -> {
       if (future.isSuccess()) {
         // Response if fully written, update the response accordingly
-        response.completeHandshake();
+        response.handleHandshakeCompleted();
         // remove compressor as it's not needed anymore once connection was upgraded to websockets
         ChannelPipeline pipeline = channel.pipeline();
         ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);

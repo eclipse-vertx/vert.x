@@ -278,6 +278,9 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     requestInProgress = null;
     boolean tryClose = (wantClose || shutdownInitiated != null) && responseInProgress == null;
     request.handleEnd();
+    if (METRICS_ENABLED && httpMetrics != null) {
+      flushBytesRead();
+    }
     if (tryClose) {
       closeInternal();
     }
@@ -383,27 +386,25 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     return serverOrigin;
   }
 
-  void createWebSocket(Http1ServerRequest request, PromiseInternal<ServerWebSocketHandshake> promise) {
-    wantClose = false;
+  void createWebSocket(Http1ServerRequest request, FullHttpRequest fullRequest, PromiseInternal<ServerWebSocketHandshake> promise) {
     context.execute(() -> {
+      wantClose = false;
       if (request != responseInProgress) {
         promise.fail("Invalid request");
-      } else if (!(request.nettyRequest() instanceof FullHttpRequest)) {
-        promise.fail(new IllegalStateException());
       } else {
         WebSocketServerHandshaker handshaker;
         try {
-          handshaker = createHandshaker(request);
+          handshaker = createHandshaker(request, fullRequest);
         } catch (WebSocketHandshakeException e) {
           promise.fail(e);
           return;
         }
-        promise.complete(new ServerWebSocketHandshaker(request, handshaker, webSocketConfig, registerWebSocketWriteHandlers));
+        promise.complete(new ServerWebSocketHandshaker(request, fullRequest, handshaker, webSocketConfig, registerWebSocketWriteHandlers));
       }
     });
   }
 
-  public WebSocketServerHandshaker createHandshaker(Http1ServerRequest request) throws WebSocketHandshakeException {
+  public WebSocketServerHandshaker createHandshaker(Http1ServerRequest request, FullHttpRequest fullRequest) throws WebSocketHandshakeException {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -440,7 +441,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       .closeOnProtocolViolation(false)
       .build();
     WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(wsURL, subProtocols, config);
-    WebSocketServerHandshaker shake = factory.newHandshaker(request.nettyRequest());
+    WebSocketServerHandshaker shake = factory.newHandshaker(fullRequest);
     if (shake != null) {
       return shake;
     }

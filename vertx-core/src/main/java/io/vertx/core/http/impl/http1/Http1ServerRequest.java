@@ -54,38 +54,40 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   private static final HostAndPort NULL_HOST_AND_PORT = HostAndPort.create("", -1);
 
+  // Immutable
   private final Http1ServerConnection conn;
   final ContextInternal context;
+  private final HttpRequest request;
 
-  private HttpRequest request;
+  // Event loop
+  boolean reportMetricsFailed;
+  Http1ServerRequest next;
+
+  // Written on the event loop before the request handler is called, read on both threads (happens-before by emit)
+  private Http1ServerResponse response;
+  Object metric;
+  Object trace;
+
+  // Event loop and context thread using double checked locking
+  private volatile InboundMessageQueue<Buffer> queue;
+
+  // Context thread
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
   private HostAndPort authority;
   private String uri;
   private String path;
   private String query;
-
-  // Accessed on event loop
-  Object metric;
-  Object trace;
-  boolean reportMetricsFailed;
-  Http1ServerRequest next;
-
-  private Http1ServerResponse response;
-
-  // Cache this for performance
   private MultiMap headers;
   private String absoluteURI;
-
   private HttpEventHandler eventHandler;
+  private long bytesRead;
   private Handler<HttpServerFileUpload> uploadHandler;
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
-  private boolean decoderClosed;
-  private long bytesRead;
-  private volatile InboundMessageQueue<Buffer> queue;
   private ContentDecoder initializedDecoder;
+  private boolean decoderClosed;
   boolean inHead;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
@@ -138,9 +140,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   public HttpRequest nettyRequest() {
-    synchronized (conn) {
-      return request;
-    }
+    return request;
   }
 
   void handleBegin(boolean keepAlive) {
@@ -295,9 +295,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public long bytesRead() {
-    synchronized (conn) {
-      return bytesRead;
-    }
+    return bytesRead;
   }
 
   @Override
@@ -322,27 +320,23 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkEnded();
-      }
-      HttpEventHandler eventHandler = eventHandler(handler != null);
-      if (eventHandler != null) {
-        eventHandler.chunkHandler(handler);
-      }
-      return this;
+    if (handler != null) {
+      checkEnded();
     }
+    HttpEventHandler eventHandler = eventHandler(handler != null);
+    if (eventHandler != null) {
+      eventHandler.chunkHandler(handler);
+    }
+    return this;
   }
 
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
-    synchronized (conn) {
-      HttpEventHandler eventHandler = eventHandler(handler != null);
-      if (eventHandler != null) {
-        eventHandler.exceptionHandler(handler);
-      }
-      return this;
+    HttpEventHandler eventHandler = eventHandler(handler != null);
+    if (eventHandler != null) {
+      eventHandler.exceptionHandler(handler);
     }
+    return this;
   }
 
   @Override
@@ -364,16 +358,14 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkEnded();
-      }
-      HttpEventHandler eventHandler = eventHandler(handler != null);
-      if (eventHandler != null) {
-        eventHandler.endHandler(handler);
-      }
-      return this;
+    if (handler != null) {
+      checkEnded();
     }
+    HttpEventHandler eventHandler = eventHandler(handler != null);
+    if (eventHandler != null) {
+      eventHandler.endHandler(handler);
+    }
+    return this;
   }
 
   @Override
@@ -401,13 +393,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkEnded();
-      }
-      uploadHandler = handler;
-      return this;
+    if (handler != null) {
+      checkEnded();
     }
+    uploadHandler = handler;
+    return this;
   }
 
   @Override
@@ -455,7 +445,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     endHandler(v -> {
       if (!failed[0]) {
         // Handle the request once we have the full body.
-        request = new DefaultFullHttpRequest(
+        FullHttpRequest fullRequest = new DefaultFullHttpRequest(
           request.protocolVersion(),
           request.method(),
           request.uri(),
@@ -463,7 +453,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
           request.headers(),
           EmptyHttpHeaders.INSTANCE
         );
-        conn.createWebSocket(this, promise);
+        conn.createWebSocket(this, fullRequest, promise);
       }
     });
     // In case we were paused
@@ -472,44 +462,40 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
-    synchronized (conn) {
-      checkEnded();
-      expectMultipart = expect;
-      if (expect) {
-        if (decoder == null) {
-          String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
-          if (contentType == null) {
-            throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
-          }
-          if (!HttpUtils.isValidMultipartContentType(contentType)) {
-            throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
-          }
-          if (!HttpUtils.isValidMultipartMethod(request.method())) {
-            throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
-          }
-          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          factory.setMaxLimit(conn.maxFormAttributeSize());
-          int maxFields = conn.maxFormFields();
-          int maxBufferedBytes = conn.maxFormBufferedBytes();
-          decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
+    checkEnded();
+    expectMultipart = expect;
+    if (expect) {
+      if (decoder == null) {
+        String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
+        if (contentType == null) {
+          throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
         }
-      } else {
-        decoder = null;
+        if (!HttpUtils.isValidMultipartContentType(contentType)) {
+          throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
+        }
+        if (!HttpUtils.isValidMultipartMethod(request.method())) {
+          throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
+        }
+        NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
+        factory.setMaxLimit(conn.maxFormAttributeSize());
+        int maxFields = conn.maxFormFields();
+        int maxBufferedBytes = conn.maxFormBufferedBytes();
+        decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
       }
-      return this;
+    } else {
+      decoder = null;
     }
+    return this;
   }
 
   @Override
-  public synchronized boolean isExpectMultipart() {
+  public boolean isExpectMultipart() {
     return expectMultipart;
   }
 
   @Override
   public boolean isEnded() {
-    synchronized (conn) {
-      return response.trailersReceived;
-    }
+    return response.trailersReceived;
   }
 
   @Override
@@ -523,40 +509,37 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   @Override
-  public synchronized Future<Buffer> body() {
+  public Future<Buffer> body() {
     checkEnded();
     return eventHandler(true).body();
   }
 
   @Override
-  public synchronized Future<Void> end() {
+  public Future<Void> end() {
     checkEnded();
     return eventHandler(true).end();
   }
 
   private void onData(Buffer data) {
-    HttpEventHandler handler;
-    synchronized (conn) {
-      bytesRead += data.length();
-      if (decoder != null) {
-        try {
-          decoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
-        } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
-                 HttpPostRequestDecoder.TooLongFormFieldException |
-                 HttpPostRequestDecoder.TooManyFormFieldsException e) {
-          decoder.destroy();
-          decoder = null;
-          onException(e);
-        }
+    bytesRead += data.length();
+    if (decoder != null) {
+      try {
+        decoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
+               HttpPostRequestDecoder.TooLongFormFieldException |
+               HttpPostRequestDecoder.TooManyFormFieldsException e) {
+        decoder.destroy();
+        decoder = null;
+        onException(e);
       }
-      handler = eventHandler;
     }
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
       context.dispatch(((BufferInternal)data).getByteBuf(), decoder);
     }
+    HttpEventHandler handler = eventHandler;
     if (handler != null) {
-      eventHandler.handleChunk(data);
+      handler.handleChunk(data);
     }
   }
 
@@ -564,14 +547,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     if (METRICS_ENABLED) {
       reportRequestComplete();
     }
-    HttpEventHandler handler;
-    synchronized (conn) {
-      if (decoder != null) {
-        endDecode();
-      }
-      response.trailersReceived = true;
-      handler = eventHandler;
+    if (decoder != null) {
+      endDecode();
     }
+    response.trailersReceived = true;
     ContentDecoder decoder = initializedDecoder;
     if (decoder != null) {
       ContextInternal prev = context.beginDispatch();
@@ -586,14 +565,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       }
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
+    HttpEventHandler handler = eventHandler;
     if (handler != null) {
       handler.handleEnd();
     }
-    boolean close;
-    synchronized (conn) {
-      close = response.trailersSent;
-    }
-    if (close) {
+    if (response.trailersSent) {
       response.tryClose();
     }
   }
@@ -602,7 +578,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     HttpServerMetrics metrics = conn.httpMetrics;
     if (metrics != null) {
       metrics.requestEnd(metric, this, bytesRead);
-      conn.flushBytesRead();
     }
   }
 
@@ -674,19 +649,17 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
     InterfaceHttpData upload = null;
-    synchronized (conn) {
-      if (!isEnded()) {
-        handler = eventHandler;
-        if (decoder != null) {
-          upload = decoder.currentPartialHttpData();
-        }
+    if (!isEnded()) {
+      handler = eventHandler;
+      if (decoder != null) {
+        upload = decoder.currentPartialHttpData();
       }
-      if (!response.ended()) {
-        if (METRICS_ENABLED) {
-          reportRequestReset(t);
-        }
-        resp = response;
+    }
+    if (!response.ended()) {
+      if (METRICS_ENABLED) {
+        reportRequestReset(t);
       }
+      resp = response;
     }
     if (resp != null) {
       resp.onException(t);
