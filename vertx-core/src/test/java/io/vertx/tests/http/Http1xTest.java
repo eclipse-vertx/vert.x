@@ -1304,6 +1304,7 @@ public class Http1xTest extends HttpTest {
         client.run();
       }));
     }
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -1366,6 +1367,7 @@ public class Http1xTest extends HttpTest {
       so.closeHandler(v -> checkpoint.succeed());
       so.write(requests);
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -1408,6 +1410,7 @@ public class Http1xTest extends HttpTest {
       }
     };
     task[0].accept(0);
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -1448,6 +1451,7 @@ public class Http1xTest extends HttpTest {
         checkpoint.succeed();
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -1476,6 +1480,7 @@ public class Http1xTest extends HttpTest {
         checkpoint.succeed();
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -1641,6 +1646,7 @@ public class Http1xTest extends HttpTest {
           ws.closeHandler(v2 -> checkpoint.succeed());
         }));
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -2086,7 +2092,8 @@ public class Http1xTest extends HttpTest {
       Assert.fail();
     });
     startServer(testAddress);
-    vertx.createNetClient(new NetClientOptions()).connect(testAddress).onComplete(TestUtils.onSuccess(socket -> {
+    NetClient client = vertx.createNetClient(new NetClientOptions());
+    client.connect(testAddress).onComplete(TestUtils.onSuccess(socket -> {
       socket.closeHandler(r -> {
         checkpoint.succeed();
       });
@@ -2095,6 +2102,7 @@ public class Http1xTest extends HttpTest {
       // trigger another write to be sure we detect that the other peer has closed the connection.
       socket.write("X-Header: test\r\n");
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -2331,6 +2339,7 @@ public class Http1xTest extends HttpTest {
         checkpoint.succeed();
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3420,6 +3429,7 @@ public class Http1xTest extends HttpTest {
     socket
       .write("POST / HTTP/1.1\r\nContent-Length: 4\r\n\r\ntoolong\r\n")
       .await();
+    checkpoint.awaitSuccess();
   }
   @Test
   public void testInvalidTrailerInHttpServerRequest(Checkpoint checkpoint) throws Exception {
@@ -3468,6 +3478,7 @@ public class Http1xTest extends HttpTest {
     so.write("POST /somepath HTTP/1.1\r\n");
     so.write("Transfer-Encoding: chunked\r\n");
     so.write("\r\n");
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3567,6 +3578,7 @@ public class Http1xTest extends HttpTest {
     socket
       .write("GET /\r\n\r\n")
       .await();
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3764,6 +3776,7 @@ public class Http1xTest extends HttpTest {
         so.write(fullRequest.slice(1, fullRequest.length()));
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3780,6 +3793,7 @@ public class Http1xTest extends HttpTest {
         checkpoint.succeed();
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3826,6 +3840,7 @@ public class Http1xTest extends HttpTest {
         checkpoint.succeed();
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -5353,6 +5368,7 @@ public class Http1xTest extends HttpTest {
     nc.connect(testAddress).onComplete(TestUtils.onSuccess(so -> {
       so.write("GET / HTTP/1.1\r\n\r\n");
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test

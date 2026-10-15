@@ -57,5 +57,6 @@ public class NetTest extends VertxTestBase2 {
       so.closeHandler(v2 -> checkpoint.succeed());
       so.end().await();
     });
+    checkpoint.awaitSuccess();
   }
 }

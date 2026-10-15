@@ -33,6 +33,10 @@ public class NettyCompatTest extends VertxTestBase {
 
   @Test
   public void testHttp2() {
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+        .setSsl(true)
+        .setSslEngineOptions(new OpenSSLEngineOptions())
+        .setTrustOptions(Trust.SERVER_JKS.get()));
     vertx.createHttpServer(new HttpServerOptions()
         .setUseAlpn(true)
         .setSsl(true)
@@ -41,10 +45,6 @@ public class NettyCompatTest extends VertxTestBase {
     )
         .requestHandler(req -> req.response().end("OK"))
         .listen(8443, "localhost").onComplete(onSuccess(s -> {
-          HttpClient client = vertx.createHttpClient(new HttpClientOptions()
-              .setSsl(true)
-              .setSslEngineOptions(new OpenSSLEngineOptions())
-              .setTrustOptions(Trust.SERVER_JKS.get()));
           client
             .request(HttpMethod.GET, 8443, "localhost", "/somepath")
             .compose(req -> req.send().compose(HttpClientResponse::body))

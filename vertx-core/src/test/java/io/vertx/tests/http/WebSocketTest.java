@@ -1149,6 +1149,7 @@ public class WebSocketTest extends VertxTestBase2 {
           checkpoint2.succeed();
         }));
     }));
+    checkpoint2.awaitSuccess();
   }
 
   @Test
@@ -1401,6 +1402,7 @@ public class WebSocketTest extends VertxTestBase2 {
         });
       }));
     }));
+    checkpoint.awaitSuccess();
   }
 
   private void testReject(WebSocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody, Checkpoint checkpoint) {
@@ -1557,6 +1559,7 @@ public class WebSocketTest extends VertxTestBase2 {
           checkpoint.succeed();
         });
       }))));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -2034,6 +2037,7 @@ public class WebSocketTest extends VertxTestBase2 {
         req.connection().close();
       }));
     });
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -2090,22 +2094,22 @@ public class WebSocketTest extends VertxTestBase2 {
   }
 
   @Test
-  public void testUpgradeInvalidRequest(Checkpoint checkpoint1, Checkpoint checkpoint2) {
+  public void testUpgradeInvalidRequest(Checkpoint checkpoint) {
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     server.requestHandler(request -> {
       request.toWebSocket().onComplete(TestUtils.onFailure(err -> {
-        checkpoint1.succeed();
+        checkpoint.succeed();
       }));
       request.response().end();
     });
     server.listen().await();
     HttpClient client = vertx.createHttpClient();
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-      .compose(HttpClientRequest::send)
-      .onComplete(TestUtils.onSuccess(resp -> {
-        checkpoint2.succeed();
-      }));
+      .compose(request -> request
+        .send()
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
   @Test
@@ -2324,6 +2328,7 @@ public class WebSocketTest extends VertxTestBase2 {
           }));
         }));
       }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -2978,6 +2983,7 @@ public class WebSocketTest extends VertxTestBase2 {
         }));
       });
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -2991,8 +2997,8 @@ public class WebSocketTest extends VertxTestBase2 {
         checkpoint1.succeed();
       });
     });
+    HttpClient client = vertx.createHttpClient();
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(TestUtils.onSuccess(v1 -> {
-      HttpClient client = vertx.createHttpClient();
       handshake(client, req -> {
         req.send().onComplete(TestUtils.onSuccess(resp -> {
           assertEquals(101, resp.statusCode());
@@ -3024,6 +3030,8 @@ public class WebSocketTest extends VertxTestBase2 {
         }));
       });
     }));
+    checkpoint1.awaitSuccess();
+    checkpoint2.awaitSuccess();
   }
 
   @Test
@@ -3169,6 +3177,7 @@ public class WebSocketTest extends VertxTestBase2 {
         });
       }));
     });
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3269,6 +3278,7 @@ public class WebSocketTest extends VertxTestBase2 {
         sock.write(buff);
       }));
     });
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3375,6 +3385,7 @@ public class WebSocketTest extends VertxTestBase2 {
           });
         }));
     }));
+    checkpoint.awaitSuccess();
   }
 
   @Test
@@ -3877,8 +3888,8 @@ public class WebSocketTest extends VertxTestBase2 {
                     });
                   });
     server.listen().await();
-    vertx.createWebSocketClient()
-         .connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
          .onSuccess(ws -> ws.close(INVALID_STATUS_CODE));
   }
 

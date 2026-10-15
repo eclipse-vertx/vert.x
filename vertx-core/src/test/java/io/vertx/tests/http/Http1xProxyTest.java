@@ -549,6 +549,7 @@ public class Http1xProxyTest extends HttpTestBase2 {
     });
     ws.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").await();
     ws.write(Buffer.buffer("Hello world")).await();
+    checkpoint.awaitSuccess();
   }
 
   @WithProxy(kind = ProxyKind.HTTP)

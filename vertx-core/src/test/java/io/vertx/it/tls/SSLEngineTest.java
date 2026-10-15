@@ -155,6 +155,7 @@ public class SSLEngineTest extends HttpTestBase2 {
       assertEquals("test", msg);
       checkpoint.succeed();
     });
+    checkpoint.awaitSuccess();
   }
 
   private class TestServer {

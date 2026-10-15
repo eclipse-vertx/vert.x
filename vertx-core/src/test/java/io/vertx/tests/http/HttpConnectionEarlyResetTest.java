@@ -14,6 +14,7 @@ package io.vertx.tests.http;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
@@ -57,7 +58,8 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
 
   @Test
   public void testExceptionCaught() throws Exception {
-    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(socket -> {
+    NetClient client = vertx.createNetClient(new NetClientOptions().setSoLinger(0));
+    client.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(socket -> {
       vertx.setTimer(2000, id -> {
         socket.close();
       });

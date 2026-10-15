@@ -16,6 +16,7 @@ import io.netty.channel.ServerChannel;
 import io.vertx.core.Vertx;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.core.internal.VertxBootstrap;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -64,10 +65,11 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
       }
     }).init().vertx();
 
+    NetClient client = vertx.createNetClient(options);
     vertx.createNetServer().connectHandler(so -> {
       fail();
     }).listen(1234, "localhost").onComplete( onSuccess(v -> {
-      vertx.createNetClient(options).connect(1234, "localhost").onComplete(onFailure(err -> {
+      client.connect(1234, "localhost").onComplete(onFailure(err -> {
         assertSame(err, cause);
         testComplete();
       }));
