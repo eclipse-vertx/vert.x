@@ -138,10 +138,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    synchronized (conn) {
-      checkHeadWritten();
-      status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
-    }
+    checkHeadWritten();
+    status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
     return this;
   }
 
@@ -152,186 +150,148 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
-    synchronized (conn) {
-      checkHeadWritten();
-      this.statusMessage = statusMessage;
-      this.status = new HttpResponseStatus(status.code(), statusMessage);
-      return this;
-    }
+    checkHeadWritten();
+    this.statusMessage = statusMessage;
+    this.status = new HttpResponseStatus(status.code(), statusMessage);
+    return this;
   }
 
   @Override
   public Http1ServerResponse setChunked(boolean chunked) {
-    synchronized (conn) {
-      checkHeadWritten();
-      // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
-      if (version != HttpVersion.HTTP_1_0) {
-        headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
-      }
-      return this;
+    checkHeadWritten();
+    // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
+    if (version != HttpVersion.HTTP_1_0) {
+      headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
     }
+    return this;
   }
 
   @Override
   public boolean isChunked() {
-    synchronized (conn) {
-      return headers.contains(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED, true);
-    }
+    return headers.contains(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED, true);
   }
 
   @Override
   public Http1ServerResponse putHeader(String key, String value) {
-    synchronized (conn) {
-      checkHeadWritten();
-      headers.set(key, value);
-      return this;
-    }
+    checkHeadWritten();
+    headers.set(key, value);
+    return this;
   }
 
   @Override
   public Http1ServerResponse putHeader(String key, Iterable<String> values) {
-    synchronized (conn) {
-      checkHeadWritten();
-      headers.set(key, values);
-      return this;
-    }
+    checkHeadWritten();
+    headers.set(key, values);
+    return this;
   }
 
   @Override
   public Http1ServerResponse putTrailer(String key, String value) {
-    synchronized (conn) {
-      checkValid();
-      trailers().set(key, value);
-      return this;
-    }
+    checkValid();
+    trailers().set(key, value);
+    return this;
   }
 
   @Override
   public Http1ServerResponse putTrailer(String key, Iterable<String> values) {
-    synchronized (conn) {
-      checkValid();
-      trailers().set(key, values);
-      return this;
-    }
+    checkValid();
+    trailers().set(key, values);
+    return this;
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
-    synchronized (conn) {
-      checkHeadWritten();
-      headers.set(name, value);
-      return this;
-    }
+    checkHeadWritten();
+    headers.set(name, value);
+    return this;
   }
 
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
-    synchronized (conn) {
-      checkHeadWritten();
-      headers.set(name, values);
-      return this;
-    }
+    checkHeadWritten();
+    headers.set(name, values);
+    return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
-    synchronized (conn) {
-      checkValid();
-      trailers().set(name, value);
-      return this;
-    }
+    checkValid();
+    trailers().set(name, value);
+    return this;
   }
 
   @Override
   public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
-    synchronized (conn) {
-      checkValid();
-      trailers().set(name, value);
-      return this;
-    }
+    checkValid();
+    trailers().set(name, value);
+    return this;
   }
 
   @Override
   public HttpServerResponse setWriteQueueMaxSize(int size) {
-    synchronized (conn) {
-      checkValid();
-      conn.doSetWriteQueueMaxSize(size);
-      return this;
-    }
+    checkValid();
+    conn.doSetWriteQueueMaxSize(size);
+    return this;
   }
 
   @Override
   public boolean writeQueueFull() {
-    synchronized (conn) {
-      checkValid();
-      return conn.writeQueueFull();
-    }
+    checkValid();
+    return conn.writeQueueFull();
   }
 
   @Override
   public HttpServerResponse drainHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkValid();
-      }
-      drainHandler = handler;
-      return this;
+    if (handler != null) {
+      checkValid();
     }
+    drainHandler = handler;
+    return this;
   }
 
   @Override
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkValid();
-      }
-      exceptionHandler = handler;
-      return this;
+    if (handler != null) {
+      checkValid();
     }
+    exceptionHandler = handler;
+    return this;
   }
 
   @Override
   public HttpServerResponse closeHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkValid();
-      }
-      closeHandler = handler;
-      return this;
+    if (handler != null) {
+      checkValid();
     }
+    closeHandler = handler;
+    return this;
   }
 
   @Override
   public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkValid();
-      }
-      endHandler = handler;
-      return this;
+    if (handler != null) {
+      checkValid();
     }
+    endHandler = handler;
+    return this;
   }
 
   @Override
   public Future<Void> writeHead() {
     checkThread();
     Handler<Void> handler;
-    synchronized (conn) {
-      checkHeadWritten();
-      handler = headersEndHandler;
-    }
+    checkHeadWritten();
+    handler = headersEndHandler;
     if (handler != null) {
       context.dispatch(handler);
     }
     VertxHttpObject msg;
-    synchronized (conn) {
-      checkHeadWritten();
-      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
-        headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-      }
-      prepareHeaders(-1);
-      msg = new VertxHttpResponse(head, version, status, headers);
+    checkHeadWritten();
+    if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
     }
+    prepareHeaders(-1);
+    msg = new VertxHttpResponse(head, version, status, headers);
     PromiseInternal<Void> promise = context.promise();
     conn.write(msg, promise);
     return promise.future();
@@ -377,9 +337,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       headersMultiMap = Http1xHeaders.httpHeaders();
       headersMultiMap.addAll(headers);
     }
-    synchronized (conn) {
-      checkHeadWritten();
-    }
+    checkHeadWritten();
     conn.write103EarlyHints(headersMultiMap, promise);
     return promise.future();
   }
@@ -405,14 +363,12 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     checkThread();
     ByteBuf data = ((BufferInternal)chunk).getByteBuf();
     Handler<Void> handler;
-    synchronized (conn) {
-      if (trailersSent) {
-        throw new IllegalStateException(RESPONSE_WRITTEN);
-      }
-      handler = headersSent ? null : headersEndHandler;
-      trailersSent = true;
-      bytesWritten += data.readableBytes();
+    if (trailersSent) {
+      throw new IllegalStateException(RESPONSE_WRITTEN);
     }
+    handler = headersSent ? null : headersEndHandler;
+    trailersSent = true;
+    bytesWritten += data.readableBytes();
     if (handler != null) {
       context.dispatch(handler);
     }
@@ -420,19 +376,17 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     Handler<Void> bodyEndHandler;
     Handler<Void> endHandler;
     VertxHttpObject msg;
-    synchronized (conn) {
-      if (!headersSent) {
-        // if the head was not written yet we can write out everything in one go
-        // which is cheaper.
-        prepareHeaders(bytesWritten);
-        msg = new VertxFullHttpResponse(head, version, status, data, headers, trailingHeaders);
-      } else {
-        msg = new VertxLastHttpContent(data, trailingHeaders);
-      }
-      bodyEndHandler = this.bodyEndHandler;
-      endHandler = closed ? null : this.endHandler;
-      close = trailersReceived;
+    if (!headersSent) {
+      // if the head was not written yet we can write out everything in one go
+      // which is cheaper.
+      prepareHeaders(bytesWritten);
+      msg = new VertxFullHttpResponse(head, version, status, data, headers, trailingHeaders);
+    } else {
+      msg = new VertxLastHttpContent(data, trailingHeaders);
     }
+    bodyEndHandler = this.bodyEndHandler;
+    endHandler = closed ? null : this.endHandler;
+    close = trailersReceived;
     conn.write(msg, listener);
     if (bodyEndHandler != null) {
       context.dispatch(bodyEndHandler);
@@ -455,11 +409,9 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
     setStatusCode(101);
     boolean close;
-    synchronized (conn) {
-      headersSent = true;
-      trailersSent = true;
-      close = trailersReceived;
-    }
+    headersSent = true;
+    trailersSent = true;
+    close = trailersReceived;
     conn.responseComplete();
     if (close) {
       tryClose();
@@ -537,43 +489,39 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       }
       checkValid();
       Handler<Void> headersEndHandler;
-      synchronized (conn) {
-        checkHeadWritten();
-        headersEndHandler = this.headersEndHandler;
-      }
+      checkHeadWritten();
+      headersEndHandler = this.headersEndHandler;
       if (headersEndHandler != null) {
         context.dispatch(headersEndHandler);
       }
-      synchronized (conn) {
-        // fail early before status code/headers are written to the response
-        prepareHeaders(actualLength);
-        bytesWritten = actualLength;
-        trailersSent = true;
-        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
-        FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
-        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
-        PromiseInternal<Void> promise = context.promise();
-        ret = promise.future();
-        channelFuture.addListener(future -> {
-          if (future.isSuccess()) {
-            context.execute(promise, this::onSendFileCompleted);
-          } else {
-            promise.fail(future.cause());
-          }
+      // fail early before status code/headers are written to the response
+      prepareHeaders(actualLength);
+      bytesWritten = actualLength;
+      trailersSent = true;
+      conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
+      FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
+      ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
+      PromiseInternal<Void> promise = context.promise();
+      ret = promise.future();
+      channelFuture.addListener(future -> {
+        if (future.isSuccess()) {
+          context.execute(promise, this::onSendFileCompleted);
+        } else {
+          promise.fail(future.cause());
+        }
 
-          //
-          if (close) {
-            try {
-              if (file != null) {
-                file.close();
-              } else {
-                fileChannel.close();
-              }
-            } catch (IOException ignore) {
+        //
+        if (close) {
+          try {
+            if (file != null) {
+              file.close();
+            } else {
+              fileChannel.close();
             }
+          } catch (IOException ignore) {
           }
-        });
-      }
+        }
+      });
       return ret;
     } finally {
       if (ret == null && close) {
@@ -592,10 +540,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private void onSendFileCompleted(PromiseInternal<Void> promise) {
     Handler<Void> bodyEndHandler;
     Handler<Void> endHandler;
-    synchronized (conn) {
-      bodyEndHandler = this.bodyEndHandler;
-      endHandler = this.endHandler;
-    }
+    bodyEndHandler = this.bodyEndHandler;
+    endHandler = this.endHandler;
     if (bodyEndHandler != null) {
       context.dispatch(bodyEndHandler);
     }
@@ -604,10 +550,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
     // write an empty last content to let the http encoder know the response is complete
     conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
-    boolean close;
-    synchronized (conn) {
-      close = trailersReceived;
-    }
+    boolean close = trailersReceived;
     if (close) {
       tryClose();
     }
@@ -615,63 +558,45 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public boolean ended() {
-    synchronized (conn) {
-      return trailersSent;
-    }
+    return trailersSent;
   }
 
   @Override
   public boolean closed() {
-    synchronized (conn) {
-      return closed;
-    }
+    return closed;
   }
 
   @Override
   public boolean headWritten() {
-    synchronized (conn) {
-      return headersSent;
-    }
+    return headersSent;
   }
 
   @Override
   public long bytesWritten() {
-    synchronized (conn) {
-      return bytesWritten;
-    }
+    return bytesWritten;
   }
 
   @Override
   public HttpServerResponse headersEndHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      this.headersEndHandler = handler;
-      return this;
-    }
+    this.headersEndHandler = handler;
+    return this;
   }
 
   @Override
   public HttpServerResponse bodyEndHandler(Handler<Void> handler) {
-    synchronized (conn) {
-      this.bodyEndHandler = handler;
-      return this;
-    }
+    this.bodyEndHandler = handler;
+    return this;
   }
 
   void handleWriteQueueDrained(Void v) {
-    Handler<Void> handler;
-    synchronized (conn) {
-      handler = drainHandler;
-    }
+    Handler<Void> handler = drainHandler;
     if (handler != null) {
       context.dispatch(null, handler);
     }
   }
 
   void onException(Throwable t) {
-    Handler<Throwable> handler;
-    synchronized (conn) {
-      handler = exceptionHandler;
-    }
+    Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
       context.dispatch(t, handler);
     }
@@ -679,13 +604,11 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   void tryClose() {
     Handler<Void> handler;
-    synchronized (conn) {
-      if (closed) {
-        return;
-      }
-      closed = true;
-      handler = closeHandler;
+    if (closed) {
+      return;
     }
+    closed = true;
+    handler = closeHandler;
     if (handler != null) {
       context.dispatch(null, handler);
     }
@@ -747,27 +670,23 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private void write(ByteBuf chunk, PromiseInternal<Void> promise) {
     checkThread();
     Handler<Void> headersEndHandler;
-    synchronized (conn) {
-      checkValid();
-      if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
-        if (version != HttpVersion.HTTP_1_0) {
-          headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
-        }
+    checkValid();
+    if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      if (version != HttpVersion.HTTP_1_0) {
+        headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
       }
-      headersEndHandler = headersSent ? null : this.headersEndHandler;
     }
+    headersEndHandler = headersSent ? null : this.headersEndHandler;
     if (headersEndHandler != null) {
       context.dispatch(headersEndHandler);
     }
     VertxHttpObject msg;
-    synchronized (conn) {
-      bytesWritten += chunk.readableBytes();
-      if (!headersSent) {
-        prepareHeaders(-1);
-        msg = new VertxAssembledHttpResponse(head, version, status, headers, chunk);
-      } else {
-        msg = new VertxHttpContent(chunk);
-      }
+    bytesWritten += chunk.readableBytes();
+    if (!headersSent) {
+      prepareHeaders(-1);
+      msg = new VertxAssembledHttpResponse(head, version, status, headers, chunk);
+    } else {
+      msg = new VertxHttpContent(chunk);
     }
     conn.write(msg, promise);
   }
@@ -776,42 +695,38 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     checkThread();
     boolean close;
     Handler<Void> headersEndHandler;
-    synchronized (conn) {
-      if (netSocket != null) {
-        return netSocket;
-      }
-      if (headersSent) {
-        return context.failedFuture("Response already sent");
-      }
-      if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
-        return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
-      }
-      headersEndHandler = this.headersEndHandler;
+    if (netSocket != null) {
+      return netSocket;
     }
+    if (headersSent) {
+      return context.failedFuture("Response already sent");
+    }
+    if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
+      return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
+    }
+    headersEndHandler = this.headersEndHandler;
     if (headersEndHandler != null) {
       context.dispatch(headersEndHandler);
     }
     Promise<NetSocket> socketPromise;
     PromiseInternal<Void> upgradePromise;
     HttpResponseStatus st;
-    synchronized (conn) {
-      if (headersSent) {
-        return context.failedFuture("Response already sent");
-      }
-      ChannelPipeline pipeline = conn.channel().pipeline();
-      WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
-      if (wsHandler != null) {
-        pipeline.remove(wsHandler);
-      }
-      st = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
-      prepareHeaders(-1);
-      upgradePromise = context.promise();
-      socketPromise = context.promise();
-      close = trailersReceived;
-      status = st;
-      trailersSent = true;
-      netSocket = socketPromise.future();
+    if (headersSent) {
+      return context.failedFuture("Response already sent");
     }
+    ChannelPipeline pipeline = conn.channel().pipeline();
+    WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
+    if (wsHandler != null) {
+      pipeline.remove(wsHandler);
+    }
+    st = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
+    prepareHeaders(-1);
+    upgradePromise = context.promise();
+    socketPromise = context.promise();
+    close = trailersReceived;
+    status = st;
+    trailersSent = true;
+    netSocket = socketPromise.future();
     conn.write(new VertxAssembledHttpResponse(head, version, st, headers), upgradePromise);
     conn.netSocket(socketPromise);
     if (close) {
@@ -827,10 +742,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> reset(long code) {
-    synchronized (conn) {
-      if (trailersSent) {
-        return context.failedFuture("Response written");
-      }
+    if (trailersSent) {
+      return context.failedFuture("Response written");
     }
     conn.close();
     return context.succeededFuture();
@@ -852,15 +765,13 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   CookieJar cookies() {
-    synchronized (conn) {
-      // avoid double parsing
-      if (cookies == null) {
-        String cookieHeader = request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE);
-        if (cookieHeader == null) {
-          cookies = new CookieJar();
-        } else {
-          cookies = new CookieJar(cookieHeader);
-        }
+    // avoid double parsing
+    if (cookies == null) {
+      String cookieHeader = request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE);
+      if (cookieHeader == null) {
+        cookies = new CookieJar();
+      } else {
+        cookies = new CookieJar(cookieHeader);
       }
     }
     return cookies;
@@ -868,35 +779,27 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse addCookie(Cookie cookie) {
-    synchronized (conn) {
-      checkHeadWritten();
-      cookies().add((ServerCookie) cookie);
-    }
+    checkHeadWritten();
+    cookies().add((ServerCookie) cookie);
     return this;
   }
 
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    synchronized (conn) {
-      checkHeadWritten();
-      return cookies().removeOrInvalidate(name, invalidate);
-    }
+    checkHeadWritten();
+    return cookies().removeOrInvalidate(name, invalidate);
   }
 
   @Override
   public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
-    synchronized (conn) {
-      checkHeadWritten();
-      return cookies().removeOrInvalidate(name, domain, path, invalidate);
-    }
+    checkHeadWritten();
+    return cookies().removeOrInvalidate(name, domain, path, invalidate);
   }
 
   @Override
   public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
-    synchronized (conn) {
-      checkHeadWritten();
-      return (Set) cookies().removeOrInvalidateAll(name, invalidate);
-    }
+    checkHeadWritten();
+    return (Set) cookies().removeOrInvalidateAll(name, invalidate);
   }
 
   @Override
