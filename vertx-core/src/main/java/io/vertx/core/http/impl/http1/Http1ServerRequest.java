@@ -54,38 +54,40 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   private static final HostAndPort NULL_HOST_AND_PORT = HostAndPort.create("", -1);
 
+  // Immutable
   private final Http1ServerConnection conn;
   final ContextInternal context;
+  private final HttpRequest request;
 
-  private HttpRequest request;
+  // Event loop
+  boolean reportMetricsFailed;
+  Http1ServerRequest next;
+
+  // Written on the event loop before the request handler is called, read on both threads (happens-before by emit)
+  private Http1ServerResponse response;
+  Object metric;
+  Object trace;
+
+  // Event loop and context thread using double checked locking
+  private volatile InboundMessageQueue<Buffer> queue;
+
+  // Context thread
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
   private HostAndPort authority;
   private String uri;
   private String path;
   private String query;
-
-  // Accessed on event loop
-  Object metric;
-  Object trace;
-  boolean reportMetricsFailed;
-  Http1ServerRequest next;
-
-  private Http1ServerResponse response;
-
-  // Cache this for performance
   private MultiMap headers;
   private String absoluteURI;
-
   private HttpEventHandler eventHandler;
+  private long bytesRead;
   private Handler<HttpServerFileUpload> uploadHandler;
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
-  private boolean decoderClosed;
-  private long bytesRead;
-  private volatile InboundMessageQueue<Buffer> queue;
   private ContentDecoder initializedDecoder;
+  private boolean decoderClosed;
   boolean inHead;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
@@ -455,7 +457,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     endHandler(v -> {
       if (!failed[0]) {
         // Handle the request once we have the full body.
-        request = new DefaultFullHttpRequest(
+        FullHttpRequest fullRequest = new DefaultFullHttpRequest(
           request.protocolVersion(),
           request.method(),
           request.uri(),
@@ -463,7 +465,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
           request.headers(),
           EmptyHttpHeaders.INSTANCE
         );
-        conn.createWebSocket(this, promise);
+        conn.createWebSocket(this, fullRequest, promise);
       }
     });
     // In case we were paused

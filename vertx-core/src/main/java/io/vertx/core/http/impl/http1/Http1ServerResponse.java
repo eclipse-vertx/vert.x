@@ -57,33 +57,35 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
 
+  // Immutable
   private final VertxInternal vertx;
   private final HttpRequest request;
   private final Http1ServerConnection conn;
   private final ContextInternal context;
-  private HttpResponseStatus status;
   private final HttpVersion version;
   private final boolean keepAlive;
   private final boolean head;
   private final Object requestMetric;
+  private final Http1xHeaders headers;
 
+  // Context thread
+  private HttpResponseStatus status;
+  private String statusMessage;
+  private CookieJar cookies;
   private boolean headersSent;
+  private MultiMap trailers;
+  private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
+  private long bytesWritten;
   boolean trailersSent;
   boolean trailersReceived;
+  private boolean closed;
+  private Future<NetSocket> netSocket;
+  private Handler<Void> headersEndHandler;
+  private Handler<Void> bodyEndHandler;
+  private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private Handler<Void> endHandler;
-  private Handler<Void> headersEndHandler;
-  private Handler<Void> bodyEndHandler;
-  private boolean closed;
-  private final Http1xHeaders headers;
-  private CookieJar cookies;
-  private MultiMap trailers;
-  private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
-  private String statusMessage;
-  private long bytesWritten;
-  private Future<NetSocket> netSocket;
 
   Http1ServerResponse(VertxInternal vertx,
                       ContextInternal context,
