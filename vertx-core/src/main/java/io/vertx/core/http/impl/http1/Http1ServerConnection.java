@@ -278,6 +278,9 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     requestInProgress = null;
     boolean tryClose = (wantClose || shutdownInitiated != null) && responseInProgress == null;
     request.handleEnd();
+    if (METRICS_ENABLED && httpMetrics != null) {
+      flushBytesRead();
+    }
     if (tryClose) {
       closeInternal();
     }

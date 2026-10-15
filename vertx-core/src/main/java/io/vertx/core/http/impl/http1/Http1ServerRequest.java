@@ -604,7 +604,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     HttpServerMetrics metrics = conn.httpMetrics;
     if (metrics != null) {
       metrics.requestEnd(metric, this, bytesRead);
-      conn.flushBytesRead();
     }
   }
 
