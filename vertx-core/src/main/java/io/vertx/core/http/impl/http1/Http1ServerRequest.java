@@ -86,7 +86,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private long bytesRead;
   private volatile InboundMessageQueue<Buffer> queue;
   private ContentDecoder initializedDecoder;
-  private ContentDecoder contentDecoder;
+  boolean inHead;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
     super(conn.queryParamDecoder());
@@ -150,15 +150,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     response = new Http1ServerResponse(context.owner(), context, conn, request, metric, keepAlive);
     if (conn.handle100ContinueAutomatically) {
       check100();
-    }
-  }
-
-  void initContentDecoder() {
-    ContentDecoder decoder = contentDecoder;
-    if (contentDecoder != null) {
-      contentDecoder = null;
-      decoder.init(this);
-      initializedDecoder = decoder;
     }
   }
 
@@ -617,7 +608,17 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
-    contentDecoder = decoder;
+    if (inHead) {
+      ContentDecoder prev = initializedDecoder;
+      if (prev != null) {
+        initializedDecoder = null;
+        prev.handleClose();
+      }
+      if (decoder != null) {
+        decoder.init(this);
+        initializedDecoder = decoder;
+      }
+    }
     return this;
   }
 

@@ -47,10 +47,10 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   final C connection;
   final QuicStreamInternal stream;
 
-  private boolean headReceived;
-  private boolean headWritten;
-  private boolean inboundReceived;
-  private boolean outboundReceived;
+  private boolean headersReceived;
+  private boolean headersSent;
+  private boolean trailersReceived;
+  private boolean trailersSent;
   private boolean reset;
   private boolean aborted;
   private int bytesRead;
@@ -120,7 +120,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   protected void handleEnd() {
-    inboundReceived = true;
+    trailersReceived = true;
     if (observer != null) {
       observer.observeInboundTrailers(bytesRead);
     }
@@ -141,13 +141,13 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   protected void handleClose() {
-    if ((headWritten || headReceived) && (!outboundReceived || !inboundReceived) && observer != null) {
+    if ((headersSent || headersReceived) && (!trailersSent || !trailersReceived) && observer != null) {
       observer.observeReset();
     }
-    if (outboundReceived) {
+    if (trailersSent) {
       if (aborted) {
         handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      } else if (inboundReceived) {
+      } else if (trailersReceived) {
         //
       } else {
         //
@@ -188,11 +188,11 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
             case 0x01:
               // Headers frame
               Http3HeadersFrame http3HeadersFrame = (Http3HeadersFrame) http3Frame;
-              if (!headReceived) {
+              if (!headersReceived) {
                 HttpHeaders headers = headOf(http3HeadersFrame.headers());
                 inHead = true;
                 try {
-                  headReceived = handleHead(headers);
+                  headersReceived = handleHead(headers);
                 } finally {
                   inHead = false;
                 }
@@ -294,13 +294,13 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   Future<Void> writeHeaders(HttpHeaders headers, Buffer chunk, boolean end) {
-    if (outboundReceived) {
+    if (trailersSent) {
       throw new UnsupportedOperationException("handle me");
     }
     if (observer != null) {
       observer.observeOutboundHeaders(headers);
     }
-    headWritten = true;
+    headersSent = true;
     Http3HeadersFrame frame = new DefaultHttp3HeadersFrame((Http3Headers) headers.unwrap());
     Future<Void> fut = stream.writeMessage(frame);
     if (chunk != null) {
@@ -311,17 +311,17 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       if (observer != null) {
         observer.observeOutboundTrailers(bytesWritten);
       }
-      outboundReceived = true;
+      trailersSent = true;
       fut = stream.end();
     }
     return fut;
   }
 
   public Future<Void> write(Buffer chunk, boolean end) {
-    if (!headWritten) {
+    if (!headersSent) {
       return context.failedFuture("Headers must be sent before sending a message");
     }
-    if (outboundReceived) {
+    if (trailersSent) {
       throw new UnsupportedOperationException("handle me");
     }
     Future<Void> fut;
@@ -332,7 +332,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       fut = null;
     }
     if (end) {
-      outboundReceived = true;
+      trailersSent = true;
       fut = stream.end();
       if (observer != null) {
         observer.observeOutboundTrailers(bytesWritten);
@@ -342,7 +342,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public Future<Boolean> cancel() {
-    if (outboundReceived) {
+    if (trailersSent) {
       // Check inbound
       if (!aborted) {
         aborted = true;
@@ -356,7 +356,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public Future<Void> writeReset(long code) {
-    if (outboundReceived) {
+    if (trailersSent) {
       return context.failedFuture("Stream already ended");
     }
     if (reset) {

@@ -306,6 +306,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeHead() {
+    Handler<Void> headersEndHandler;
+    synchronized (conn) {
+      checkHeadWritten();
+      headersEndHandler = this.headersEndHandler;
+    }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
+    }
     synchronized (conn) {
       checkHeadWritten();
     }
@@ -360,9 +368,19 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   Future<NetSocket> netSocket(ReadStream<Buffer> inbound) {
+    Handler<Void> headersEndHandler;
+    synchronized (conn) {
+      if (netSocket != null) {
+        return netSocket;
+      }
+      status = HttpResponseStatus.OK;
+      headersEndHandler = headWritten ? null : this.headersEndHandler;
+    }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
+    }
     synchronized (conn) {
       if (netSocket == null) {
-        status = HttpResponseStatus.OK;
         if (checkSendHeaders() == null) {
           netSocket = context.failedFuture("Response for CONNECT already sent");
         } else {
@@ -383,22 +401,29 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
       if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
+        context.dispatch(bodyEndHandler);
       }
       if (endHandler != null) {
-        endHandler.handle(null);
+        context.dispatch(endHandler);
       }
     }
     return future;
   }
 
   private Future<Void> write_(Buffer chunk, boolean end) {
-    boolean sendHeaders;
+    Handler<Void> headersEndHandler;
     synchronized (conn) {
       if (ended) {
         throw new IllegalStateException("Response has already been written");
       }
       ended = end;
+      headersEndHandler = headWritten ? null : this.headersEndHandler;
+    }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
+    }
+    boolean sendHeaders;
+    synchronized (conn) {
       if (chunk != null) {
         bytesWritten += chunk.length();
       }
@@ -428,9 +453,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private boolean prepareHeaders() {
     if (!headWritten) {
-      if (headersEndHandler != null) {
-        headersEndHandler.handle(null);
-      }
       if (cookies != null) {
         setCookies();
       }
@@ -461,6 +483,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
+    Handler<Void> headersEndHandler;
+    synchronized (conn) {
+      checkValid();
+      headersEndHandler = headWritten ? null : this.headersEndHandler;
+    }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
+    }
     synchronized (conn) {
       checkValid();
       checkSendHeaders();
@@ -575,6 +605,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
             putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
           }
         }
+        Handler<Void> headersEndHandler;
+        synchronized (conn) {
+          headersEndHandler = headWritten ? null : this.headersEndHandler;
+        }
+        if (headersEndHandler != null) {
+          context.dispatch(headersEndHandler);
+        }
         checkSendHeaders();
         Future<Void> fut = file.pipeTo(this);
         return fut
@@ -644,6 +681,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (headersMap.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
         putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(file.length()));
       }
+    }
+    Handler<Void> headersEndHandler;
+    synchronized (conn) {
+      headersEndHandler = headWritten ? null : this.headersEndHandler;
+    }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
     }
     checkSendHeaders();
     Promise<Void> promise = context.promise();
