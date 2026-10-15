@@ -3,6 +3,7 @@ package io.vertx.test.core;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Completable;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 public final class Checkpoint implements Completable<Object> {
 
   static final Exception SUCCESS = new Exception();
+  private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
 
   Throwable completion;
   final CountDownLatch latch = new CountDownLatch(1);
@@ -47,15 +49,29 @@ public final class Checkpoint implements Completable<Object> {
   }
 
   public void await() {
+    await(DEFAULT_TIMEOUT);
+  }
+
+  /**
+   * Await the completion of this checkpoint for at most {@code timeout}, without failing when it is not completed.
+   *
+   * @return whether the checkpoint has been completed
+   */
+  public boolean await(Duration timeout) {
     try {
-      latch.await(10, TimeUnit.SECONDS);
+      return latch.await(timeout.toNanos(), TimeUnit.NANOSECONDS);
     } catch (InterruptedException e) {
       PlatformDependent.throwException(e);
+      return false;
     }
   }
 
   public void awaitSuccess() {
-    await();
+    awaitSuccess(DEFAULT_TIMEOUT);
+  }
+
+  public void awaitSuccess(Duration timeout) {
+    await(timeout);
     Throwable c = completion;
     if (c == null) {
       PlatformDependent.throwException(new TimeoutException());
@@ -65,7 +81,11 @@ public final class Checkpoint implements Completable<Object> {
   }
 
   public void awaitFailure() {
-    await();
+    awaitFailure(DEFAULT_TIMEOUT);
+  }
+
+  public void awaitFailure(Duration timeout) {
+    await(timeout);
     Throwable c = completion;
     if (c == SUCCESS) {
       throw new AssertionError("Unexpected success");
