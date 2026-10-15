@@ -67,7 +67,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   private final boolean head;
   private final Object requestMetric;
 
-  private boolean headWritten;
+  private boolean headersSent;
   boolean trailersSent;
   boolean trailersReceived;
   private Handler<Void> drainHandler;
@@ -407,7 +407,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       if (trailersSent) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
-      handler = headWritten ? null : headersEndHandler;
+      handler = headersSent ? null : headersEndHandler;
       trailersSent = true;
       bytesWritten += data.readableBytes();
     }
@@ -419,7 +419,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     Handler<Void> endHandler;
     VertxHttpObject msg;
     synchronized (conn) {
-      if (!headWritten) {
+      if (!headersSent) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
@@ -450,7 +450,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     setStatusCode(101);
     boolean close;
     synchronized (conn) {
-      headWritten = true;
+      headersSent = true;
       trailersSent = true;
       close = trailersReceived;
     }
@@ -628,7 +628,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public boolean headWritten() {
     synchronized (conn) {
-      return headWritten;
+      return headersSent;
     }
   }
 
@@ -696,7 +696,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void checkHeadWritten() {
-    if (headWritten) {
+    if (headersSent) {
       throw new IllegalStateException("Response head already sent");
     }
   }
@@ -725,7 +725,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       // TODO : DONE SOMEWHERE ELSE FROM EVENT LOOP
       reportResponseBegin();
     }
-    headWritten = true;
+    headersSent = true;
   }
 
   private void setCookies() {
@@ -747,12 +747,12 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     Handler<Void> headersEndHandler;
     synchronized (conn) {
       checkValid();
-      if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
           headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
         }
       }
-      headersEndHandler = headWritten ? null : this.headersEndHandler;
+      headersEndHandler = headersSent ? null : this.headersEndHandler;
     }
     if (headersEndHandler != null) {
       context.dispatch(headersEndHandler);
@@ -760,7 +760,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     VertxHttpObject msg;
     synchronized (conn) {
       bytesWritten += chunk.readableBytes();
-      if (!headWritten) {
+      if (!headersSent) {
         prepareHeaders(-1);
         msg = new VertxAssembledHttpResponse(head, version, status, headers, chunk);
       } else {
@@ -778,7 +778,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       if (netSocket != null) {
         return netSocket;
       }
-      if (headWritten) {
+      if (headersSent) {
         return context.failedFuture("Response already sent");
       }
       if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
@@ -793,7 +793,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     PromiseInternal<Void> upgradePromise;
     HttpResponseStatus st;
     synchronized (conn) {
-      if (headWritten) {
+      if (headersSent) {
         return context.failedFuture("Response already sent");
       }
       ChannelPipeline pipeline = conn.channel().pipeline();
