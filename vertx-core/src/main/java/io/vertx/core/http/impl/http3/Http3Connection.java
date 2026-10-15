@@ -16,8 +16,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.QuicStreamChannel;
-import io.netty.util.collection.LongObjectHashMap;
-import io.netty.util.collection.LongObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -33,16 +31,17 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class Http3Connection implements HttpConnection {
 
-  private final LongObjectMap<Http3Stream<?, ?>> streams;
+  private final ConcurrentMap<Long, Http3Stream<?, ?>> streams;
   private final Http3FrameLogger frameLogger;
   final ContextInternal context;
   final QuicConnectionInternal connection;
@@ -57,7 +56,7 @@ public abstract class Http3Connection implements HttpConnection {
   private Handler<HttpSettings> remoteSettingsHandler;
 
   public Http3Connection(QuicConnectionInternal connection, Http3Settings localSettings, Http3FrameLogger frameLogger) {
-    this.streams = new LongObjectHashMap<>();
+    this.streams = new ConcurrentHashMap<>();
     this.frameLogger = frameLogger;
     this.context = connection.context();
     this.connection = connection;
@@ -298,12 +297,10 @@ public abstract class Http3Connection implements HttpConnection {
   }
 
   private void sendGoAway(QuicStreamChannel controlStream, long streamId, PromiseInternal<Void> promise) {
-    Iterator<LongObjectMap.PrimitiveEntry<Http3Stream<?, ?>>> iterator = streams.entries().iterator();
     List<Http3Stream<?, ?>> toCancel = new ArrayList<>();
-    while (iterator.hasNext()) {
-      LongObjectMap.PrimitiveEntry<Http3Stream<?, ?>> entry = iterator.next();
-      if (entry.key() >= streamId) {
-        toCancel.add(entry.value());
+    for (Map.Entry<Long, Http3Stream<?, ?>> entry : streams.entrySet()) {
+      if (entry.getKey() >= streamId) {
+        toCancel.add(entry.getValue());
         // Should we remove ????
       }
     }
