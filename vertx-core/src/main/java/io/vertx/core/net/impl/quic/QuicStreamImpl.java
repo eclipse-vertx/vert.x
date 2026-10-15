@@ -144,10 +144,9 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
 
   @Override
   protected void handleEvent(Object event) {
+    super.handleEvent(event);
     if (event == ChannelInputShutdownEvent.INSTANCE) {
       handleEnded();
-    } else {
-      super.handleEvent(event);
     }
   }
 

@@ -375,6 +375,42 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   @Test
+  public void testClientHalfClose() throws Exception {
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
+    server.connectHandler(conn -> {
+      conn.streamHandler(stream -> {
+        AtomicInteger seq = new AtomicInteger();
+        ((QuicStreamInternal)stream).eventHandler(event -> {
+          seq.compareAndSet(0, 1);
+        });
+        stream.endHandler(v -> {
+          seq.compareAndSet(1, 2);
+          vertx.setTimer(10, id -> {
+            stream.end();
+          });
+        });
+        stream.closeHandler(v -> {
+          Assert.assertEquals(2, seq.get());
+          testComplete();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(vertx);
+    try {
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream();
+      stream.create();
+      stream.write("ping");
+      stream.close();
+      await();
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
+  @Test
   public void testClientReset() throws Exception {
     waitFor(2);
     disableThreadChecks();
