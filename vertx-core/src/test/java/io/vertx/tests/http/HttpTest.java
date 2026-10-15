@@ -4601,36 +4601,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testCloseHandlerWhenConnectionEndsEventLoop(Checkpoint checkpoint) throws Exception {
-    testCloseHandlerWhenConnectionEnds(ThreadingModel.EVENT_LOOP, checkpoint);
-  }
-
-  @Test
-  public void testCloseHandlerWhenConnectionEndsWorker(Checkpoint checkpoint) throws Exception {
-    testCloseHandlerWhenConnectionEnds(ThreadingModel.WORKER, checkpoint);
-  }
-
-  private void testCloseHandlerWhenConnectionEnds(ThreadingModel threadingModel, Checkpoint checkpoint) throws Exception {
-    server.requestHandler(req -> {
-      Context ctx = Vertx.currentContext();
-      req.response().closeHandler(v -> {
-        assertOnContext(ctx);
-        checkpoint.succeed();
-      });
-      req.response().setChunked(true).write("some-data");
-    });
-    startServer(testAddress, ((VertxInternal) vertx).createContext(threadingModel));
-    client.request(requestOptions)
-      .onComplete(TestUtils.onSuccess(req -> {
-        req.send().onComplete(TestUtils.onSuccess(resp -> {
-          resp.handler(v -> {
-            resp.request().connection().close();
-          });
-        }));
-      }));
-  }
-
-  @Test
   public void testUseResponseAfterClose(Checkpoint checkpoint) throws Exception {
     testAfterServerResponseClose(resp -> {
       Buffer buff = Buffer.buffer();
@@ -4693,7 +4663,37 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testCloseHandlerCalledOnceWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
+  public void testCloseHandlerCalledOnceInvariantWhenConnectionEndsEventLoop(Checkpoint checkpoint) throws Exception {
+    testCloseHandlerCalledOnceInvariantWhenConnectionEnds(ThreadingModel.EVENT_LOOP, checkpoint);
+  }
+
+  @Test
+  public void testCloseHandlerCalledOnceInvariantWhenConnectionEndsWorker(Checkpoint checkpoint) throws Exception {
+    testCloseHandlerCalledOnceInvariantWhenConnectionEnds(ThreadingModel.WORKER, checkpoint);
+  }
+
+  private void testCloseHandlerCalledOnceInvariantWhenConnectionEnds(ThreadingModel threadingModel, Checkpoint checkpoint) throws Exception {
+    server.requestHandler(req -> {
+      Context ctx = Vertx.currentContext();
+      req.response().closeHandler(v -> {
+        assertOnContext(ctx);
+        checkpoint.succeed();
+      });
+      req.response().setChunked(true).write("some-data");
+    });
+    startServer(testAddress, ((VertxInternal) vertx).createContext(threadingModel));
+    client.request(requestOptions)
+      .onComplete(TestUtils.onSuccess(req -> {
+        req.send().onComplete(TestUtils.onSuccess(resp -> {
+          resp.handler(v -> {
+            resp.request().connection().close();
+          });
+        }));
+      }));
+  }
+
+  @Test
+  public void testCloseHandlerCalledOnceInvariantWhenConnectionClosedAfterEnd(Checkpoint checkpoint) throws Exception {
     AtomicInteger closeCount = new AtomicInteger();
     AtomicInteger endCount = new AtomicInteger();
     server.requestHandler(req -> {
@@ -4718,6 +4718,31 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         });
       }));
     }));
+  }
+
+  @Test
+  public void testCloseHandlerCalledOnceInvariantWhenResponseEndsBeforeRequest(Checkpoint checkpoint) throws Exception {
+    AtomicInteger closeCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.response().closeHandler(v -> {
+        assertEquals(1, closeCount.incrementAndGet());
+        assertTrue(req.isEnded());
+        assertTrue(req.response().ended());
+        req.connection().close();
+      });
+      req.connection().closeHandler(v -> {
+        assertEquals(1, closeCount.get());
+        checkpoint.succeed();
+      });
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
+      .compose(req -> req.write("chunk")
+        .compose(v -> req.response())
+        .compose(HttpClientResponse::end)
+        .compose(v -> req.end()))
+      .await();
   }
 
   @Test
@@ -5084,7 +5109,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         .compose(HttpClientResponse::body))
       .await();
   }
-
 
   @Test
   public void testHttpConnect(Checkpoint checkpoint) {
