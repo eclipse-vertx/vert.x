@@ -313,19 +313,25 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeHead() {
     checkThread();
-    PromiseInternal<Void> promise = context.promise();
+    Handler<Void> handler;
     synchronized (conn) {
-      if (headWritten) {
-        throw new IllegalStateException();
-      }
+      checkHeadWritten();
+      handler = headersEndHandler;
+    }
+    if (handler != null) {
+      context.dispatch(handler);
+    }
+    VertxHttpObject msg;
+    synchronized (conn) {
+      checkHeadWritten();
       if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
       }
-      VertxHttpObject msg;
       prepareHeaders(-1);
       msg = new VertxHttpResponse(head, version, status, headers);
-      conn.write(msg, promise);
     }
+    PromiseInternal<Void> promise = context.promise();
+    conn.write(msg, promise);
     return promise.future();
   }
 
@@ -395,15 +401,24 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
     checkThread();
-    boolean close;
+    ByteBuf data = ((BufferInternal)chunk).getByteBuf();
+    Handler<Void> handler;
     synchronized (conn) {
       if (trailersSent) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
+      handler = headWritten ? null : headersEndHandler;
       trailersSent = true;
-      ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
-      VertxHttpObject msg;
+    }
+    if (handler != null) {
+      context.dispatch(handler);
+    }
+    boolean close;
+    Handler<Void> bodyEndHandler;
+    Handler<Void> endHandler;
+    VertxHttpObject msg;
+    synchronized (conn) {
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
@@ -412,14 +427,16 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         msg = new VertxLastHttpContent(data, trailingHeaders);
       }
-      conn.write(msg, listener);
-      if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
-      }
-      if (!closed && endHandler != null) {
-        endHandler.handle(null);
-      }
+      bodyEndHandler = this.bodyEndHandler;
+      endHandler = closed ? null : this.endHandler;
       close = trailersReceived;
+    }
+    conn.write(msg, listener);
+    if (bodyEndHandler != null) {
+      context.dispatch(bodyEndHandler);
+    }
+    if (endHandler != null) {
+      context.dispatch(endHandler);
     }
     if (close) {
       tryClose();
@@ -512,12 +529,16 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       if (actualLength < 0) {
         return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
       }
+      checkValid();
+      Handler<Void> headersEndHandler;
       synchronized (conn) {
-        checkValid();
-        if (headWritten) {
-          throw new IllegalStateException("Head already written");
-        }
-
+        checkHeadWritten();
+        headersEndHandler = this.headersEndHandler;
+      }
+      if (headersEndHandler != null) {
+        context.dispatch(headersEndHandler);
+      }
+      synchronized (conn) {
         // fail early before status code/headers are written to the response
         prepareHeaders(actualLength);
         bytesWritten = actualLength;
@@ -697,9 +718,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         headers.set(HttpHeaders.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
       }
     }
-    if (headersEndHandler != null) {
-      headersEndHandler.handle(null);
-    }
     if (cookies != null) {
       setCookies();
     }
@@ -724,58 +742,76 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  private Http1ServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
+  private void write(ByteBuf chunk, PromiseInternal<Void> promise) {
     checkThread();
+    Handler<Void> headersEndHandler;
     synchronized (conn) {
-      if (trailersSent) {
-        throw new IllegalStateException("Response has already been written");
-      } else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      checkValid();
+      if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
           headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
         }
       }
+      headersEndHandler = headWritten ? null : this.headersEndHandler;
+    }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
+    }
+    VertxHttpObject msg;
+    synchronized (conn) {
       bytesWritten += chunk.readableBytes();
-      VertxHttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
         msg = new VertxAssembledHttpResponse(head, version, status, headers, chunk);
       } else {
         msg = new VertxHttpContent(chunk);
       }
-      conn.write(msg, promise);
-      return this;
     }
+    conn.write(msg, promise);
   }
 
   Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
     checkThread();
     boolean close;
+    Handler<Void> headersEndHandler;
     synchronized (conn) {
-      if (netSocket == null) {
-        if (headWritten) {
-          return context.failedFuture("Response already sent");
-        }
-        if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
-          return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
-        }
-        ChannelPipeline pipeline = conn.channel().pipeline();
-        WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
-        if (wsHandler != null) {
-          pipeline.remove(wsHandler);
-        }
-        status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
-        prepareHeaders(-1);
-        PromiseInternal<Void> upgradePromise = context.promise();
-        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), upgradePromise);
-        trailersSent = true;
-        Promise<NetSocket> promise = context.promise();
-        netSocket = promise.future();
-        conn.netSocket(promise);
-        close = trailersReceived;
-      } else {
-        close = false;
+      if (netSocket != null) {
+        return netSocket;
       }
+      if (headWritten) {
+        return context.failedFuture("Response already sent");
+      }
+      if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
+        return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
+      }
+      headersEndHandler = this.headersEndHandler;
     }
+    if (headersEndHandler != null) {
+      context.dispatch(headersEndHandler);
+    }
+    Promise<NetSocket> socketPromise;
+    PromiseInternal<Void> upgradePromise;
+    HttpResponseStatus st;
+    synchronized (conn) {
+      if (headWritten) {
+        return context.failedFuture("Response already sent");
+      }
+      ChannelPipeline pipeline = conn.channel().pipeline();
+      WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
+      if (wsHandler != null) {
+        pipeline.remove(wsHandler);
+      }
+      st = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
+      prepareHeaders(-1);
+      upgradePromise = context.promise();
+      socketPromise = context.promise();
+      close = trailersReceived;
+      status = st;
+      trailersSent = true;
+      netSocket = socketPromise.future();
+    }
+    conn.write(new VertxAssembledHttpResponse(head, version, st, headers), upgradePromise);
+    conn.netSocket(socketPromise);
     if (close) {
       tryClose();
     }

@@ -4382,140 +4382,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testEventHandlersNotHoldingLock(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    server.requestHandler(req -> {
-      HttpConnection conn = req.connection();
-      switch (req.path()) {
-        case "/0":
-          req.handler(chunk -> {
-            assertFalse(Thread.holdsLock(conn));
-          });
-          req.endHandler(v -> {
-            assertFalse(Thread.holdsLock(conn));
-            req.response().end(TestUtils.randomAlphaString(256));
-          });
-          break;
-        case "/1":
-          AtomicBoolean paused = new AtomicBoolean();
-          req.pause();
-          paused.set(true);
-          vertx.runOnContext(v -> {
-            paused.set(false);
-            req.resume();
-          });
-          req.handler(chunk -> {
-            assertFalse(Thread.holdsLock(conn));
-            assertFalse(paused.get());
-            paused.set(true);
-            req.pause();
-            vertx.runOnContext(v -> {
-              paused.set(false);
-              req.resume();
-            });
-          });
-          req.endHandler(v -> {
-            assertFalse(Thread.holdsLock(conn));
-            assertFalse(paused.get());
-            req.response().end(TestUtils.randomAlphaString(256));
-          });
-          break;
-      }
-    });
-    startServer(testAddress);
-    for (int i = 0;i < 2;i++) {
-      Buffer body = Buffer.buffer(randomAlphaString(256));
-      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/" + i))
-        .onComplete(TestUtils.onSuccess(req -> req.send(body).onComplete(TestUtils.onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          HttpConnection conn = resp.request().connection();
-          switch (resp.request().path()) {
-            case "/0":
-              resp.handler(chunk -> {
-                assertFalse(Thread.holdsLock(conn));
-              });
-              resp.endHandler(v -> {
-                assertFalse(Thread.holdsLock(conn));
-                checkpoint1.succeed();
-              });
-              break;
-            case "/1":
-              AtomicBoolean paused = new AtomicBoolean();
-              resp.pause();
-              paused.set(true);
-              vertx.runOnContext(v -> {
-                paused.set(false);
-                resp.resume();
-              });
-              resp.handler(chunk -> {
-                assertFalse(Thread.holdsLock(conn));
-                assertFalse(paused.get());
-                paused.set(true);
-                resp.pause();
-                vertx.runOnContext(v -> {
-                  paused.set(false);
-                  resp.resume();
-                });
-              });
-              resp.endHandler(v -> {
-                assertFalse(Thread.holdsLock(conn));
-                assertFalse(paused.get());
-                checkpoint2.succeed();
-              });
-              break;
-          }
-        }))));
-    }
-  }
-
-  @Test
-  public void testEventHandlersNotHoldingLockOnClose(Checkpoint checkpoint) throws Exception {
-    CountDownLatch latch = checkpoint.asLatch(7);
-    server.requestHandler(req -> {
-      HttpConnection conn = req.connection();
-      req.exceptionHandler(atMostOnce(err -> {
-        assertFalse(Thread.holdsLock(conn));
-        latch.countDown();
-      }));
-      HttpServerResponse resp = req.response();
-      resp.exceptionHandler(atMostOnce(err -> {
-        assertFalse(Thread.holdsLock(conn));
-        latch.countDown();
-      }));
-      resp.closeHandler(v -> {
-        assertFalse(Thread.holdsLock(conn));
-        latch.countDown();
-      });
-      conn.closeHandler(err -> {
-        assertFalse(Thread.holdsLock(conn));
-        latch.countDown();
-      });
-      resp.setChunked(true).write("hello");
-    });
-    startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
-      .onComplete(TestUtils.onSuccess(req -> {
-        req.response().onComplete(TestUtils.onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          HttpConnection conn = resp.request().connection();
-          resp.exceptionHandler(atMostOnce(err -> {
-            assertFalse(Thread.holdsLock(conn));
-            latch.countDown();
-          }));
-          conn.closeHandler(v -> {
-            assertFalse(Thread.holdsLock(conn));
-            latch.countDown();
-          });
-          conn.close();
-        }));
-        req.exceptionHandler(atMostOnce(err -> {
-          assertFalse(Thread.holdsLock(req.connection()));
-          latch.countDown();
-        }));
-        req.setChunked(true).writeHead();
-      }));
-  }
-
-  @Test
   public void testUseResponseAfterClose(Checkpoint checkpoint) throws Exception {
     testAfterServerResponseClose(resp -> {
       Buffer buff = Buffer.buffer();
@@ -4804,6 +4670,153 @@ public abstract class HttpTest extends SimpleHttpTest2 {
             resp.request().connection().close();
           });
         }));
+      }));
+  }
+
+  @Test
+  public void testCallbacksNotHoldingLockInvariant(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    server.requestHandler(req -> {
+      HttpConnection conn = req.connection();
+      HttpServerResponse response = req.response();
+      response.headersEndHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+      });
+      response.bodyEndHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+      });
+      response.endHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+      });
+      response.closeHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+      });
+      switch (req.path()) {
+        case "/0":
+          req.handler(chunk -> {
+            assertFalse(Thread.holdsLock(conn));
+          });
+          req.endHandler(v -> {
+            assertFalse(Thread.holdsLock(conn));
+            req.response().end(TestUtils.randomAlphaString(256));
+          });
+          break;
+        case "/1":
+          AtomicBoolean paused = new AtomicBoolean();
+          req.pause();
+          paused.set(true);
+          vertx.runOnContext(v -> {
+            paused.set(false);
+            req.resume();
+          });
+          req.handler(chunk -> {
+            assertFalse(Thread.holdsLock(conn));
+            assertFalse(paused.get());
+            paused.set(true);
+            req.pause();
+            vertx.runOnContext(v -> {
+              paused.set(false);
+              req.resume();
+            });
+          });
+          req.endHandler(v -> {
+            assertFalse(Thread.holdsLock(conn));
+            assertFalse(paused.get());
+            req.response().end(TestUtils.randomAlphaString(256));
+          });
+          break;
+      }
+    });
+    startServer(testAddress);
+    for (int i = 0;i < 2;i++) {
+      Buffer body = Buffer.buffer(randomAlphaString(256));
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/" + i))
+        .onComplete(TestUtils.onSuccess(req -> req.send(body).onComplete(TestUtils.onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          HttpConnection conn = resp.request().connection();
+          switch (resp.request().path()) {
+            case "/0":
+              resp.handler(chunk -> {
+                assertFalse(Thread.holdsLock(conn));
+              });
+              resp.endHandler(v -> {
+                assertFalse(Thread.holdsLock(conn));
+                checkpoint1.succeed();
+              });
+              break;
+            case "/1":
+              AtomicBoolean paused = new AtomicBoolean();
+              resp.pause();
+              paused.set(true);
+              vertx.runOnContext(v -> {
+                paused.set(false);
+                resp.resume();
+              });
+              resp.handler(chunk -> {
+                assertFalse(Thread.holdsLock(conn));
+                assertFalse(paused.get());
+                paused.set(true);
+                resp.pause();
+                vertx.runOnContext(v -> {
+                  paused.set(false);
+                  resp.resume();
+                });
+              });
+              resp.endHandler(v -> {
+                assertFalse(Thread.holdsLock(conn));
+                assertFalse(paused.get());
+                checkpoint2.succeed();
+              });
+              break;
+          }
+        }))));
+    }
+  }
+
+  @Test
+  public void testCallbacksNotHoldingLockInvariantOnClose(Checkpoint checkpoint) throws Exception {
+    CountDownLatch latch = checkpoint.asLatch(7);
+    server.requestHandler(req -> {
+      HttpConnection conn = req.connection();
+      req.exceptionHandler(atMostOnce(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        latch.countDown();
+      }));
+      HttpServerResponse resp = req.response();
+      resp.exceptionHandler(atMostOnce(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        latch.countDown();
+      }));
+      resp.closeHandler(v -> {
+        assertFalse(Thread.holdsLock(conn));
+        latch.countDown();
+      });
+      conn.closeHandler(err -> {
+        assertFalse(Thread.holdsLock(conn));
+        latch.countDown();
+      });
+      resp.setChunked(true).write("hello");
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
+      .onComplete(TestUtils.onSuccess(req -> {
+        req.response().onComplete(TestUtils.onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          HttpConnection conn = resp.request().connection();
+          resp.exceptionHandler(atMostOnce(err -> {
+            assertFalse(Thread.holdsLock(conn));
+            latch.countDown();
+          }));
+          conn.closeHandler(v -> {
+            assertFalse(Thread.holdsLock(conn));
+            latch.countDown();
+          });
+          conn.close();
+        }));
+        req.exceptionHandler(atMostOnce(err -> {
+          assertFalse(Thread.holdsLock(req.connection()));
+          latch.countDown();
+        }));
+        req.setChunked(true).writeHead();
       }));
   }
 
