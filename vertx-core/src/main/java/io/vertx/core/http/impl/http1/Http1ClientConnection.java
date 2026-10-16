@@ -495,11 +495,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         protected void handleConsumerClosed() {
           StreamImpl stream = (StreamImpl)Stream.this;
           ContentDecoder decoder = stream.currentDecoder();
-          boolean abrupt = trailers == null;
-          if (abrupt) {
+          Throwable cause = trailers == null ? HttpUtils.CONNECTION_CLOSED_EXCEPTION : null;
+          if (cause != null) {
             stream.contentDecoder = ContentDecoder.NULL;
           }
-          decoder.handleClose(abrupt);
+          decoder.handleClose(cause);
         }
       };
     }

@@ -682,11 +682,20 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       ContentDecoder decoder = currentDecoder();
       ContextInternal prev = context.beginDispatch();
       try {
-        boolean abrupt = trailers == null;
-        if (abrupt) {
+        Throwable cause;
+        if (trailers == null) {
+          if (reset != -1L) {
+            cause = new StreamResetException(reset);
+          } else if (failure != null) {
+            cause = failure;
+          } else {
+            cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
+          }
           contentDecoder = ContentDecoder.NULL;
+        } else {
+          cause = null;
         }
-        decoder.handleClose(abrupt);
+        decoder.handleClose(cause);
       } finally {
         context.endDispatch(prev);
       }

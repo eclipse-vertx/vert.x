@@ -127,7 +127,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint2.succeed();
         }
         @Override
-        public void handleClose(boolean abrupt) {
+        public void handleClose(Throwable cause) {
           checkpoint1.succeed();
         }
       });
@@ -162,9 +162,9 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint.fail(new AssertionError("handleEnd delivered after abrupt close"));
         }
         @Override
-        public void handleClose(boolean abrupt) {
+        public void handleClose(Throwable cause) {
           assertEquals(0, closed.getAndIncrement());
-          assertTrue(abrupt);
+          assertNotNull(cause);
           assertEquals(1, count.get());
           flowController.resume();
           vertx.setTimer(100, id -> checkpoint.succeed());
@@ -204,8 +204,8 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint1.succeed();
         }
         @Override
-        public void handleClose(boolean abrupt) {
-          assertFalse(abrupt);
+        public void handleClose(Throwable cause) {
+          assertNull(cause);
           closed.set(true);
           flowController.resume();
         }
@@ -234,8 +234,8 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint2.succeed();
         }
         @Override
-        public void handleClose(boolean abrupt) {
-          assertTrue(abrupt);
+        public void handleClose(Throwable cause) {
+          assertTrue(cause instanceof HttpClosedException);
           checkpoint1.succeed();
         }
       });
@@ -540,7 +540,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     }
 
     @Override
-    public void handleClose(boolean abrupt) {
+    public void handleClose(Throwable cause) {
     }
   }
 }

@@ -121,7 +121,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   }
 
   @Override
-  public void handleClose(boolean abrupt) {
+  public void handleClose(Throwable cause) {
   }
 
   @Override

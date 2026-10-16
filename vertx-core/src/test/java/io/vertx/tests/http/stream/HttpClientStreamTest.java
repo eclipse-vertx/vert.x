@@ -106,8 +106,8 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
         events.add("handleEnd");
       }
       @Override
-      public void handleClose(boolean abrupt) {
-        events.add(abrupt ? "handleClose(abrupt)" : "handleClose");
+      public void handleClose(Throwable cause) {
+        events.add(cause != null ? "handleClose(abrupt)" : "handleClose");
         vertx.setTimer(100, id -> {
           assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
           checkpoint.succeed();

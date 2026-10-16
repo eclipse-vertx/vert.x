@@ -77,8 +77,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
           response.handleEnd();
         }
         @Override
-        public void handleClose(boolean abrupt) {
-          response.handleClose(abrupt);
+        public void handleClose(Throwable cause) {
+          response.handleClose(cause);
         }
       });
       stream.trailersHandler(response::handleTrailers);

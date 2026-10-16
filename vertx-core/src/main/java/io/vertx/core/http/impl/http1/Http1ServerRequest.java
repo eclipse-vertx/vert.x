@@ -562,7 +562,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       decoder.handleEnd();
       if (!decoderClosed) {
         decoderClosed = true;
-        decoder.handleClose(false);
+        decoder.handleClose(null);
       }
     } finally {
       context.endDispatch(prev);
@@ -693,11 +693,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       ContentDecoder decoder = currentDecoder();
       ContextInternal prev = context.beginDispatch();
       try {
-        boolean abrupt = !trailersReceived;
-        if (abrupt) {
+        Throwable cause = trailersReceived ? null : HttpUtils.CONNECTION_CLOSED_EXCEPTION;
+        if (cause != null) {
           contentDecoder = ContentDecoder.NULL;
         }
-        decoder.handleClose(abrupt);
+        decoder.handleClose(cause);
       } finally {
         context.endDispatch(prev);
       }

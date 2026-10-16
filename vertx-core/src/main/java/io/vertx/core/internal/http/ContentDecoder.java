@@ -34,7 +34,7 @@ public interface ContentDecoder extends Handler<ByteBuf> {
     public void handleEnd() {
     }
     @Override
-    public void handleClose(boolean abrupt) {
+    public void handleClose(Throwable cause) {
     }
   };
 
@@ -61,9 +61,9 @@ public interface ContentDecoder extends Handler<ByteBuf> {
   /**
    * Signals the underlying stream is closed, content chunks might still be delivered when the queue is paused.
    *
-   * @param abrupt whether the stream closed without receiving the end, e.g. a reset or a connection close, in which case
-   *               nothing is delivered after this call
+   * @param cause {@code null} when the stream closed after receiving the end, otherwise the cause of the abrupt close,
+   *              e.g. a reset or a connection close, in which case nothing is delivered after this call
    */
-  void handleClose(boolean abrupt);
+  void handleClose(Throwable cause);
 
 }

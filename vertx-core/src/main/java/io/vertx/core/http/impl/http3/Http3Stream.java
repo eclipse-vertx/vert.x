@@ -148,11 +148,11 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     ContentDecoder decoder = currentDecoder();
     ContextInternal prev = context.beginDispatch();
     try {
-      boolean abrupt = !inputShutdown;
-      if (abrupt) {
+      Throwable cause = inputShutdown ? null : HttpUtils.CONNECTION_CLOSED_EXCEPTION;
+      if (cause != null) {
         contentDecoder = ContentDecoder.NULL;
       }
-      decoder.handleClose(abrupt);
+      decoder.handleClose(cause);
     } finally {
       context.endDispatch(prev);
     }

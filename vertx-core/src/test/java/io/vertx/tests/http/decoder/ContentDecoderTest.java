@@ -129,10 +129,10 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
           req.response().end();
         }
         @Override
-        public void handleClose(boolean abrupt) {
+        public void handleClose(Throwable cause) {
           checkThread.run();
           assertSame(current, Vertx.currentContext());
-          events.add(abrupt ? "handleClose(abrupt)" : "handleClose");
+          events.add(cause != null ? "handleClose(abrupt)" : "handleClose");
           vertx.setTimer(100, id -> checkpoint1.succeed());
         }
       };
