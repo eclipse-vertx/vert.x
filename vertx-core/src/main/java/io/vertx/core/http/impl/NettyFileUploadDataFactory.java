@@ -16,8 +16,8 @@ import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.FlowController;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
@@ -28,13 +28,13 @@ import java.util.function.Supplier;
 public class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   private final ContextInternal context;
-  private final HttpServerRequest request;
+  private final FlowController flowController;
   private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  public NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  public NettyFileUploadDataFactory(ContextInternal context, FlowController flowController, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
-    this.request = request;
+    this.flowController = flowController;
     this.lazyUploadHandler = lazyUploadHandler;
   }
 
@@ -42,7 +42,7 @@ public class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
   public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     NettyFileUpload nettyUpload = new NettyFileUpload(
       context,
-      request,
+      flowController,
       name,
       filename,
       contentType,

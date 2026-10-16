@@ -18,7 +18,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -39,23 +39,23 @@ public final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   private Charset charset;
   private boolean completed;
   private long maxSize = -1;
-  private final HttpServerRequest request;
+  private final FlowController flowController;
   private final InboundBuffer<Object> pending;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> dataHandler;
   private final long size;
 
-  NettyFileUpload(Context context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
+  NettyFileUpload(Context context, FlowController flowController, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
-    this.request = request;
+    this.flowController = flowController;
     this.size = size;
     this.pending = new InboundBuffer<>(context)
-      .drainHandler(v -> request.resume())
+      .drainHandler(v -> flowController.resume())
       .handler(buff -> {
         if (buff == InboundBuffer.END_SENTINEL) {
           Handler<Void> handler = endHandler();
@@ -117,7 +117,7 @@ public final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   private void receiveData(Buffer data) {
     if (data.length() != 0) {
       if (!pending.write(data)) {
-        request.pause();
+        flowController.pause();
       }
     }
   }
