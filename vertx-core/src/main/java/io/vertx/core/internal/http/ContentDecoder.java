@@ -21,7 +21,25 @@ import io.vertx.core.Handler;
 public interface ContentDecoder extends Handler<ByteBuf> {
 
   /**
-   * Init the decoder, passing the {@code flowController}.
+   * A decoder discarding the content.
+   */
+  ContentDecoder NULL = new ContentDecoder() {
+    @Override
+    public void init(FlowController flowController) {
+    }
+    @Override
+    public void handle(ByteBuf chunk) {
+    }
+    @Override
+    public void handleEnd() {
+    }
+    @Override
+    public void handleClose(boolean abrupt) {
+    }
+  };
+
+  /**
+   * Init the decoder, passing the {@code flowController}, this method is called when the decoder is set on the stream.
    *
    * @param flowController the flow controller
    */

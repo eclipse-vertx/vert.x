@@ -54,6 +54,7 @@ public interface HttpStream {
    *
    * @param decoder the decoder
    * @return this stream
+   * @throws IllegalStateException when the content has already started
    */
   HttpStream contentDecoder(ContentDecoder decoder);
 

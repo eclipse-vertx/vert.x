@@ -65,8 +65,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private Handler<Throwable> exceptionHandler;
 
   private ContentDecoder contentDecoder;
-  private ContentDecoder initializedDecoder;
-  private boolean inHead;
+  private boolean contentStarted;
 
   public Http3Stream(C connection, QuicStreamInternal stream, ContextInternal context, StreamObserver observer) {
     this.stream = stream;
@@ -83,12 +82,6 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     if (headers.validate()) {
       if (observer != null) {
         observer.observeInboundHeaders(headers);
-      }
-      ContentDecoder decoder = contentDecoder;
-      if (decoder != null) {
-        decoder.init(this);
-        contentDecoder = null;
-        initializedDecoder = decoder;
       }
       return true;
     } else {
@@ -108,10 +101,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   protected void handleData(ByteBuf buffer) {
     bytesRead += buffer.readableBytes();
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      context.dispatch(buffer,  decoder);
-    }
+    context.dispatch(buffer, currentDecoder());
   }
 
   protected void handleReset(long code) {
@@ -136,10 +126,8 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       }
       context.dispatch(trailers, trailHandler);
     }
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      context.dispatch(null, v -> decoder.handleEnd());
-    }
+    ContentDecoder decoder = currentDecoder();
+    context.dispatch(null, v -> decoder.handleEnd());
   }
 
   protected void handleClose() {
@@ -157,18 +145,16 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     } else {
       handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      ContextInternal prev = context.beginDispatch();
-      try {
-        boolean abrupt = !inputShutdown;
-        if (abrupt) {
-          initializedDecoder = null;
-        }
-        decoder.handleClose(abrupt);
-      } finally {
-        context.endDispatch(prev);
+    ContentDecoder decoder = currentDecoder();
+    ContextInternal prev = context.beginDispatch();
+    try {
+      boolean abrupt = !inputShutdown;
+      if (abrupt) {
+        contentDecoder = ContentDecoder.NULL;
       }
+      decoder.handleClose(abrupt);
+    } finally {
+      context.endDispatch(prev);
     }
     Handler<Void> handler = closeHandler;
     if (handler != null) {
@@ -196,12 +182,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
               Http3HeadersFrame http3HeadersFrame = (Http3HeadersFrame) http3Frame;
               if (!headersReceived) {
                 HttpHeaders headers = headOf(http3HeadersFrame.headers());
-                inHead = true;
-                try {
-                  headersReceived = handleHead(headers);
-                } finally {
-                  inHead = false;
-                }
+                headersReceived = handleHead(headers);
               } else {
                 headers = http3HeadersFrame.headers();
                 handleHeaders(http3HeadersFrame.headers());
@@ -403,20 +384,24 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public S contentDecoder(ContentDecoder decoder) {
-    if (inHead) {
-      ContentDecoder prev = initializedDecoder;
-      if (prev != null) {
-        initializedDecoder = null;
-        prev.handleClose(false);
-      }
-      if (decoder != null) {
-        decoder.init(this);
-        initializedDecoder = decoder;
-      }
-      contentDecoder = null;
-    } else {
-      contentDecoder = decoder;
+    if (contentStarted) {
+      throw new IllegalStateException("Content has already started");
     }
+    if (decoder != null) {
+      decoder.init(this);
+    }
+    contentDecoder = decoder;
     return (S)this;
+  }
+
+  private ContentDecoder currentDecoder() {
+    if (!contentStarted) {
+      contentStarted = true;
+      if (contentDecoder == null) {
+        contentDecoder = ContentDecoder.NULL;
+        contentDecoder.init(this);
+      }
+    }
+    return contentDecoder;
   }
 }

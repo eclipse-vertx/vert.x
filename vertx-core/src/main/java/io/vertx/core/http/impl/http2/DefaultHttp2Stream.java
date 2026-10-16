@@ -85,8 +85,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   // Content
   private ContentDecoder contentDecoder;
-  private ContentDecoder initializedDecoder;
-  boolean inHead;
+  private boolean contentStarted;
 
   DefaultHttp2Stream(Http2Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
@@ -217,18 +216,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   private void handleHeader2(HttpHeaders headers) {
-    ContentDecoder decoder = contentDecoder;
-    if (decoder != null) {
-      decoder.init(this);
-      initializedDecoder = decoder;
-      contentDecoder = null;
-    }
-    inHead = true;
-    try {
-      handleHeader(headers);
-    } finally {
-      inHead = false;
-    }
+    handleHeader(headers);
   }
 
   public void onException(Throwable cause) {
@@ -287,21 +275,25 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   @Override
   public S contentDecoder(ContentDecoder decoder) {
-    if (inHead) {
-      ContentDecoder prev = initializedDecoder;
-      if (prev != null) {
-        initializedDecoder = null;
-        prev.handleClose(false);
-      }
-      if (decoder != null) {
-        decoder.init(this);
-        initializedDecoder = decoder;
-      }
-      contentDecoder = null;
-    } else {
-      contentDecoder = decoder;
+    if (contentStarted) {
+      throw new IllegalStateException("Content has already started");
     }
+    if (decoder != null) {
+      decoder.init(this);
+    }
+    contentDecoder = decoder;
     return (S)this;
+  }
+
+  private ContentDecoder currentDecoder() {
+    if (!contentStarted) {
+      contentStarted = true;
+      if (contentDecoder == null) {
+        contentDecoder = ContentDecoder.NULL;
+        contentDecoder.init(this);
+      }
+    }
+    return contentDecoder;
   }
 
   public final long id() {
@@ -517,10 +509,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   private void handleData(ByteBuf buf) {
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      context.dispatch(buf, decoder);
-    }
+    context.dispatch(buf, currentDecoder());
   }
 
   public S customFrameHandler(Handler<HttpFrame> handler) {
@@ -561,14 +550,12 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         handler.handle(trailers);
       }
     }
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      ContextInternal prev = context.beginDispatch();
-      try {
-        decoder.handleEnd();
-      } finally {
-        context.endDispatch(prev);
-      }
+    ContentDecoder decoder = currentDecoder();
+    ContextInternal prev = context.beginDispatch();
+    try {
+      decoder.handleEnd();
+    } finally {
+      context.endDispatch(prev);
     }
   }
 
@@ -692,18 +679,16 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
     @Override
     protected void handleConsumerClosed() {
-      ContentDecoder decoder = initializedDecoder;
-      if (decoder != null) {
-        ContextInternal prev = context.beginDispatch();
-        try {
-          boolean abrupt = trailers == null;
-          if (abrupt) {
-            initializedDecoder = null;
-          }
-          decoder.handleClose(abrupt);
-        } finally {
-          context.endDispatch(prev);
+      ContentDecoder decoder = currentDecoder();
+      ContextInternal prev = context.beginDispatch();
+      try {
+        boolean abrupt = trailers == null;
+        if (abrupt) {
+          contentDecoder = ContentDecoder.NULL;
         }
+        decoder.handleClose(abrupt);
+      } finally {
+        context.endDispatch(prev);
       }
     }
   }

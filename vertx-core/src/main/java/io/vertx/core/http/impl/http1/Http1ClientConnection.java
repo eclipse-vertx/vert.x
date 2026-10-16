@@ -494,14 +494,12 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         @Override
         protected void handleConsumerClosed() {
           StreamImpl stream = (StreamImpl)Stream.this;
-          ContentDecoder decoder = stream.initializedDecoder;
-          if (decoder != null) {
-            boolean abrupt = trailers == null;
-            if (abrupt) {
-              stream.initializedDecoder = null;
-            }
-            decoder.handleClose(abrupt);
+          ContentDecoder decoder = stream.currentDecoder();
+          boolean abrupt = trailers == null;
+          if (abrupt) {
+            stream.contentDecoder = ContentDecoder.NULL;
           }
+          decoder.handleClose(abrupt);
         }
       };
     }
@@ -604,8 +602,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private boolean trailersDispatched;
 
     private ContentDecoder contentDecoder;
-    private ContentDecoder initializedDecoder;
-    boolean inHead;
+    private boolean contentStarted;
 
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
@@ -613,21 +610,25 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     public HttpClientStream contentDecoder(ContentDecoder decoder) {
-      if (inHead) {
-        ContentDecoder prev = initializedDecoder;
-        if (prev != null) {
-          initializedDecoder = null;
-          prev.handleClose(false);
-        }
-        if (decoder != null) {
-          decoder.init(this);
-          initializedDecoder = decoder;
-        }
-        contentDecoder = null;
-      } else {
-        contentDecoder = decoder;
+      if (contentStarted) {
+        throw new IllegalStateException("Content has already started");
       }
+      if (decoder != null) {
+        decoder.init(this);
+      }
+      contentDecoder = decoder;
       return this;
+    }
+
+    private ContentDecoder currentDecoder() {
+      if (!contentStarted) {
+        contentStarted = true;
+        if (contentDecoder == null) {
+          contentDecoder = ContentDecoder.NULL;
+          contentDecoder.init(this);
+        }
+      }
+      return contentDecoder;
     }
 
     @Override
@@ -814,10 +815,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           handler.handle(trailers);
         }
       }
-      ContentDecoder decoder = initializedDecoder;
-      if (decoder != null) {
-        decoder.handleEnd();
-      }
+      currentDecoder().handleEnd();
     }
 
     @Override
@@ -833,10 +831,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleChunk(ByteBuf chunk) {
-      Handler<ByteBuf> decoder = initializedDecoder;
-      if (decoder != null) {
-        decoder.handle(chunk);
-      }
+      currentDecoder().handle(chunk);
     }
 
     void handleContinue(Void v) {
@@ -855,20 +850,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
-      ContentDecoder decoder = contentDecoder;
-      if (decoder != null) {
-        decoder.init(this);
-        initializedDecoder = decoder;
-        contentDecoder = null;
-      }
-      inHead = true;
-      try {
-        Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
-        if (handler != null) {
-          handler.handle(response);
-        }
-      } finally {
-        inHead = false;
+      Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
+      if (handler != null) {
+        handler.handle(response);
       }
     }
 
