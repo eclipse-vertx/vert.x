@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.form;
 
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
@@ -25,13 +25,13 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
+class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   private final ContextInternal context;
   private final FlowController flowController;
   private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  public NettyFileUploadDataFactory(ContextInternal context, FlowController flowController, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(ContextInternal context, FlowController flowController, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
     this.flowController = flowController;

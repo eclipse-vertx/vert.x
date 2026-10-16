@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.form;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.multipart.FileUpload;
@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
+final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
   private final String name;
   private String contentType;
