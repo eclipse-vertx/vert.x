@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
@@ -166,6 +167,18 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
 
   protected final void consumerTask(Runnable task) {
     context.runOnContext(v -> task.run());
+  }
+
+  protected final void awaitConsumer() {
+    if (Thread.currentThread() != consumerThread) {
+      CountDownLatch latch = new CountDownLatch(1);
+      consumerTask(latch::countDown);
+      try {
+        awaitLatch(latch);
+      } catch (InterruptedException e) {
+        fail(e);
+      }
+    }
   }
 
   protected final TestChannel buffer(IntConsumer consumer) {
@@ -336,7 +349,8 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
       assertEquals(0, events.get());
       assertTrue(queue.emit());
       assertEquals(0, reads.get());
-      waitUntilEquals(1, events::get);
+      awaitConsumer();
+      assertEquals(1, events.get());
       assertTrue(queue.emit());
       assertEquals(0, reads.get());
       assertEquals(1, events.get());
@@ -361,7 +375,8 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
       queue.pause();
       queue.fetch(1);
       assertTrue(queue.emit());
-      assertWaitUntil(() -> emitted.get() == 1);
+      awaitConsumer();
+      assertEquals(1, emitted.get());
       assertTrue(queue.emit());
       assertFalse(queue.emit());
       testComplete();
