@@ -21,16 +21,18 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 
 import java.util.function.Supplier;
 
 /**
- * Decodes a form (url encoded or multipart) request body, the content is forwarded to a delegate decoder.
+ * Decodes a form (url encoded or multipart) request body, the content is forwarded to a chunk handler and an end handler.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -44,7 +46,8 @@ public class FormDecoder implements ContentDecoder<Void> {
   private final Supplier<Handler<HttpServerFileUpload>> uploadHandler;
   private final MultiMap attributes;
   private final Handler<Throwable> exceptionHandler;
-  private final ContentDecoder<?> delegate;
+  private final Handler<Buffer> chunkHandler;
+  private final Handler<Void> endHandler;
   private HttpPostRequestDecoder decoder;
 
   public FormDecoder(ContextInternal context,
@@ -55,7 +58,8 @@ public class FormDecoder implements ContentDecoder<Void> {
                      Supplier<Handler<HttpServerFileUpload>> uploadHandler,
                      MultiMap attributes,
                      Handler<Throwable> exceptionHandler,
-                     ContentDecoder<?> delegate) {
+                     Handler<Buffer> chunkHandler,
+                     Handler<Void> endHandler) {
     String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
     if (contentType == null) {
       throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
@@ -74,7 +78,8 @@ public class FormDecoder implements ContentDecoder<Void> {
     this.uploadHandler = uploadHandler;
     this.attributes = attributes;
     this.exceptionHandler = exceptionHandler;
-    this.delegate = delegate;
+    this.chunkHandler = chunkHandler;
+    this.endHandler = endHandler;
   }
 
   @Override
@@ -82,16 +87,15 @@ public class FormDecoder implements ContentDecoder<Void> {
     NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, flowController, uploadHandler);
     factory.setMaxLimit(maxAttributeSize);
     decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
-    delegate.init(flowController);
   }
 
   @Override
   public void handle(ByteBuf chunk) {
+    ByteBuf copy = VertxByteBufAllocator.DEFAULT.heapBuffer(chunk.readableBytes());
+    copy.writeBytes(chunk, chunk.readerIndex(), chunk.readableBytes());
     if (decoder != null) {
       try {
-        ByteBuf copy = VertxByteBufAllocator.DEFAULT.heapBuffer(chunk.readableBytes());
-        copy.writeBytes(chunk, chunk.readerIndex(), chunk.readableBytes());
-        decoder.offer(new DefaultHttpContent(copy));
+        decoder.offer(new DefaultHttpContent(copy.duplicate()));
       } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                HttpPostRequestDecoder.TooLongFormFieldException |
                HttpPostRequestDecoder.TooManyFormFieldsException e) {
@@ -100,7 +104,7 @@ public class FormDecoder implements ContentDecoder<Void> {
         exceptionHandler.handle(e);
       }
     }
-    delegate.handle(chunk);
+    chunkHandler.handle(BufferInternal.buffer(copy));
   }
 
   @Override
@@ -131,7 +135,7 @@ public class FormDecoder implements ContentDecoder<Void> {
         decoder = null;
       }
     }
-    delegate.handleEnd();
+    endHandler.handle(null);
     return null;
   }
 
@@ -140,7 +144,6 @@ public class FormDecoder implements ContentDecoder<Void> {
     if (cause != null && decoder != null) {
       destroy();
     }
-    delegate.handleClose(cause);
   }
 
   private void destroy() {

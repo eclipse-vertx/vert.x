@@ -470,7 +470,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     if (expect) {
       if (formDecoder == null) {
         FormDecoder decoder = new FormDecoder(context, request, conn.maxFormAttributeSize(), conn.maxFormFields(),
-          conn.maxFormBufferedBytes(), () -> uploadHandler, attributes(), this::onException, ContentDecoder.NULL);
+          conn.maxFormBufferedBytes(), () -> uploadHandler, attributes(), this::onException, chunk -> {}, v -> {});
         contentDecoder(decoder);
         formDecoder = decoder;
       }

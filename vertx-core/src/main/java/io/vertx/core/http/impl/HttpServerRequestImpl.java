@@ -413,7 +413,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
             req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           }
           FormDecoder decoder = new FormDecoder(context, req, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes,
-            () -> uploadHandler, formAttributes(), this::handleException, this);
+            () -> uploadHandler, formAttributes(), this::handleException, this::handleData, v -> handleEnd());
           stream.contentDecoder(decoder);
           formDecoder = decoder;
         }

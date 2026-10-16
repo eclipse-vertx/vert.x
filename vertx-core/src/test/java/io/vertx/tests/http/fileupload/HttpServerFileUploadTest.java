@@ -29,9 +29,11 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -545,6 +547,42 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       Assert.assertEquals(Arrays.asList("0", "1"), req.formAttributes().getAll("list"));
       req.response().end();
     });
+  }
+
+  @Test
+  public void testPauseRequestWithExpectMultipart() throws Exception {
+    String body = "framework=vertx&runson=jvm";
+    AtomicBoolean paused = new AtomicBoolean(true);
+    Buffer received = Buffer.buffer();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.pause();
+      req.handler(chunk -> {
+        Assert.assertFalse(paused.get());
+        received.appendBuffer(chunk);
+      });
+      req.endHandler(v -> {
+        Assert.assertFalse(paused.get());
+        Assert.assertEquals(body, received.toString());
+        Assert.assertEquals("vertx", req.getFormAttribute("framework"));
+        Assert.assertEquals("jvm", req.getFormAttribute("runson"));
+        req.response().end();
+      });
+      vertx.setTimer(100, id -> {
+        paused.set(false);
+        req.resume();
+      });
+    });
+    server.listen(testAddress).await();
+    client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form"))
+      .compose(req -> req
+        .putHeader("content-type", "application/x-www-form-urlencoded")
+        .send(body)
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await(Duration.ofSeconds(10));
   }
 
   @Test
