@@ -33,6 +33,8 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -464,6 +466,36 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       }
     });
 
+    await();
+  }
+
+  @Test
+  public void testFormUploadFailedWhenServerConnectionClosed() throws Exception {
+    AtomicReference<HttpConnection> connection = new AtomicReference<>();
+    CountDownLatch received = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      connection.set(req.connection());
+      req.setExpectMultipart(true);
+      req.uploadHandler(upload -> {
+        upload.handler(buff -> {
+          upload.pause();
+          received.countDown();
+        });
+        upload.exceptionHandler(err -> {
+          Assert.assertTrue(err instanceof HttpClosedException);
+          testComplete();
+        });
+        upload.endHandler(v -> Assert.fail("Upload should not end"));
+      });
+    });
+    server.listen(testAddress).await();
+    client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form"))
+      .andThen(TestUtils.onSuccess(req -> req.send(ClientMultipartForm.multipartForm()
+        .textFileUpload("file", "tmp-0.txt", "text/plain", Buffer.buffer(TestUtils.randomAlphaString(1024 * 1024))))));
+    Assert.assertTrue(received.await(10, TimeUnit.SECONDS));
+    connection.get().close();
     await();
   }
 

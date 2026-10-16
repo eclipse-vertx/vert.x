@@ -178,10 +178,8 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   }
 
   private void notifyException(Throwable failure) {
-    FormDecoder decoder;
     HttpEventHandler handler;
     synchronized (connection) {
-      decoder = formDecoder;
       handler = eventHandler;
       if (handler == null && this.failure == null) {
         this.failure = failure;
@@ -189,9 +187,6 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
     }
     if (handler != null) {
       handler.handleException(failure);
-    }
-    if (decoder != null) {
-      decoder.failUpload(failure);
     }
   }
 

@@ -612,13 +612,11 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   void onException(Throwable t) {
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
-    FormDecoder decoder = null;
     if (!isEnded()) {
       handler = eventHandler;
       if (handler == null && failure == null) {
         failure = t;
       }
-      decoder = formDecoder;
     }
     if (!response.ended()) {
       if (METRICS_ENABLED) {
@@ -628,9 +626,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
     if (resp != null) {
       resp.onException(t);
-    }
-    if (decoder != null) {
-      decoder.failUpload(t);
     }
     if (handler != null) {
       handler.handleException(t);

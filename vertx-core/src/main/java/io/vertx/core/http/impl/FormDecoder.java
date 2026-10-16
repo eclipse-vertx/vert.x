@@ -100,7 +100,6 @@ public class FormDecoder implements ContentDecoder<Void> {
                HttpPostRequestDecoder.TooLongFormFieldException |
                HttpPostRequestDecoder.TooManyFormFieldsException e) {
         destroy();
-        decoder = null;
         exceptionHandler.handle(e);
       }
     }
@@ -132,7 +131,6 @@ public class FormDecoder implements ContentDecoder<Void> {
         exceptionHandler.handle(e);
       } finally {
         destroy();
-        decoder = null;
       }
     }
     endHandler.handle(null);
@@ -142,7 +140,11 @@ public class FormDecoder implements ContentDecoder<Void> {
   @Override
   public void handleClose(Throwable cause) {
     if (cause != null && decoder != null) {
+      InterfaceHttpData upload = decoder.currentPartialHttpData();
       destroy();
+      if (upload instanceof NettyFileUpload) {
+        ((NettyFileUpload) upload).handleException(cause);
+      }
     }
   }
 
@@ -152,19 +154,6 @@ public class FormDecoder implements ContentDecoder<Void> {
       partial.release();
     }
     decoder.destroy();
-  }
-
-  /**
-   * Fail the file upload in progress, if any.
-   *
-   * @param failure the failure
-   */
-  public void failUpload(Throwable failure) {
-    if (decoder != null) {
-      InterfaceHttpData upload = decoder.currentPartialHttpData();
-      if (upload instanceof NettyFileUpload) {
-        ((NettyFileUpload) upload).handleException(failure);
-      }
-    }
+    decoder = null;
   }
 }
