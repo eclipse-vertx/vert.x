@@ -33,6 +33,7 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
@@ -219,6 +220,32 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     request.end().await();
     checkpoint2.awaitSuccess();
     request.connection().close().await();
+  }
+
+  @Test
+  public void testContentDecoderClosedByServerConnectionCloseWhilePaused(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    AtomicReference<HttpConnection> connection = new AtomicReference<>();
+    handler = stream -> {
+      connection.set(stream.connection());
+      stream.contentDecoder(new ContentDecoderBase() {
+        @Override
+        public void handle(ByteBuf chunk) {
+          flowController.pause();
+          checkpoint2.succeed();
+        }
+        @Override
+        public void handleClose(boolean abrupt) {
+          assertTrue(abrupt);
+          checkpoint1.succeed();
+        }
+      });
+    };
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions).await();
+    request.setChunked(true).write(TestUtils.randomAlphaString(1024 * 1024));
+    checkpoint2.awaitSuccess();
+    connection.get().close().await();
   }
 
   @Test

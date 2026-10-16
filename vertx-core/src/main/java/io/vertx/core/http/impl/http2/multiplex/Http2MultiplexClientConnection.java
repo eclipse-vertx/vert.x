@@ -86,7 +86,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     return clientMetrics;
   }
 
-  void refresh() {
+  private void refresh() {
     expirationTimestampMillis = keepAliveTimeoutMillis > 0 ? System.currentTimeMillis() + keepAliveTimeoutMillis : Long.MAX_VALUE;
   }
 
@@ -95,6 +95,12 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   void onInitialSettingsSent() {
+  }
+
+  @Override
+  void onStreamClosed(int streamId) {
+    super.onStreamClosed(streamId);
+    refresh();
   }
 
   @Override
