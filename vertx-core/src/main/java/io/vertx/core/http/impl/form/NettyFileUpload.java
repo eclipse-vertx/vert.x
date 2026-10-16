@@ -14,13 +14,14 @@ package io.vertx.core.http.impl.form;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,13 +41,13 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   private boolean completed;
   private long maxSize = -1;
   private final FlowController flowController;
-  private final InboundBuffer<Object> pending;
+  private final InboundMessageQueue<Buffer> pending;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> dataHandler;
   private final long size;
 
-  NettyFileUpload(Context context, FlowController flowController, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
+  NettyFileUpload(ContextInternal context, FlowController flowController, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
@@ -54,10 +55,10 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
     this.charset = charset;
     this.flowController = flowController;
     this.size = size;
-    this.pending = new InboundBuffer<>(context)
-      .drainHandler(v -> flowController.resume())
-      .handler(buff -> {
-        if (buff == InboundBuffer.END_SENTINEL) {
+    this.pending = new InboundMessageQueue<>(context.executor(), context.executor()) {
+      @Override
+      protected void handleMessage(Buffer msg) {
+        if (msg == HttpUtils.END_OF_STREAM) {
           Handler<Void> handler = endHandler();
           if (handler != null) {
             handler.handle(null);
@@ -65,10 +66,19 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
         } else {
           Handler<Buffer> handler = handler();
           if (handler != null) {
-            handler.handle((Buffer) buff);
+            handler.handle(msg);
           }
         }
-      });
+      }
+      @Override
+      protected void handlePause() {
+        flowController.pause();
+      }
+      @Override
+      protected void handleResume() {
+        flowController.resume();
+      }
+    };
   }
 
   @Override
@@ -116,14 +126,12 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
   private void receiveData(Buffer data) {
     if (data.length() != 0) {
-      if (!pending.write(data)) {
-        flowController.pause();
-      }
+      pending.write(data);
     }
   }
 
   private void end() {
-    pending.write(InboundBuffer.END_SENTINEL);
+    pending.write(HttpUtils.END_OF_STREAM);
   }
 
   public void handleException(Throwable err) {
