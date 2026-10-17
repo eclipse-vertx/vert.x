@@ -427,6 +427,8 @@ public abstract class MessagePassingQueue<E> {
 
   public static class MpSc<E> extends MessagePassingQueue<E> {
 
+    private static final int INITIAL_MPSC_CHUNK_SIZE = 64;
+
     private static final AtomicLongFieldUpdater<MessagePassingQueue.MpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessagePassingQueue.MpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessagePassingQueue.MpSc.class, "wip");
 
     // Todo : check false sharing
@@ -437,7 +439,8 @@ public abstract class MessagePassingQueue<E> {
     }
 
     public MpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
-      super(PlatformDependent.newMpscQueue(), consumer, lowWaterMark, highWaterMark);
+      // Use a small initial MPSC chunk rather than allocating 1024 slots per connection.
+      super(PlatformDependent.newMpscQueue(INITIAL_MPSC_CHUNK_SIZE, 1 << 30), consumer, lowWaterMark, highWaterMark);
     }
 
     /**

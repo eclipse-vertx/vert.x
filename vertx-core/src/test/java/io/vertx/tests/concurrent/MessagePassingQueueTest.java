@@ -71,6 +71,25 @@ public class MessagePassingQueueTest {
   }
 
   @Test
+  public void testDrainAcrossMultipleMpscChunks() {
+    AtomicBoolean paused = new AtomicBoolean(true);
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (paused.get()) {
+        return false;
+      }
+      output.add(elt);
+      return true;
+    });
+    assertFlagsSet(queue.write(0), DRAIN_REQUIRED_MASK);
+    for (int i = 1; i < 256; i++) {
+      producerAdd(i);
+    }
+    paused.set(false);
+    assertFlagsClear(queue.drain(), DRAIN_REQUIRED_MASK);
+    assertEquals(range(0, 256), output);
+  }
+
+  @Test
   public void testWriteFromEventLoopThread() {
     queue = new MessagePassingQueue.MpSc<>(elt -> {
       output.add(elt);
