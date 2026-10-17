@@ -299,6 +299,8 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
         // Catch the first, the second is going to be a connection closed exception when the
         // server is shutdown on testComplete
         if (failed.compareAndSet(false, true)) {
+          assertTrue(t instanceof TimeoutException);
+          assertEquals(0, t.getStackTrace().length);
           checkpoint.succeed();
         }
       }));
