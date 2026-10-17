@@ -437,7 +437,8 @@ public abstract class MessagePassingQueue<E> {
     }
 
     public MpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
-      super(PlatformDependent.newMpscQueue(), consumer, lowWaterMark, highWaterMark);
+      // Use a small initial MPSC chunk rather than allocating 1024 slots per connection.
+      super(PlatformDependent.newMpscQueue(DEFAULT_HIGH_WATER_MARK, 1 << 30), consumer, lowWaterMark, highWaterMark);
     }
 
     /**
