@@ -668,51 +668,6 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testPostFileUpload() throws Exception {
-    Context ctx = vertx.getOrCreateContext();
-    server.requestHandler(req -> {
-      Buffer tot = Buffer.buffer();
-      req.setExpectMultipart(true);
-      req.uploadHandler(upload -> {
-        TestUtils.assertOnIOContext(ctx);
-        Assert.assertEquals("file", upload.name());
-        Assert.assertEquals("tmp-0.txt", upload.filename());
-        Assert.assertEquals("image/gif", upload.contentType());
-        upload.handler(tot::appendBuffer);
-        upload.endHandler(v -> {
-          Assert.assertEquals(tot, Buffer.buffer("some-content"));
-          testComplete();
-        });
-      });
-      req.endHandler(v -> {
-        Assert.assertEquals(0, req.formAttributes().size());
-        req.response().putHeader("content-type", "text/plain").end("done");
-      });
-    });
-    startServer(ctx);
-
-    String contentType = "multipart/form-data; boundary=a4e41223-a527-49b6-ac1c-315d76be757e";
-    String contentLength = "225";
-    String body = "--a4e41223-a527-49b6-ac1c-315d76be757e\r\n" +
-        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
-        "Content-Type: image/gif; charset=utf-8\r\n" +
-        "Content-Length: 12\r\n" +
-        "\r\n" +
-        "some-content\r\n" +
-        "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
-
-    TestClient client = new TestClient();
-    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
-      int id = request.nextStreamId();
-      request.encoder.writeHeaders(request.context, id, POST("/form").
-          set("content-type", contentType).set("content-length", contentLength), 0, false, request.context.newPromise());
-      request.encoder.writeData(request.context, id, BufferInternal.buffer(body).getByteBuf(), 0, true, request.context.newPromise());
-      request.context.flush();
-    });
-    await();
-  }
-
-  @Test
   public void testConnect() throws Exception {
     server.requestHandler(req -> {
       Assert.assertEquals(HttpMethod.CONNECT, req.method());

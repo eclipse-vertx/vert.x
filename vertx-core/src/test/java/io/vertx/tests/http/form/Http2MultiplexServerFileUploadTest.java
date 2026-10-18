@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,13 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.tests.http.http3;
+package io.vertx.tests.http.form;
 
-import io.vertx.tests.http.fileupload.HttpClientFileUploadTest;
+/**
+ */
+public class Http2MultiplexServerFileUploadTest extends Http2ServerFileUploadTest {
 
-public class Http3ClientFileUploadTest extends HttpClientFileUploadTest {
-
-  public Http3ClientFileUploadTest() {
-    super(new Http3Configurator());
+  public Http2MultiplexServerFileUploadTest() {
+    super(true);
   }
 }

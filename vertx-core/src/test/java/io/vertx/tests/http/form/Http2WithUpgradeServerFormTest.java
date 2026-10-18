@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+package io.vertx.tests.http.form;
+
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.test.http.HttpConfigurator;
+
+public class Http2WithUpgradeServerFormTest extends HttpServerFormTest {
+
+  public Http2WithUpgradeServerFormTest() {
+    super(new HttpConfigurator.Http1x(DEFAULT_HTTPS_HOST, DEFAULT_HTTP_PORT) {
+      @Override
+      public HttpClientOptions createBaseClientOptions() {
+        return new HttpClientOptions()
+          .setProtocolVersion(HttpVersion.HTTP_2)
+          .setHttp2ClearTextUpgrade(true);
+      }
+    });
+  }
+}

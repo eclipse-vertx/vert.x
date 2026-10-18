@@ -744,60 +744,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testParamUmlauteDecoding() throws Exception {
-    testParamDecoding("\u00e4\u00fc\u00f6");
-  }
-
-  @Test
-  public void testParamPlusDecoding() throws Exception {
-    testParamDecoding("+");
-  }
-
-  @Test
-  public void testParamPercentDecoding() throws Exception {
-    testParamDecoding("%");
-  }
-
-  @Test
-  public void testParamSpaceDecoding() throws Exception {
-    testParamDecoding(" ");
-  }
-
-  @Test
-  public void testParamNormalDecoding() throws Exception {
-    testParamDecoding("hello");
-  }
-
-  @Test
-  public void testParamAltogetherDecoding() throws Exception {
-    testParamDecoding("\u00e4\u00fc\u00f6+% hello");
-  }
-
-  private void testParamDecoding(String value) throws Exception {
-
-    server.requestHandler(req -> {
-      req.setExpectMultipart(true);
-      req.endHandler(v -> {
-        MultiMap formAttributes = req.formAttributes();
-        assertEquals(value, formAttributes.get("param"));
-      });
-      req.response().end();
-    });
-    Buffer body = Buffer.buffer("param=" + URLEncoder.encode(value,"UTF-8"));
-    startServer(testAddress);
-    client
-      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
-      .compose(req -> req
-        .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length()))
-        .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
-        .send(body).compose(resp -> {
-          assertEquals(200, resp.statusCode());
-          return resp.end();
-        }))
-      .await();
-  }
-
-  @Test
   public void testParamsAmpersand() throws Exception {
     testParams('&');
   }
@@ -970,38 +916,6 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     } finally {
       server.close().await();
     }
-  }
-
-  @Test
-  public void testMissingContentTypeMultipartRequest() throws Exception {
-    testInvalidMultipartRequest(null, HttpMethod.POST);
-  }
-
-  @Test
-  public void testInvalidContentTypeMultipartRequest() throws Exception {
-    testInvalidMultipartRequest("application/json", HttpMethod.POST);
-  }
-
-  @Test
-  public void testInvalidMethodMultipartRequest() throws Exception {
-    testInvalidMultipartRequest("multipart/form-data", HttpMethod.GET);
-  }
-
-  private void testInvalidMultipartRequest(String contentType, HttpMethod method) throws Exception {
-    server.requestHandler(req -> {
-      try {
-        req.setExpectMultipart(true);
-        Assert.fail();
-      } catch (IllegalStateException ignore) {
-        req.response().end();
-      }
-    });
-    startServer(testAddress);
-    sendAndAwait(requestOptions, req -> {
-      if (contentType != null) {
-        req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
-      }
-    });
   }
 
   @Test

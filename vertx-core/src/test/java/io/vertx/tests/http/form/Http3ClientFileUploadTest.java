@@ -8,11 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.tests.http.fileupload;
+package io.vertx.tests.http.form;
 
-public class Http2MultiplexClientFileUploadTest extends Http2ClientFileUploadTest {
+import io.vertx.tests.http.http3.Http3Configurator;
 
-  public Http2MultiplexClientFileUploadTest() {
-    super(true);
+public class Http3ClientFileUploadTest extends HttpClientFileUploadTest {
+
+  public Http3ClientFileUploadTest() {
+    super(new Http3Configurator());
   }
 }

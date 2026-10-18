@@ -8,9 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.tests.http.http3;
+package io.vertx.tests.http.form;
 
-import io.vertx.tests.http.fileupload.HttpServerFileUploadTest;
+import io.vertx.tests.http.http3.Http3Configurator;
 import org.junit.Ignore;
 import org.junit.Test;
 
