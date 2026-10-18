@@ -10,12 +10,14 @@
  */
 package io.vertx.tests.http.form;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
@@ -23,8 +25,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.TestUtils.assertWaitUntil;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public abstract class HttpServerFormTest extends SimpleHttpTest2 {
 
@@ -111,7 +119,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       }
     });
     startServer(testAddress);
-    sendAndAwait(requestOptions, req -> {
+    sendAndAwait(new RequestOptions(requestOptions).setMethod(method), req -> {
       if (contentType != null) {
         req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
       }
@@ -130,5 +138,121 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
           });
       })
       .await();
+  }
+
+  // %zz is not a valid percent encoding
+  private static final String MALFORMED_URL_ENCODED_FORM = "a=%zz";
+
+  private List<String> recordFormEvents(HttpServerRequest req) {
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    req.setExpectMultipart(true);
+    req.exceptionHandler(err -> events.add("request-exception"));
+    req.response().exceptionHandler(err -> events.add("response-exception"));
+    return events;
+  }
+
+  private int sendForm(String contentType, Buffer body, int chunkSize) {
+    return client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .compose(req -> {
+        req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+        if (chunkSize > 0) {
+          req.setChunked(true);
+          for (int i = 0;i < body.length();i += chunkSize) {
+            req.write(body.slice(i, Math.min(body.length(), i + chunkSize)));
+          }
+          return req.end().compose(v -> req.response());
+        } else {
+          return req.send(body);
+        }
+      })
+      .compose(resp -> resp.end().map(v -> resp.statusCode()))
+      .await();
+  }
+
+  @Test
+  public void testMalformedUrlEncodedForm() throws Exception {
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      List<String> reqEvents = recordFormEvents(req);
+      req.endHandler(v -> {
+        events.addAll(reqEvents);
+        events.add("end:" + req.formAttributes().size());
+        req.response().setStatusCode(400).end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(MALFORMED_URL_ENCODED_FORM), 0));
+    assertWaitUntil(() -> events.stream().anyMatch(e -> e.startsWith("end:")));
+    assertEquals(1, Collections.frequency(events, "request-exception"));
+    assertEquals(1, Collections.frequency(events, "response-exception"));
+    assertTrue(events.indexOf("request-exception") < events.indexOf("end:0"));
+  }
+
+  @Test
+  public void testFormDecodingErrorKeepsDeliveringChunks() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0;i < 300;i++) {
+      sb.append(i > 0 ? "&" : "").append("a").append(i).append("=b");
+    }
+    Buffer body = Buffer.buffer(sb.toString());
+    Buffer received = Buffer.buffer();
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      List<String> reqEvents = recordFormEvents(req);
+      req.handler(received::appendBuffer);
+      req.endHandler(v -> {
+        events.addAll(reqEvents);
+        events.add("end");
+        req.response().setStatusCode(400).end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), body, 64));
+    assertWaitUntil(() -> events.contains("end"));
+    assertEquals(1, Collections.frequency(events, "request-exception"));
+    assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
+    assertEquals(body, received);
+  }
+
+  @Test
+  public void testFormErrorFailsEndAndBodyFutures() throws Exception {
+    AtomicReference<Future<Buffer>> body = new AtomicReference<>();
+    AtomicReference<Future<Void>> end = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      body.set(req.body());
+      end.set(req.end());
+      end.get().onComplete(ar -> req.response().setStatusCode(ar.succeeded() ? 200 : 400).end());
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(MALFORMED_URL_ENCODED_FORM), 0));
+    assertWaitUntil(() -> body.get().isComplete());
+    assertTrue(body.get().failed());
+    assertTrue(end.get().failed());
+    assertEquals(end.get().cause(), body.get().cause());
+  }
+
+  @Test
+  public void testFormErrorFailsEndFutureRequestedAfterTheError() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0;i < 300;i++) {
+      sb.append(i > 0 ? "&" : "").append("a").append(i).append("=b");
+    }
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    AtomicReference<Future<Void>> end = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.exceptionHandler(failure::set);
+      req.handler(chunk -> {
+        if (failure.get() != null && end.get() == null) {
+          end.set(req.end());
+        }
+      });
+      req.endHandler(v -> req.response().setStatusCode(400).end());
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(sb.toString()), 64));
+    assertWaitUntil(() -> end.get() != null && end.get().isComplete());
+    assertTrue("end() requested after a form error should fail", end.get().failed());
   }
 }
