@@ -5711,6 +5711,41 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testServerRequestFuturesRequestedAfterFailure(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    testServerRequestFuturesRequestedAfterFailure(checkpoint1, checkpoint2, true);
+  }
+
+  @Test
+  public void testServerRequestFuturesRequestedAfterFailureWithoutHandler(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    testServerRequestFuturesRequestedAfterFailure(checkpoint1, checkpoint2, false);
+  }
+
+  private void testServerRequestFuturesRequestedAfterFailure(Checkpoint checkpoint1, Checkpoint checkpoint2, boolean requestExceptionHandler) throws Exception {
+    server.requestHandler(req -> {
+      Handler<Throwable> onFailure = err -> vertx.setTimer(10, id -> {
+        Future<Buffer> body = req.body();
+        Future<Void> end = req.end();
+        Future.join(body, end).onComplete(ar -> {
+          assertTrue(body.failed());
+          assertTrue(end.failed());
+          checkpoint1.succeed();
+        });
+      });
+      if (requestExceptionHandler) {
+        req.exceptionHandler(onFailure);
+      } else {
+        req.response().exceptionHandler(onFailure);
+      }
+      checkpoint2.succeed();
+    });
+    startServer(testAddress);
+    HttpClientRequest request = client.request(requestOptions).await();
+    request.setChunked(true).write("chunk");
+    checkpoint2.awaitSuccess();
+    request.reset();
+  }
+
+  @Test
   public void testResetClientRequestBeforeActualSend(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     server.requestHandler(req -> {
     });
