@@ -255,4 +255,32 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     assertWaitUntil(() -> end.get() != null && end.get().isComplete());
     assertTrue("end() requested after a form error should fail", end.get().failed());
   }
+
+  @Test
+  public void testTruncatedMultipartFailsUploadInProgress() throws Exception {
+    String boundary = "a4e41223-a527-49b6-ac1c-315d76be757e";
+    String body = "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+      "Content-Type: text/plain\r\n" +
+      "\r\n" +
+      "some-content-without-the-closing-boundary";
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.exceptionHandler(err -> events.add("request-exception"));
+      req.uploadHandler(upload -> {
+        upload.handler(buff -> {});
+        upload.exceptionHandler(err -> events.add("upload-exception"));
+        upload.endHandler(v -> events.add("upload-end"));
+      });
+      req.endHandler(v -> {
+        events.add("end");
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(200, sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0));
+    assertWaitUntil(() -> events.contains("end"));
+    assertEquals(List.of("upload-exception", "request-exception", "end"), events);
+  }
 }

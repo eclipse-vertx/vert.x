@@ -100,7 +100,7 @@ public class FormDecoder implements ContentDecoder<Void> {
       } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                HttpPostRequestDecoder.TooLongFormFieldException |
                HttpPostRequestDecoder.TooManyFormFieldsException e) {
-        destroy();
+        dispose(e);
         exceptionHandler.handle(e);
       }
     }
@@ -110,6 +110,7 @@ public class FormDecoder implements ContentDecoder<Void> {
   @Override
   public Void handleEnd() {
     if (decoder != null) {
+      Throwable failure = null;
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
         while (decoder.hasNext()) {
@@ -126,12 +127,18 @@ public class FormDecoder implements ContentDecoder<Void> {
             }
           }
         }
+        if (decoder.currentPartialHttpData() != null) {
+          failure = new HttpPostRequestDecoder.ErrorDataDecoderException("Multipart body ended before the end of a part");
+        }
       } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
         // ignore this as it is expected
       } catch (Exception e) {
-        exceptionHandler.handle(e);
+        failure = e;
       } finally {
-        destroy();
+        dispose(failure);
+      }
+      if (failure != null) {
+        exceptionHandler.handle(failure);
       }
     }
     endHandler.handle(null);
@@ -141,20 +148,19 @@ public class FormDecoder implements ContentDecoder<Void> {
   @Override
   public void handleClose(Throwable cause) {
     if (cause != null && decoder != null) {
-      InterfaceHttpData upload = decoder.currentPartialHttpData();
-      destroy();
-      if (upload instanceof NettyFileUpload) {
-        ((NettyFileUpload) upload).handleException(cause);
-      }
+      dispose(cause);
     }
   }
 
-  private void destroy() {
+  private void dispose(Throwable failure) {
     InterfaceHttpData partial = decoder.currentPartialHttpData();
     if (partial instanceof Attribute && partial.refCnt() > 0) {
       partial.release();
     }
     decoder.destroy();
     decoder = null;
+    if (failure != null && partial instanceof NettyFileUpload) {
+      ((NettyFileUpload) partial).handleException(failure);
+    }
   }
 }
