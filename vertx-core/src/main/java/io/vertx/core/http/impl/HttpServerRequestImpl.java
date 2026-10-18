@@ -67,6 +67,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   private String absoluteURI;
   private MultiMap attributes;
   private HttpEventHandler eventHandler;
+  private Throwable failure;
   private boolean ended;
   private Handler<HttpServerFileUpload> uploadHandler;
   private boolean expectMultipart;
@@ -131,7 +132,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
 
   private HttpEventHandler eventHandler(boolean create) {
     if (eventHandler == null && create) {
-      eventHandler = new HttpEventHandler(context);
+      eventHandler = new HttpEventHandler(context, failure);
     }
     return eventHandler;
   }
@@ -189,6 +190,9 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
         upload = postRequestDecoder.currentPartialHttpData();
       }
       handler = eventHandler;
+      if (handler == null && this.failure == null) {
+        this.failure = failure;
+      }
     }
     if (handler != null) {
       handler.handleException(failure);

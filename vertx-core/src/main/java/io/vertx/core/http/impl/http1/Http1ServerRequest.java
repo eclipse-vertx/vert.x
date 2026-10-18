@@ -81,6 +81,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private MultiMap headers;
   private String absoluteURI;
   private HttpEventHandler eventHandler;
+  private Throwable failure;
   private long bytesRead;
   private Handler<HttpServerFileUpload> uploadHandler;
   private MultiMap attributes;
@@ -135,7 +136,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   private HttpEventHandler eventHandler(boolean create) {
     if (eventHandler == null && create) {
-      eventHandler = new HttpEventHandler(context);
+      eventHandler = new HttpEventHandler(context, failure);
     }
     return eventHandler;
   }
@@ -658,6 +659,9 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     InterfaceHttpData upload = null;
     if (!isEnded()) {
       handler = eventHandler;
+      if (handler == null && failure == null) {
+        failure = t;
+      }
       if (decoder != null) {
         upload = decoder.currentPartialHttpData();
       }

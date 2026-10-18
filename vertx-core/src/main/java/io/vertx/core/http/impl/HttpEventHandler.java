@@ -28,9 +28,15 @@ public class HttpEventHandler {
   private Buffer body;
   private Promise<Buffer> bodyPromise;
   private Promise<Void> endPromise;
+  private Throwable failure;
 
   public HttpEventHandler(ContextInternal context) {
+    this(context, null);
+  }
+
+  public HttpEventHandler(ContextInternal context, Throwable failure) {
     this.context = context;
+    this.failure = failure;
   }
 
   public void chunkHandler(Handler<Buffer> handler) {
@@ -59,6 +65,9 @@ public class HttpEventHandler {
     if (body == null) {
       body = Buffer.buffer();
       bodyPromise = context.promise();
+      if (failure != null) {
+        bodyPromise.fail(failure);
+      }
     }
     return bodyPromise.future();
   }
@@ -66,6 +75,9 @@ public class HttpEventHandler {
   public Future<Void> end() {
     if (endPromise == null) {
       endPromise = context.promise();
+      if (failure != null) {
+        endPromise.fail(failure);
+      }
     }
     return endPromise.future();
   }
@@ -84,6 +96,9 @@ public class HttpEventHandler {
   }
 
   public void handleException(Throwable err) {
+    if (failure == null) {
+      failure = err;
+    }
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
       context.dispatch(err, handler);
