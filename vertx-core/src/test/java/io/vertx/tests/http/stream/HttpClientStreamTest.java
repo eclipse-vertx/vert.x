@@ -21,13 +21,16 @@ import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.test.core.Checkpoint;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -114,6 +117,102 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
         });
       }
     });
+    HttpClientConnection connection = stream.connection();
+    HttpRequestHead head = new HttpRequestHead(
+      "https",
+      HttpMethod.GET,
+      "/",
+      connection.newHttpRequestHeaders(),
+      HostAndPort.authority("localhost", testAddress.port()),
+      null);
+    stream.writeHead(head, Buffer.buffer(), true);
+  }
+
+  @Test
+  public void testContentDecoderHandleFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new HttpServerStreamTest.ContentDecoderBase() {
+      @Override
+      protected void handleImpl(ByteBuf chunk) {
+        throw HttpServerStreamTest.FAILURE;
+      }
+    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true);
+  }
+
+  @Test
+  public void testContentDecoderHandleFailureWhilePaused(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new HttpServerStreamTest.ContentDecoderBase() {
+      @Override
+      protected void handleImpl(ByteBuf chunk) {
+        flowController.pause();
+        throw HttpServerStreamTest.FAILURE;
+      }
+    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true, TestUtils.randomAlphaString(1024 * 1024));
+  }
+
+  @Test
+  public void testContentDecoderHandleEndFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new HttpServerStreamTest.ContentDecoderBase() {
+      @Override
+      protected void handleEndImpl() {
+        throw HttpServerStreamTest.FAILURE;
+      }
+    }, List.of("handle", "handleEnd", "stream-exception", "handleClose(failure)", "stream-close"), true);
+  }
+
+  @Test
+  public void testContentDecoderHandleCloseFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new HttpServerStreamTest.ContentDecoderBase() {
+      @Override
+      protected void handleCloseImpl(Throwable cause) {
+        throw HttpServerStreamTest.FAILURE;
+      }
+    }, List.of("handle", "handleEnd", "handleClose", "context-exception", "stream-close"), false);
+  }
+
+  @Test
+  public void testContentDecoderInitFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new HttpServerStreamTest.ContentDecoderBase() {
+      @Override
+      protected void initImpl(FlowController flowController) {
+        throw HttpServerStreamTest.FAILURE;
+      }
+    }, List.of("init-thrown", "stream-close"), true);
+  }
+
+  private void testContentDecoderFailure(Checkpoint checkpoint, Supplier<HttpServerStreamTest.ContentDecoderBase> decoder, List<String> expected, boolean ordered) throws Exception {
+    testContentDecoderFailure(checkpoint, decoder, expected, ordered, "chunk-2");
+  }
+
+  private void testContentDecoderFailure(Checkpoint checkpoint, Supplier<HttpServerStreamTest.ContentDecoderBase> decoder, List<String> expected, boolean ordered, String lastChunk) throws Exception {
+    RuntimeException failure = HttpServerStreamTest.FAILURE;
+    HttpServerStreamTest.ContentDecoderBase contentDecoder = decoder.get();
+    List<String> events = contentDecoder.events;
+    vertx.exceptionHandler(err -> events.add(err == failure ? "context-exception" : "context-exception:" + err));
+    handler = request -> request
+      .response()
+      .setChunked(true)
+      .write("chunk-1")
+      .compose(v -> request.response().end(lastChunk));
+    startServer(testAddress);
+    HttpClientStream stream = client.openStream(requestOptions).await();
+    stream.exceptionHandler(err -> events.add(err == failure ? "stream-exception" : "stream-exception:" + err));
+    stream.closeHandler(v -> {
+      events.add("stream-close");
+      vertx.setTimer(100, id -> {
+        List<String> actual = new ArrayList<>(events);
+        boolean match = ordered ? expected.equals(actual) : expected.size() == actual.size() && new HashSet<>(expected).equals(new HashSet<>(actual));
+        if (match) {
+          checkpoint.succeed();
+        } else {
+          checkpoint.fail(new AssertionError("Expected " + expected + " but was " + actual));
+        }
+      });
+    });
+    try {
+      stream.contentDecoder(contentDecoder);
+    } catch (RuntimeException e) {
+      events.add(e == failure ? "init-thrown" : "init-thrown:" + e);
+    }
     HttpClientConnection connection = stream.connection();
     HttpRequestHead head = new HttpRequestHead(
       "https",

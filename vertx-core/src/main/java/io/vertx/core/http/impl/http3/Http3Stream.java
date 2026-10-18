@@ -22,6 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.http.impl.HttpFrameImpl;
@@ -388,6 +389,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       throw new IllegalStateException("Content has already started");
     }
     if (decoder != null) {
+      decoder = new SafeContentDecoder(decoder, context, this::handleException);
       decoder.init(this);
     }
     contentDecoder = decoder;

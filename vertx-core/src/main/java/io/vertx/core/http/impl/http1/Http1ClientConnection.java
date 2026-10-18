@@ -51,6 +51,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
@@ -614,6 +615,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         throw new IllegalStateException("Content has already started");
       }
       if (decoder != null) {
+        decoder = new SafeContentDecoder(decoder, context, this::handleException);
         decoder.init(this);
       }
       contentDecoder = decoder;

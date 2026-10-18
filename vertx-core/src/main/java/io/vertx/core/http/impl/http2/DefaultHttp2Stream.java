@@ -32,6 +32,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
+import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.impl.MessageWrite;
@@ -279,6 +280,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       throw new IllegalStateException("Content has already started");
     }
     if (decoder != null) {
+      decoder = new SafeContentDecoder(decoder, context, this::handleException);
       decoder.init(this);
     }
     contentDecoder = decoder;

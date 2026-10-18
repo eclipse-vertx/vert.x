@@ -41,6 +41,10 @@ public interface ContentDecoder extends Handler<ByteBuf> {
   /**
    * Init the decoder, passing the {@code flowController}, this method is called when the decoder is set on the stream.
    *
+   * <p>This method is not expected to fail: checking that the decoder can decode the content of a stream belongs to
+   * the creation of the decoder. A failure is a programming error, it is thrown to the caller setting the decoder
+   * and the decoder is not set.
+   *
    * @param flowController the flow controller
    */
   void init(FlowController flowController);

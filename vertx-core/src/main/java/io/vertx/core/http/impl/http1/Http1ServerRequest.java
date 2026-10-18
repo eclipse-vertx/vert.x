@@ -30,6 +30,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
@@ -590,6 +591,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       throw new IllegalStateException("Content has already started");
     }
     if (decoder != null) {
+      decoder = new SafeContentDecoder(decoder, context, this::onException);
       decoder.init(this);
     }
     contentDecoder = decoder;
