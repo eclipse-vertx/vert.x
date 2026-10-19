@@ -94,9 +94,7 @@ public class FormDecoder implements ContentDecoder<Void> {
     if (decoder != null) {
       try {
         decoder.offer(new DefaultHttpContent(copy.duplicate()));
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
-               HttpPostRequestDecoder.TooLongFormFieldException |
-               HttpPostRequestDecoder.TooManyFormFieldsException e) {
+      } catch (Exception e) {
         dispose(e);
         exceptionHandler.handle(e);
       }
@@ -116,9 +114,6 @@ public class FormDecoder implements ContentDecoder<Void> {
             Attribute attr = (Attribute) data;
             try {
               attributes.add(attr.getName(), attr.getValue());
-            } catch (Exception e) {
-              // Will never happen, anyway handle it somehow just in case
-              exceptionHandler.handle(e);
             } finally {
               attr.release();
             }

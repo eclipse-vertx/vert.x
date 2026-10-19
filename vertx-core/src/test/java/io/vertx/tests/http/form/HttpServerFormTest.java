@@ -28,6 +28,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.assertWaitUntil;
@@ -152,7 +153,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     return events;
   }
 
-  private int sendForm(String contentType, Buffer body, int chunkSize) {
+  private int sendForm(String contentType, Buffer body, int chunkSize) throws Exception {
     return client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
       .compose(req -> {
         req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
@@ -167,7 +168,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
         }
       })
       .compose(resp -> resp.end().map(v -> resp.statusCode()))
-      .await();
+      .await(10, TimeUnit.SECONDS);
   }
 
   @Test
@@ -303,5 +304,35 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     assertWaitUntil(() -> expectMultipart.get() != null);
     assertTrue("Expected an IllegalStateException, got " + thrown.get(), thrown.get() instanceof IllegalStateException);
     assertFalse(expectMultipart.get());
+  }
+
+  @Test
+  public void testFormDecodingErrorNotReportedByNettyAsDecoderError() throws Exception {
+    // An illegal charset name in a part content type makes Netty throw an IllegalCharsetNameException
+    // that is not wrapped in an HttpPostRequestDecoder exception
+    String boundary = "a4e41223-a527-49b6-ac1c-315d76be757e";
+    Buffer body = Buffer.buffer("--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"attr\"\r\n" +
+      "Content-Type: text/plain; charset=@@@\r\n" +
+      "\r\n" +
+      "value\r\n" +
+      "--" + boundary + "--\r\n");
+    Buffer received = Buffer.buffer();
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      List<String> reqEvents = recordFormEvents(req);
+      req.handler(received::appendBuffer);
+      req.endHandler(v -> {
+        events.addAll(reqEvents);
+        events.add("end");
+        req.response().setStatusCode(400).end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm("multipart/form-data; boundary=" + boundary, body, 0));
+    assertWaitUntil(() -> events.contains("end"));
+    assertEquals(1, Collections.frequency(events, "request-exception"));
+    assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
+    assertEquals(body, received);
   }
 }
