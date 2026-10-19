@@ -319,6 +319,9 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
    * Be aware that the attributes will only be available after the whole body has been received, i.e. after
    * the request end handler has been called.
    * <p>
+   * The form is decoded as a whole: when the body is not a valid form, the request exception handler is called and
+   * no attributes are available, including those decoded before the error.
+   * <p>
    * {@link #setExpectMultipart(boolean)} must be called first before trying to get the form attributes.
    *
    * @return the form attributes

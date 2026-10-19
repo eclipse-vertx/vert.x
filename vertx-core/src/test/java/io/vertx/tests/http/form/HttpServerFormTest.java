@@ -335,4 +335,31 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
     assertEquals(body, received);
   }
+
+  @Test
+  public void testFormErrorGivesNoAttributes() throws Exception {
+    String boundary = "a4e41223-a527-49b6-ac1c-315d76be757e";
+    String body = "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"attr\"\r\n" +
+      "\r\n" +
+      "value\r\n" +
+      "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+      "Content-Type: text/plain\r\n" +
+      "\r\n" +
+      "some-content-without-the-closing-boundary";
+    AtomicReference<MultiMap> attributes = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.uploadHandler(upload -> upload.handler(buff -> {}));
+      req.exceptionHandler(err -> {});
+      req.endHandler(v -> {
+        attributes.set(MultiMap.caseInsensitiveMultiMap().addAll(req.formAttributes()));
+        req.response().setStatusCode(400).end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0));
+    assertTrue("Expected no attributes, got " + attributes.get(), attributes.get().isEmpty());
+  }
 }

@@ -105,6 +105,7 @@ public class FormDecoder implements ContentDecoder<Void> {
   @Override
   public Void handleEnd() {
     if (decoder != null) {
+      MultiMap decoded = MultiMap.caseInsensitiveMultiMap();
       Throwable failure = null;
       try {
         decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -113,7 +114,7 @@ public class FormDecoder implements ContentDecoder<Void> {
           if (data instanceof Attribute) {
             Attribute attr = (Attribute) data;
             try {
-              attributes.add(attr.getName(), attr.getValue());
+              decoded.add(attr.getName(), attr.getValue());
             } finally {
               attr.release();
             }
@@ -131,6 +132,8 @@ public class FormDecoder implements ContentDecoder<Void> {
       }
       if (failure != null) {
         exceptionHandler.handle(failure);
+      } else {
+        attributes.addAll(decoded);
       }
     }
     endHandler.handle(null);
