@@ -380,4 +380,39 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     assertEquals(400, sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0));
     assertTrue("Expected no attributes, got " + attributes.get(), attributes.get().isEmpty());
   }
+
+  @Test
+  public void testMultipartMediaTypeIsCaseInsensitive() throws Exception {
+    String boundary = "a4e41223-a527-49b6-ac1c-315d76be757e";
+    String body = "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"name\"\r\n" +
+      "\r\n" +
+      "Julien\r\n" +
+      "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+      "Content-Type: text/plain\r\n" +
+      "\r\n" +
+      "hello\r\n" +
+      "--" + boundary + "--\r\n";
+    List<String> uploads = Collections.synchronizedList(new ArrayList<>());
+    AtomicReference<MultiMap> attributes = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.uploadHandler(upload -> {
+        Buffer content = Buffer.buffer();
+        upload.handler(content::appendBuffer);
+        upload.endHandler(v -> uploads.add(upload.filename() + ":" + content));
+      });
+      req.endHandler(v -> {
+        attributes.set(MultiMap.caseInsensitiveMultiMap().addAll(req.formAttributes()));
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(200, sendForm("Multipart/Form-Data; boundary=" + boundary, Buffer.buffer(body), 0));
+    assertEquals("Expected the name attribute, got " + attributes.get(), "Julien", attributes.get().get("name"));
+    assertEquals(1, attributes.get().size());
+    assertWaitUntil(() -> !uploads.isEmpty());
+    assertEquals(List.of("tmp-0.txt:hello"), uploads);
+  }
 }

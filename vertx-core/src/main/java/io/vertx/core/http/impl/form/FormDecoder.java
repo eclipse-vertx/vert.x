@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.form;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpRequest;
@@ -30,6 +31,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 
+import java.util.Locale;
 import java.util.function.Supplier;
 
 /**
@@ -66,6 +68,7 @@ public class FormDecoder implements ContentDecoder<Void> {
     if (!HttpUtils.isValidMultipartMethod(request.method())) {
       throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
     }
+    request = normalizeMediaType(request, contentType);
     NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, uploadHandler);
     factory.setMaxLimit(maxAttributeSize);
     HttpPostRequestDecoder decoder;
@@ -157,5 +160,18 @@ public class FormDecoder implements ContentDecoder<Void> {
     if (failure != null && partial instanceof NettyFileUpload) {
       ((NettyFileUpload) partial).handleException(failure);
     }
+  }
+
+  private static HttpRequest normalizeMediaType(HttpRequest request, String contentType) {
+    int index = contentType.indexOf(';');
+    String mediaType = index == -1 ? contentType : contentType.substring(0, index);
+    String normalized = mediaType.toLowerCase(Locale.ROOT);
+    if (normalized.equals(mediaType)) {
+      return request;
+    }
+    HttpRequest copy = new DefaultHttpRequest(request.protocolVersion(), request.method(), request.uri());
+    copy.headers().set(request.headers());
+    copy.headers().set(HttpHeaderNames.CONTENT_TYPE, normalized + contentType.substring(mediaType.length()));
+    return copy;
   }
 }
