@@ -13,7 +13,7 @@
  *
  *  You may elect to redistribute this code under either of these licenses.
  */
-package io.vertx.tests.http.fileupload;
+package io.vertx.tests.http.form;
 
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.vertx.core.buffer.Buffer;

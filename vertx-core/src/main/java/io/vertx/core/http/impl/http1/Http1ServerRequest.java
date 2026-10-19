@@ -15,14 +15,12 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.multipart.Attribute;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
-import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.form.FormDecoder;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
@@ -86,7 +84,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private Handler<HttpServerFileUpload> uploadHandler;
   private MultiMap attributes;
   private boolean expectMultipart;
-  private HttpPostRequestDecoder decoder;
+  private FormDecoder formDecoder;
   private ContentDecoder<?> contentDecoder;
   private boolean contentStarted;
   private boolean decoderClosed;
@@ -470,28 +468,18 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
     checkEnded();
-    expectMultipart = expect;
     if (expect) {
-      if (decoder == null) {
-        String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
-        if (contentType == null) {
-          throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
-        }
-        if (!HttpUtils.isValidMultipartContentType(contentType)) {
-          throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
-        }
-        if (!HttpUtils.isValidMultipartMethod(request.method())) {
-          throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
-        }
-        NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-        factory.setMaxLimit(conn.maxFormAttributeSize());
-        int maxFields = conn.maxFormFields();
-        int maxBufferedBytes = conn.maxFormBufferedBytes();
-        decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
+      if (formDecoder == null) {
+        FormDecoder decoder = new FormDecoder(context, request, conn.maxFormAttributeSize(), conn.maxFormFields(),
+          conn.maxFormBufferedBytes(), () -> uploadHandler, attributes(), this::onException, chunk -> {}, v -> {});
+        contentDecoder(decoder);
+        formDecoder = decoder;
       }
-    } else {
-      decoder = null;
+    } else if (formDecoder != null) {
+      contentDecoder(null);
+      formDecoder = null;
     }
+    expectMultipart = expect;
     return this;
   }
 
@@ -529,17 +517,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   private void onData(Buffer data) {
     bytesRead += data.length();
-    if (decoder != null) {
-      try {
-        decoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
-               HttpPostRequestDecoder.TooLongFormFieldException |
-               HttpPostRequestDecoder.TooManyFormFieldsException e) {
-        decoder.destroy();
-        decoder = null;
-        onException(e);
-      }
-    }
     context.dispatch(((BufferInternal)data).getByteBuf(), currentDecoder());
     HttpEventHandler handler = eventHandler;
     if (handler != null) {
@@ -552,10 +529,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     if (METRICS_ENABLED) {
       reportRequestComplete();
     }
-    if (decoder != null) {
-      endDecode();
-    }
-    response.requestEnded = true;
     ContentDecoder<?> decoder = currentDecoder();
     ContextInternal prev = context.beginDispatch();
     try {
@@ -567,6 +540,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     } finally {
       context.endDispatch(prev);
     }
+    response.requestEnded = true;
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     HttpEventHandler handler = eventHandler;
     if (handler != null) {
@@ -628,35 +602,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
   }
 
-  private void endDecode() {
-    try {
-      decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-      while (decoder.hasNext()) {
-        InterfaceHttpData data = decoder.next();
-        if (data instanceof Attribute) {
-          Attribute attr = (Attribute) data;
-          try {
-            attributes().add(attr.getName(), attr.getValue());
-          } catch (Exception e) {
-            // Will never happen, anyway handle it somehow just in case
-            onException(e);
-          } finally {
-            attr.release();
-          }
-        }
-      }
-    } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
-             HttpPostRequestDecoder.TooLongFormFieldException |
-             HttpPostRequestDecoder.TooManyFormFieldsException e) {
-      onException(e);
-    }  catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
-      // ignore this as it is expected
-    } finally {
-      decoder.destroy();
-      decoder = null;
-    }
-  }
-
   void handleException(Throwable t) {
     context.execute(t, this::onException);
   }
@@ -668,14 +613,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   void onException(Throwable t) {
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
-    InterfaceHttpData upload = null;
     if (!isEnded()) {
       handler = eventHandler;
       if (handler == null && failure == null) {
         failure = t;
-      }
-      if (decoder != null) {
-        upload = decoder.currentPartialHttpData();
       }
     }
     if (!response.ended()) {
@@ -686,9 +627,6 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
     if (resp != null) {
       resp.onException(t);
-    }
-    if (upload instanceof NettyFileUpload) {
-      ((NettyFileUpload) upload).handleException(t);
     }
     if (handler != null) {
       handler.handleException(t);

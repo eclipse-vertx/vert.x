@@ -138,5 +138,6 @@ module io.vertx.core {
   exports io.vertx.core.net.endpoint.impl to io.vertx.core.tests;
   exports io.vertx.core.http.impl.tcp to io.vertx.core.tests;
   exports io.vertx.core.http.impl.quic to io.vertx.core.tests;
+  exports io.vertx.core.http.impl.form to io.vertx.core.tests;
 
 }

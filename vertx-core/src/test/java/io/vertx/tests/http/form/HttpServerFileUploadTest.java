@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.tests.http.fileupload;
+package io.vertx.tests.http.form;
 
 import io.netty.handler.codec.DecoderException;
 import io.vertx.core.*;
@@ -29,9 +29,13 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -466,33 +470,59 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
   }
 
   @Test
+  public void testFormUploadFailedWhenServerConnectionClosed() throws Exception {
+    AtomicReference<HttpConnection> connection = new AtomicReference<>();
+    CountDownLatch received = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      connection.set(req.connection());
+      req.setExpectMultipart(true);
+      req.uploadHandler(upload -> {
+        upload.handler(buff -> {
+          upload.pause();
+          received.countDown();
+        });
+        upload.exceptionHandler(err -> {
+          Assert.assertTrue(err instanceof HttpClosedException);
+          testComplete();
+        });
+        upload.endHandler(v -> Assert.fail("Upload should not end"));
+      });
+    });
+    server.listen(testAddress).await();
+    client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form"))
+      .andThen(TestUtils.onSuccess(req -> req.send(ClientMultipartForm.multipartForm()
+        .textFileUpload("file", "tmp-0.txt", "text/plain", Buffer.buffer(TestUtils.randomAlphaString(1024 * 1024))))));
+    Assert.assertTrue(received.await(10, TimeUnit.SECONDS));
+    connection.get().close();
+    await();
+  }
+
+  @Test
   public void testFormUploadAttributes() throws Exception {
+    testFormUploadAttributes(false);
+  }
+
+  @Test
+  public void testFormUploadAttributesOnPausedRequest() throws Exception {
+    testFormUploadAttributes(true);
+  }
+
+  private void testFormUploadAttributes(boolean paused) throws Exception {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
         Assert.assertEquals(req.path(), "/form");
-        req.response().setChunked(true);
-        req.setExpectMultipart(true);
-        req.uploadHandler(upload -> upload.handler(buffer -> {
-          Assert.fail("Should get here");
-        }));
-        req.endHandler(v -> {
-          MultiMap attrs = req.formAttributes();
-          attributeCount.set(attrs.size());
-          Assert.assertEquals("vert x", attrs.get("framework"));
-          Assert.assertEquals("vert x", req.getFormAttribute("framework"));
-          Assert.assertEquals("vert x", req.formAttributes().get("framework"));
-          Assert.assertEquals(Collections.singletonList("vert x"), req.formAttributes().getAll("framework"));
-          Assert.assertEquals("jvm", attrs.get("runson"));
-          Assert.assertEquals("jvm", req.getFormAttribute("runson"));
-          Assert.assertEquals("jvm", req.formAttributes().get("runson"));
-          Assert.assertEquals(Collections.singletonList("jvm"), req.formAttributes().getAll("runson"));
-          Assert.assertEquals("0", attrs.get("list"));
-          Assert.assertEquals("0", req.getFormAttribute("list"));
-          Assert.assertEquals("0", req.formAttributes().get("list"));
-          Assert.assertEquals(Arrays.asList("0", "1"), req.formAttributes().getAll("list"));
-          req.response().end();
-        });
+        if (paused) {
+          req.pause();
+          vertx.setTimer(100, id -> {
+            expectFormAttributes(req, attributeCount);
+            req.resume();
+          });
+        } else {
+          expectFormAttributes(req, attributeCount);
+        }
       }
     });
 
@@ -524,6 +554,107 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
     }));
 
     await();
+  }
+
+  private static void expectFormAttributes(HttpServerRequest req, AtomicInteger attributeCount) {
+    req.response().setChunked(true);
+    req.setExpectMultipart(true);
+    req.uploadHandler(upload -> upload.handler(buffer -> {
+      Assert.fail("Should get here");
+    }));
+    req.endHandler(v -> {
+      MultiMap attrs = req.formAttributes();
+      attributeCount.set(attrs.size());
+      Assert.assertEquals("vert x", attrs.get("framework"));
+      Assert.assertEquals("vert x", req.getFormAttribute("framework"));
+      Assert.assertEquals("vert x", req.formAttributes().get("framework"));
+      Assert.assertEquals(Collections.singletonList("vert x"), req.formAttributes().getAll("framework"));
+      Assert.assertEquals("jvm", attrs.get("runson"));
+      Assert.assertEquals("jvm", req.getFormAttribute("runson"));
+      Assert.assertEquals("jvm", req.formAttributes().get("runson"));
+      Assert.assertEquals(Collections.singletonList("jvm"), req.formAttributes().getAll("runson"));
+      Assert.assertEquals("0", attrs.get("list"));
+      Assert.assertEquals("0", req.getFormAttribute("list"));
+      Assert.assertEquals("0", req.formAttributes().get("list"));
+      Assert.assertEquals(Arrays.asList("0", "1"), req.formAttributes().getAll("list"));
+      req.response().end();
+    });
+  }
+
+  @Test
+  public void testPauseRequestWithExpectMultipart() throws Exception {
+    String body = "framework=vertx&runson=jvm";
+    AtomicBoolean paused = new AtomicBoolean(true);
+    Buffer received = Buffer.buffer();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.pause();
+      req.handler(chunk -> {
+        Assert.assertFalse(paused.get());
+        received.appendBuffer(chunk);
+      });
+      req.endHandler(v -> {
+        Assert.assertFalse(paused.get());
+        Assert.assertEquals(body, received.toString());
+        Assert.assertEquals("vertx", req.getFormAttribute("framework"));
+        Assert.assertEquals("jvm", req.getFormAttribute("runson"));
+        req.response().end();
+      });
+      vertx.setTimer(100, id -> {
+        paused.set(false);
+        req.resume();
+      });
+    });
+    server.listen(testAddress).await();
+    client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form"))
+      .compose(req -> req
+        .putHeader("content-type", "application/x-www-form-urlencoded")
+        .send(body)
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await(Duration.ofSeconds(10));
+  }
+
+  @Test
+  public void testDisableExpectMultipartAfterContentStarted() throws Exception {
+    testChangeExpectMultipartAfterContentStarted(true);
+  }
+
+  @Test
+  public void testEnableExpectMultipartAfterContentStarted() throws Exception {
+    testChangeExpectMultipartAfterContentStarted(false);
+  }
+
+  private void testChangeExpectMultipartAfterContentStarted(boolean expect) throws Exception {
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.setExpectMultipart(expect);
+      req.handler(chunk -> {
+        if (failure.get() == null) {
+          try {
+            req.setExpectMultipart(!expect);
+          } catch (Throwable t) {
+            failure.set(t);
+          }
+        }
+      });
+      req.endHandler(v -> {
+        req.response().end(req.isExpectMultipart() + ":" + req.formAttributes().get("framework"));
+      });
+    });
+    server.listen(testAddress).await();
+    Buffer body = client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form"))
+      .compose(req -> req
+        .putHeader("content-type", "application/x-www-form-urlencoded")
+        .send("framework=vertx")
+        .compose(HttpClientResponse::body))
+      .await();
+    Assert.assertTrue(failure.get() instanceof IllegalStateException);
+    Assert.assertEquals(expect ? "true:vertx" : "false:null", body.toString());
   }
 
   @Test

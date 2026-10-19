@@ -15,15 +15,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.multipart.Attribute;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
-import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.impl.form.FormDecoder;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
@@ -70,7 +68,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   private boolean ended;
   private Handler<HttpServerFileUpload> uploadHandler;
   private boolean expectMultipart;
-  private HttpPostRequestDecoder postRequestDecoder;
+  private FormDecoder formDecoder;
   private long bytesRead;
   private FlowController flowController;
 
@@ -181,12 +179,8 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   }
 
   private void notifyException(Throwable failure) {
-    InterfaceHttpData upload = null;
     HttpEventHandler handler;
     synchronized (connection) {
-      if (postRequestDecoder != null) {
-        upload = postRequestDecoder.currentPartialHttpData();
-      }
       handler = eventHandler;
       if (handler == null && this.failure == null) {
         this.failure = failure;
@@ -195,24 +189,10 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
     if (handler != null) {
       handler.handleException(failure);
     }
-    if (upload instanceof NettyFileUpload) {
-      ((NettyFileUpload)upload).handleException(failure);
-    }
   }
 
   public void handleData(Buffer data) {
     bytesRead += data.length();
-    if (postRequestDecoder != null) {
-      try {
-        postRequestDecoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
-      } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
-               HttpPostRequestDecoder.TooLongFormFieldException |
-               HttpPostRequestDecoder.TooManyFormFieldsException e) {
-        postRequestDecoder.destroy();
-        postRequestDecoder = null;
-        handleException(e);
-      }
-    }
     HttpEventHandler handler = eventHandler;
     if (handler != null) {
       handler.handleChunk(data);
@@ -226,32 +206,6 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
     HttpEventHandler handler;
     synchronized (connection) {
       ended = true;
-      if (postRequestDecoder != null) {
-        try {
-          postRequestDecoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-          while (postRequestDecoder.hasNext()) {
-            InterfaceHttpData data = postRequestDecoder.next();
-            if (data instanceof Attribute) {
-              Attribute attr = (Attribute) data;
-              try {
-                formAttributes().add(attr.getName(), attr.getValue());
-              } catch (Exception e) {
-                // Will never happen, anyway handle it somehow just in case
-                handleException(e);
-              } finally {
-                attr.release();
-              }
-            }
-          }
-        } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
-          // ignore this as it is expected
-        } catch (Exception e) {
-          handleException(e);
-        } finally {
-          postRequestDecoder.destroy();
-          postRequestDecoder = null;
-        }
-      }
       handler = eventHandler;
     }
     if (handler != null) {
@@ -444,31 +398,26 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   public HttpServerRequest setExpectMultipart(boolean expect) {
     synchronized (connection) {
       checkEnded();
-      expectMultipart = expect;
       if (expect) {
-        if (postRequestDecoder == null) {
-          String contentType = headersMap.get(HttpHeaderNames.CONTENT_TYPE);
-          if (contentType == null) {
-            throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
-          }
-          if (!HttpUtils.isValidMultipartContentType(contentType)) {
-            throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
-          }
-          if (!HttpUtils.isValidMultipartMethod(method.toNetty())) {
-            throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
-          }
+        if (formDecoder == null) {
           HttpRequest req = new DefaultHttpRequest(
             io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
             method.toNetty(),
             uri);
-          req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          factory.setMaxLimit(maxFormAttributeSize);
-          postRequestDecoder = new HttpPostRequestDecoder(factory, req, HttpConstants.DEFAULT_CHARSET, maxFormFields, maxFormBufferedBytes);
+          String contentType = headersMap.get(HttpHeaderNames.CONTENT_TYPE);
+          if (contentType != null) {
+            req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
+          }
+          FormDecoder decoder = new FormDecoder(context, req, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes,
+            () -> uploadHandler, formAttributes(), this::handleException, this::handleData, v -> handleEnd());
+          stream.contentDecoder(decoder);
+          formDecoder = decoder;
         }
-      } else {
-        postRequestDecoder = null;
+      } else if (formDecoder != null) {
+        stream.contentDecoder(this);
+        formDecoder = null;
       }
+      expectMultipart = expect;
     }
     return this;
   }

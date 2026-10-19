@@ -9,15 +9,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.form;
 
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.FlowController;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
@@ -25,24 +25,27 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
+class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   private final ContextInternal context;
-  private final HttpServerRequest request;
   private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
+  private FlowController flowController;
 
-  public NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(ContextInternal context, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
-    this.request = request;
     this.lazyUploadHandler = lazyUploadHandler;
+  }
+
+  void flowController(FlowController flowController) {
+    this.flowController = flowController;
   }
 
   @Override
   public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     NettyFileUpload nettyUpload = new NettyFileUpload(
       context,
-      request,
+      flowController,
       name,
       filename,
       contentType,
