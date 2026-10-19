@@ -632,6 +632,38 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     assertEquals(Buffer.buffer(content), body);
   }
 
+  /**
+   * The headers end handler must see the automatic headers and must be called before the cookies are added, other
+   * projects (e.g. vertx-web) rely on this behavior.
+   */
+  @Test
+  public void testResponseHeadersEndHandlerCalledAfterAutomaticHeadersAndBeforeCookies() throws Exception {
+    String content = "blah";
+    AtomicReference<String> contentLength = new AtomicReference<>();
+    AtomicReference<List<String>> setCookies = new AtomicReference<>();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.addCookie(Cookie.cookie("the_cookie", "wibble"));
+      resp.headersEndHandler(v -> {
+        contentLength.set(resp.headers().get(HttpHeaders.CONTENT_LENGTH));
+        setCookies.set(resp.headers().getAll(HttpHeaders.SET_COOKIE));
+      });
+      resp.end(content);
+    });
+    startServer(testAddress);
+    HttpClientResponse resp = client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .compose(r -> r.body().map(r)))
+      .await();
+    assertEquals(200, resp.statusCode());
+    assertEquals(List.of("the_cookie=wibble"), resp.headers().getAll(HttpHeaders.SET_COOKIE));
+    // Automatic headers are set before the headers end handler is called
+    assertEquals(String.valueOf(content.length()), contentLength.get());
+    // Cookies are set after the headers end handler is called
+    assertEquals(List.of(), setCookies.get());
+  }
+
   @Test
   public void testAbsoluteURI() throws Exception {
     String uri = "http://" + config.host() + ":" + config.port() + "/this/is/a/path/foo.html";

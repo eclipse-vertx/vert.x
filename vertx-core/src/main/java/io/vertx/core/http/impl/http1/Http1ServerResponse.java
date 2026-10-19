@@ -608,10 +608,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void prepareHeaders(long contentLength) {
-    Handler<Void> handler = headersEndHandler;
-    if (handler != null) {
-      context.dispatch(handler);
-    }
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       headers.set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
     } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
@@ -627,6 +623,10 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       if (contentLength >= 0 && !headers.contains(HttpHeaders.CONTENT_LENGTH) && !headers.contains(HttpHeaders.TRANSFER_ENCODING)) {
         headers.set(HttpHeaders.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
       }
+    }
+    Handler<Void> handler = headersEndHandler;
+    if (handler != null) {
+      context.dispatch(handler);
     }
     if (cookies != null) {
       setCookies();
