@@ -167,7 +167,7 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
       connection.onClose();
     } else if (ctx.channel() instanceof Http2StreamChannel) {
       Http2StreamChannel streamChannel = (Http2StreamChannel) ctx.channel();
-      connection.onStreamClose(streamChannel.stream().id());
+      connection.onStreamInactive(streamChannel.stream().id());
     }
     super.channelInactive(ctx);
   }
@@ -288,10 +288,7 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
 
   @Override
   public void onStreamClosed(Http2Stream stream) {
-    if (connection instanceof Http2MultiplexClientConnection) {
-      Http2MultiplexClientConnection clientConnection = (Http2MultiplexClientConnection) connection;
-      clientConnection.refresh();
-    }
+    connection.onStreamClosed(stream.id());
   }
 
   @Override

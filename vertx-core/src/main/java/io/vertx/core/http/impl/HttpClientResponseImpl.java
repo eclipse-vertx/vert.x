@@ -380,6 +380,6 @@ public class HttpClientResponseImpl implements HttpClientResponse, ContentDecode
   }
 
   @Override
-  public void handleClose(boolean abrupt) {
+  public void handleClose(Throwable cause) {
   }
 }

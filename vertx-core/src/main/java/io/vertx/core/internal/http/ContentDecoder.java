@@ -21,7 +21,29 @@ import io.vertx.core.Handler;
 public interface ContentDecoder extends Handler<ByteBuf> {
 
   /**
-   * Init the decoder, passing the {@code flowController}.
+   * A decoder discarding the content.
+   */
+  ContentDecoder NULL = new ContentDecoder() {
+    @Override
+    public void init(FlowController flowController) {
+    }
+    @Override
+    public void handle(ByteBuf chunk) {
+    }
+    @Override
+    public void handleEnd() {
+    }
+    @Override
+    public void handleClose(Throwable cause) {
+    }
+  };
+
+  /**
+   * Init the decoder, passing the {@code flowController}, this method is called when the decoder is set on the stream.
+   *
+   * <p>This method is not expected to fail: checking that the decoder can decode the content of a stream belongs to
+   * the creation of the decoder. A failure is a programming error, it is thrown to the caller setting the decoder
+   * and the decoder is not set.
    *
    * @param flowController the flow controller
    */
@@ -43,9 +65,9 @@ public interface ContentDecoder extends Handler<ByteBuf> {
   /**
    * Signals the underlying stream is closed, content chunks might still be delivered when the queue is paused.
    *
-   * @param abrupt whether the stream closed without receiving the end, e.g. a reset or a connection close, in which case
-   *               nothing is delivered after this call
+   * @param cause {@code null} when the stream closed after receiving the end, otherwise the cause of the abrupt close,
+   *              e.g. a reset or a connection close, in which case nothing is delivered after this call
    */
-  void handleClose(boolean abrupt);
+  void handleClose(Throwable cause);
 
 }

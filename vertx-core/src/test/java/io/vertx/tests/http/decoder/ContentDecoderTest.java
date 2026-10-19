@@ -11,6 +11,7 @@
 package io.vertx.tests.http.decoder;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.vertx.core.Context;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
@@ -30,6 +31,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -43,29 +45,41 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
 
   @Test
   public void testContentDecoderLifecycleInvariantEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, false);
+    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, false, false);
     assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, false);
+    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, false, false);
+    assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
+  }
+
+  @Test
+  public void testContentDecoderSetOnPausedRequestEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, false, true);
+    assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
+  }
+
+  @Test
+  public void testContentDecoderSetOnPausedRequestWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, false, true);
     assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWhenConnectionClosedEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, true);
+    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, true, false);
     assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWhenConnectionClosedWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, true);
+    List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, true, false);
     assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
   }
 
-  private List<String> testContentDecoderLifecycleInvariant(ThreadingModel threadingModel, Checkpoint checkpoint1, Checkpoint checkpoint2, boolean fail) throws Exception {
+  private List<String> testContentDecoderLifecycleInvariant(ThreadingModel threadingModel, Checkpoint checkpoint1, Checkpoint checkpoint2, boolean fail, boolean paused) throws Exception {
 
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
     Runnable checkThread;
@@ -81,9 +95,11 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
     }
 
     List<String> events = Collections.synchronizedList(new ArrayList<>());
+    Buffer received = Buffer.buffer();
+    AtomicReference<Throwable> setAfterStart = new AtomicReference<>();
     server.requestHandler(req -> {
       Context current = Vertx.currentContext();
-      ((HttpServerRequestInternal)req).contentDecoder(new ContentDecoder() {
+      ContentDecoder decoder = new ContentDecoder() {
         @Override
         public void init(FlowController flowController) {
           checkThread.run();
@@ -96,7 +112,13 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
           assertSame(current, Vertx.currentContext());
           if (!events.get(events.size() - 1).equals("handle")) {
             events.add("handle");
+            try {
+              ((HttpServerRequestInternal)req).contentDecoder(ContentDecoder.NULL);
+            } catch (Throwable t) {
+              setAfterStart.set(t);
+            }
           }
+          received.appendBytes(ByteBufUtil.getBytes(chunk));
           checkpoint2.succeed();
         }
         @Override
@@ -107,14 +129,24 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
           req.response().end();
         }
         @Override
-        public void handleClose(boolean abrupt) {
+        public void handleClose(Throwable cause) {
           checkThread.run();
           assertSame(current, Vertx.currentContext());
-          events.add(abrupt ? "handleClose(abrupt)" : "handleClose");
+          events.add(cause != null ? "handleClose(abrupt)" : "handleClose");
           vertx.setTimer(100, id -> checkpoint1.succeed());
         }
-      });
-      assertEquals(List.of("init"), events);
+      };
+      if (paused) {
+        req.pause();
+        vertx.setTimer(100, id -> {
+          ((HttpServerRequestInternal)req).contentDecoder(decoder);
+          assertEquals(List.of("init"), events);
+          req.resume();
+        });
+      } else {
+        ((HttpServerRequestInternal)req).contentDecoder(decoder);
+        assertEquals(List.of("init"), events);
+      }
     });
 
     startServer(((VertxInternal)vertx).createContext(threadingModel));
@@ -129,6 +161,10 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
       request.send(expected).await(timeout).end().await(timeout);
     }
     checkpoint1.awaitSuccess();
+    assertTrue(setAfterStart.get() instanceof IllegalStateException);
+    if (!fail) {
+      assertEquals(expected, received);
+    }
     return new ArrayList<>(events);
   }
 }

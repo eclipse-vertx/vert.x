@@ -396,7 +396,14 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
     }
   }
 
-  void onStreamClose(int streamId) {
+  void onStreamClosed(int streamId) {
+    StreamChannel channel = channels.get(streamId);
+    if (channel != null) {
+      channel.channelContext.channel().config().setAutoRead(true);
+    }
+  }
+
+  void onStreamInactive(int streamId) {
     StreamChannel streamChannel = channels.remove(streamId);
     if (streamChannel != null) {
       S stream = streamChannel.stream;

@@ -239,12 +239,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       req.handleBegin(keepAlive);
       req.context.emit(req, r -> {
         Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
-        req.inHead = true;
-        try {
-          handler.handle(req);
-        } finally {
-          req.inHead = false;
-        }
+        handler.handle(req);
       });
     } else {
       handleOther(msg);
@@ -341,12 +336,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     next.context.emit(next, next_ -> {
       next.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
-      next_.inHead = true;
-      try {
-        handler.handle(next_);
-      } finally {
-        next_.inHead = false;
-      }
+      handler.handle(next_);
     });
     doResume();
   }

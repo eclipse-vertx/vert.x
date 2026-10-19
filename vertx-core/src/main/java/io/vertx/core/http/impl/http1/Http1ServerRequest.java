@@ -30,6 +30,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
@@ -87,10 +88,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
-  private ContentDecoder initializedDecoder;
+  private ContentDecoder contentDecoder;
+  private boolean contentStarted;
   private boolean decoderClosed;
   private boolean trailersReceived;
-  boolean inHead;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
     super(conn.queryParamDecoder());
@@ -540,10 +541,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
         onException(e);
       }
     }
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      context.dispatch(((BufferInternal)data).getByteBuf(), decoder);
-    }
+    context.dispatch(((BufferInternal)data).getByteBuf(), currentDecoder());
     HttpEventHandler handler = eventHandler;
     if (handler != null) {
       handler.handleChunk(data);
@@ -559,18 +557,16 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       endDecode();
     }
     response.requestEnded = true;
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null) {
-      ContextInternal prev = context.beginDispatch();
-      try {
-        decoder.handleEnd();
-        if (!decoderClosed) {
-          decoderClosed = true;
-          decoder.handleClose(false);
-        }
-      } finally {
-        context.endDispatch(prev);
+    ContentDecoder decoder = currentDecoder();
+    ContextInternal prev = context.beginDispatch();
+    try {
+      decoder.handleEnd();
+      if (!decoderClosed) {
+        decoderClosed = true;
+        decoder.handleClose(null);
       }
+    } finally {
+      context.endDispatch(prev);
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     HttpEventHandler handler = eventHandler;
@@ -591,18 +587,26 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   @Override
   public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
-    if (inHead) {
-      ContentDecoder prev = initializedDecoder;
-      if (prev != null) {
-        initializedDecoder = null;
-        prev.handleClose(false);
-      }
-      if (decoder != null) {
-        decoder.init(this);
-        initializedDecoder = decoder;
+    if (contentStarted) {
+      throw new IllegalStateException("Content has already started");
+    }
+    if (decoder != null) {
+      decoder = new SafeContentDecoder(decoder, context, this::onException);
+      decoder.init(this);
+    }
+    contentDecoder = decoder;
+    return this;
+  }
+
+  private ContentDecoder currentDecoder() {
+    if (!contentStarted) {
+      contentStarted = true;
+      if (contentDecoder == null) {
+        contentDecoder = ContentDecoder.NULL;
+        contentDecoder.init(this);
       }
     }
-    return this;
+    return contentDecoder;
   }
 
   private void reportRequestBegin() {
@@ -686,16 +690,16 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   void onClosed() {
     onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     response.tryClose();
-    ContentDecoder decoder = initializedDecoder;
-    if (decoder != null && !decoderClosed) {
+    if (!decoderClosed) {
       decoderClosed = true;
+      ContentDecoder decoder = currentDecoder();
       ContextInternal prev = context.beginDispatch();
       try {
-        boolean abrupt = !trailersReceived;
-        if (abrupt) {
-          initializedDecoder = null;
+        Throwable cause = trailersReceived ? null : HttpUtils.CONNECTION_CLOSED_EXCEPTION;
+        if (cause != null) {
+          contentDecoder = ContentDecoder.NULL;
         }
-        decoder.handleClose(abrupt);
+        decoder.handleClose(cause);
       } finally {
         context.endDispatch(prev);
       }

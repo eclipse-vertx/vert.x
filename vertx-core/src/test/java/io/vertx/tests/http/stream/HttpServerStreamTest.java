@@ -31,9 +31,15 @@ import io.vertx.test.http.SimpleHttpTest2;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.*;
 
@@ -93,11 +99,11 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       AtomicInteger count = new AtomicInteger();
       stream.contentDecoder(new ContentDecoderBase() {
         @Override
-        public void handle(ByteBuf chunk) {
+        protected void handleImpl(ByteBuf chunk) {
           count.addAndGet(chunk.readableBytes());
         }
         @Override
-        public void handleEnd() {
+        protected void handleEndImpl() {
           vertx.setTimer(250, id -> {
             assertEquals(numChunks * expectedChunk.length(), count.get());
             checkpoint.succeed();
@@ -121,12 +127,12 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       AtomicInteger count = new AtomicInteger();
       stream.contentDecoder(new ContentDecoderBase() {
         @Override
-        public void handle(ByteBuf chunk) {
+        protected void handleImpl(ByteBuf chunk) {
           count.addAndGet(chunk.readableBytes());
           checkpoint2.succeed();
         }
         @Override
-        public void handleClose(boolean abrupt) {
+        protected void handleCloseImpl(Throwable cause) {
           checkpoint1.succeed();
         }
       });
@@ -148,7 +154,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       AtomicInteger closed = new AtomicInteger();
       stream.contentDecoder(new ContentDecoderBase() {
         @Override
-        public void handle(ByteBuf chunk) {
+        protected void handleImpl(ByteBuf chunk) {
           int val = count.incrementAndGet();
           if (val == 1) {
             flowController.pause();
@@ -157,13 +163,13 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           }
         }
         @Override
-        public void handleEnd() {
+        protected void handleEndImpl() {
           checkpoint.fail(new AssertionError("handleEnd delivered after abrupt close"));
         }
         @Override
-        public void handleClose(boolean abrupt) {
+        protected void handleCloseImpl(Throwable cause) {
           assertEquals(0, closed.getAndIncrement());
-          assertTrue(abrupt);
+          assertNotNull(cause);
           assertEquals(1, count.get());
           flowController.resume();
           vertx.setTimer(100, id -> checkpoint.succeed());
@@ -188,7 +194,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       AtomicBoolean closed = new AtomicBoolean();
       stream.contentDecoder(new ContentDecoderBase() {
         @Override
-        public void handle(ByteBuf chunk) {
+        protected void handleImpl(ByteBuf chunk) {
           if (bytes.getAndAdd(chunk.readableBytes()) == 0) {
             flowController.pause();
             checkpoint2.succeed();
@@ -197,14 +203,14 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           }
         }
         @Override
-        public void handleEnd() {
+        protected void handleEndImpl() {
           assertTrue(closed.get());
           assertEquals(numChunks * expectedChunk.length(), bytes.get());
           checkpoint1.succeed();
         }
         @Override
-        public void handleClose(boolean abrupt) {
-          assertFalse(abrupt);
+        protected void handleCloseImpl(Throwable cause) {
+          assertNull(cause);
           closed.set(true);
           flowController.resume();
         }
@@ -219,6 +225,122 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     request.end().await();
     checkpoint2.awaitSuccess();
     request.connection().close().await();
+  }
+
+  @Test
+  public void testContentDecoderClosedByServerConnectionCloseWhilePaused(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    AtomicReference<HttpConnection> connection = new AtomicReference<>();
+    handler = stream -> {
+      connection.set(stream.connection());
+      stream.contentDecoder(new ContentDecoderBase() {
+        @Override
+        protected void handleImpl(ByteBuf chunk) {
+          flowController.pause();
+          checkpoint2.succeed();
+        }
+        @Override
+        protected void handleCloseImpl(Throwable cause) {
+          assertTrue(cause instanceof HttpClosedException);
+          checkpoint1.succeed();
+        }
+      });
+    };
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions).await();
+    request.setChunked(true).write(TestUtils.randomAlphaString(1024 * 1024));
+    checkpoint2.awaitSuccess();
+    connection.get().close().await();
+  }
+
+  @Test
+  public void testContentDecoderHandleFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new ContentDecoderBase() {
+      @Override
+      protected void handleImpl(ByteBuf chunk) {
+        throw FAILURE;
+      }
+    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true);
+  }
+
+  @Test
+  public void testContentDecoderHandleFailureWhilePaused(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new ContentDecoderBase() {
+      @Override
+      protected void handleImpl(ByteBuf chunk) {
+        flowController.pause();
+        throw FAILURE;
+      }
+    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true, TestUtils.randomAlphaString(1024 * 1024));
+  }
+
+  @Test
+  public void testContentDecoderHandleEndFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new ContentDecoderBase() {
+      @Override
+      protected void handleEndImpl() {
+        throw FAILURE;
+      }
+    }, List.of("handle", "handleEnd", "stream-exception", "handleClose(failure)", "stream-close"), true);
+  }
+
+  @Test
+  public void testContentDecoderHandleCloseFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new ContentDecoderBase() {
+      @Override
+      protected void handleCloseImpl(Throwable cause) {
+        throw FAILURE;
+      }
+    }, List.of("handle", "handleEnd", "handleClose", "context-exception", "stream-close"), false);
+  }
+
+  @Test
+  public void testContentDecoderInitFailure(Checkpoint checkpoint) throws Exception {
+    testContentDecoderFailure(checkpoint, () -> new ContentDecoderBase() {
+      @Override
+      protected void initImpl(FlowController flowController) {
+        throw FAILURE;
+      }
+    }, List.of("init-thrown", "stream-close"), true);
+  }
+
+  private void testContentDecoderFailure(Checkpoint checkpoint, Supplier<ContentDecoderBase> decoder, List<String> expected, boolean ordered) throws Exception {
+    testContentDecoderFailure(checkpoint, decoder, expected, ordered, "chunk-2");
+  }
+
+  private void testContentDecoderFailure(Checkpoint checkpoint, Supplier<ContentDecoderBase> decoder, List<String> expected, boolean ordered, String lastChunk) throws Exception {
+    ContentDecoderBase contentDecoder = decoder.get();
+    List<String> events = contentDecoder.events;
+    vertx.exceptionHandler(err -> events.add(err == FAILURE ? "context-exception" : "context-exception:" + err));
+    handler = stream -> {
+      stream.exceptionHandler(err -> events.add(err == FAILURE ? "stream-exception" : "stream-exception:" + err));
+      stream.trailersHandler(trailers -> {
+        HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
+        stream.writeHead(head, EMPTY_BUFFER, true);
+      });
+      stream.closeHandler(v -> {
+        events.add("stream-close");
+        vertx.setTimer(100, id -> {
+          List<String> actual = new ArrayList<>(events);
+          boolean match = ordered ? expected.equals(actual) : expected.size() == actual.size() && new HashSet<>(expected).equals(new HashSet<>(actual));
+          if (match) {
+            checkpoint.succeed();
+          } else {
+            checkpoint.fail(new AssertionError("Expected " + expected + " but was " + actual));
+          }
+        });
+      });
+      try {
+        stream.contentDecoder(contentDecoder);
+      } catch (RuntimeException e) {
+        events.add(e == FAILURE ? "init-thrown" : "init-thrown:" + e);
+      }
+    };
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions).await();
+    request.setChunked(true).write("chunk-1").await();
+    request.end(lastChunk);
   }
 
   @Test
@@ -495,25 +617,51 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       .await();
   }
 
-  private static class ContentDecoderBase implements ContentDecoder {
+  static final RuntimeException FAILURE = new RuntimeException("expected failure");
 
+  abstract static class ContentDecoderBase implements ContentDecoder {
+
+    final List<String> events = Collections.synchronizedList(new ArrayList<>());
     protected FlowController flowController;
 
     @Override
-    public void init(FlowController flowController) {
+    public final void init(FlowController flowController) {
       this.flowController = flowController;
+      initImpl(flowController);
     }
 
     @Override
-    public void handle(ByteBuf chunk) {
+    public final void handle(ByteBuf chunk) {
+      synchronized (events) {
+        if (events.isEmpty() || !events.get(events.size() - 1).equals("handle")) {
+          events.add("handle");
+        }
+      }
+      handleImpl(chunk);
     }
 
     @Override
-    public void handleEnd() {
+    public final void handleEnd() {
+      events.add("handleEnd");
+      handleEndImpl();
     }
 
     @Override
-    public void handleClose(boolean abrupt) {
+    public final void handleClose(Throwable cause) {
+      events.add(cause == null ? "handleClose" : cause == FAILURE ? "handleClose(failure)" : "handleClose(" + cause + ")");
+      handleCloseImpl(cause);
+    }
+
+    protected void initImpl(FlowController flowController) {
+    }
+
+    protected void handleImpl(ByteBuf chunk) {
+    }
+
+    protected void handleEndImpl() {
+    }
+
+    protected void handleCloseImpl(Throwable cause) {
     }
   }
 }

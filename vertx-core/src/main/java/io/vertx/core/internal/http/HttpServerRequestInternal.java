@@ -50,6 +50,7 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
    *
    * @param decoder the decoder
    * @return this request
+   * @throws IllegalStateException when the content has already started
    */
   public abstract HttpServerRequestInternal contentDecoder(ContentDecoder decoder);
 
