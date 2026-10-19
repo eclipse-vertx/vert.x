@@ -191,6 +191,24 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testFormWithSeveralErrorsReportsTheFirstOnly() throws Exception {
+    List<String> events = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      List<String> reqEvents = recordFormEvents(req);
+      req.endHandler(v -> {
+        events.addAll(reqEvents);
+        events.add("end");
+        req.response().setStatusCode(400).end();
+      });
+    });
+    startServer(testAddress);
+    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer("a=%zz&b=%zz&c=%zz"), 0));
+    assertWaitUntil(() -> events.contains("end"));
+    assertEquals(1, Collections.frequency(events, "request-exception"));
+    assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
+  }
+
+  @Test
   public void testFormDecodingErrorKeepsDeliveringChunks() throws Exception {
     StringBuilder sb = new StringBuilder();
     for (int i = 0;i < 300;i++) {
