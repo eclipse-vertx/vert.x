@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.test.core.TestUtils.assertWaitUntil;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class HttpServerFormTest extends SimpleHttpTest2 {
@@ -282,5 +283,25 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     assertEquals(200, sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0));
     assertWaitUntil(() -> events.contains("end"));
     assertEquals(List.of("upload-exception", "request-exception", "end"), events);
+  }
+
+  @Test
+  public void testIllegalCharsetInFormContentType() throws Exception {
+    AtomicReference<Throwable> thrown = new AtomicReference<>();
+    AtomicReference<Boolean> expectMultipart = new AtomicReference<>();
+    server.requestHandler(req -> {
+      try {
+        req.setExpectMultipart(true);
+      } catch (Throwable t) {
+        thrown.set(t);
+      }
+      expectMultipart.set(req.isExpectMultipart());
+      req.response().end();
+    });
+    startServer(testAddress);
+    assertEquals(200, sendForm("multipart/form-data; boundary=XYZ; charset=@@@", Buffer.buffer("--XYZ--\r\n"), 0));
+    assertWaitUntil(() -> expectMultipart.get() != null);
+    assertTrue("Expected an IllegalStateException, got " + thrown.get(), thrown.get() instanceof IllegalStateException);
+    assertFalse(expectMultipart.get());
   }
 }

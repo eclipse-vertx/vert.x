@@ -28,14 +28,17 @@ import java.util.function.Supplier;
 class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   private final ContextInternal context;
-  private final FlowController flowController;
   private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
+  private FlowController flowController;
 
-  NettyFileUploadDataFactory(ContextInternal context, FlowController flowController, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(ContextInternal context, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
-    this.flowController = flowController;
     this.lazyUploadHandler = lazyUploadHandler;
+  }
+
+  void flowController(FlowController flowController) {
+    this.flowController = flowController;
   }
 
   @Override

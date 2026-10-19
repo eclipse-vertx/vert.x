@@ -39,16 +39,11 @@ import java.util.function.Supplier;
  */
 public class FormDecoder implements ContentDecoder<Void> {
 
-  private final ContextInternal context;
-  private final HttpRequest request;
-  private final int maxAttributeSize;
-  private final int maxFields;
-  private final int maxBufferedBytes;
-  private final Supplier<Handler<HttpServerFileUpload>> uploadHandler;
   private final MultiMap attributes;
   private final Handler<Throwable> exceptionHandler;
   private final Handler<Buffer> chunkHandler;
   private final Handler<Void> endHandler;
+  private final NettyFileUploadDataFactory factory;
   private HttpPostRequestDecoder decoder;
 
   public FormDecoder(ContextInternal context,
@@ -71,23 +66,25 @@ public class FormDecoder implements ContentDecoder<Void> {
     if (!HttpUtils.isValidMultipartMethod(request.method())) {
       throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
     }
-    this.context = context;
-    this.request = request;
-    this.maxAttributeSize = maxAttributeSize;
-    this.maxFields = maxFields;
-    this.maxBufferedBytes = maxBufferedBytes;
-    this.uploadHandler = uploadHandler;
+    NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, uploadHandler);
+    factory.setMaxLimit(maxAttributeSize);
+    HttpPostRequestDecoder decoder;
+    try {
+      decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
+    } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+      throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request", e);
+    }
     this.attributes = attributes;
     this.exceptionHandler = exceptionHandler;
     this.chunkHandler = chunkHandler;
     this.endHandler = endHandler;
+    this.factory = factory;
+    this.decoder = decoder;
   }
 
   @Override
   public void init(FlowController flowController) {
-    NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, flowController, uploadHandler);
-    factory.setMaxLimit(maxAttributeSize);
-    decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
+    factory.flowController(flowController);
   }
 
   @Override
