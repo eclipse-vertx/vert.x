@@ -85,7 +85,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   private Handler<Void> drainHandler;
 
   // Content
-  private ContentDecoder contentDecoder;
+  private ContentDecoder<?> contentDecoder;
   private boolean contentStarted;
 
   DefaultHttp2Stream(Http2Connection connection, ContextInternal context) {
@@ -275,19 +275,28 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   @Override
-  public S contentDecoder(ContentDecoder decoder) {
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
     if (contentStarted) {
       throw new IllegalStateException("Content has already started");
     }
+    ContentDecoder<?> previous = contentDecoder;
+    Future<T> result;
     if (decoder != null) {
-      decoder = new SafeContentDecoder(decoder, context, this::handleException);
-      decoder.init(this);
+      SafeContentDecoder<T> safeDecoder = new SafeContentDecoder<>(decoder, context);
+      safeDecoder.init(this);
+      contentDecoder = safeDecoder;
+      result = safeDecoder.future();
+    } else {
+      contentDecoder = null;
+      result = context.succeededFuture();
     }
-    contentDecoder = decoder;
-    return (S)this;
+    if (previous != null) {
+      previous.handleClose(HttpUtils.STREAM_CLOSED_EXCEPTION);
+    }
+    return result;
   }
 
-  private ContentDecoder currentDecoder() {
+  private ContentDecoder<?> currentDecoder() {
     if (!contentStarted) {
       contentStarted = true;
       if (contentDecoder == null) {
@@ -552,7 +561,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         handler.handle(trailers);
       }
     }
-    ContentDecoder decoder = currentDecoder();
+    ContentDecoder<?> decoder = currentDecoder();
     ContextInternal prev = context.beginDispatch();
     try {
       decoder.handleEnd();
@@ -681,7 +690,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
     @Override
     protected void handleConsumerClosed() {
-      ContentDecoder decoder = currentDecoder();
+      ContentDecoder<?> decoder = currentDecoder();
       ContextInternal prev = context.beginDispatch();
       try {
         Throwable cause;

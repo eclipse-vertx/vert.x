@@ -36,7 +36,7 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientResponseImpl implements HttpClientResponse, ContentDecoder {
+public class HttpClientResponseImpl implements HttpClientResponse, ContentDecoder<Void> {
 
   private static final Throwable ENDED_SENTINEL = new Throwable();
 
@@ -287,7 +287,7 @@ public class HttpClientResponseImpl implements HttpClientResponse, ContentDecode
     }
   }
 
-  public void handleEnd() {
+  public Void handleEnd() {
     HttpEventHandler handler;
     synchronized (conn) {
       ended = ENDED_SENTINEL;
@@ -297,6 +297,7 @@ public class HttpClientResponseImpl implements HttpClientResponse, ContentDecode
     if (handler != null) {
       handler.handleEnd();
     }
+    return null;
   }
 
   void handleException(Throwable err) {

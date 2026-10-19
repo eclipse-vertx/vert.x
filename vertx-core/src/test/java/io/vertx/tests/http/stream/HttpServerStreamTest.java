@@ -12,6 +12,7 @@ package io.vertx.tests.http.stream;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -254,13 +255,42 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testContentDecoderReplaced(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    handler = stream -> {
+      ContentDecoderBase replaced = new ContentDecoderBase() {
+        @Override
+        protected void handleImpl(ByteBuf chunk) {
+          checkpoint1.fail(new AssertionError("content delivered to the replaced decoder"));
+        }
+      };
+      stream.contentDecoder(replaced).onComplete(ar -> {
+        assertSame(HttpUtils.STREAM_CLOSED_EXCEPTION, ar.cause());
+        checkpoint1.succeed();
+      });
+      ContentDecoderBase decoder = new ContentDecoderBase() {
+      };
+      stream.contentDecoder(decoder).onComplete(ar -> {
+        assertEquals(RESULT, ar.result());
+        assertEquals(List.of("handleClose(" + HttpUtils.STREAM_CLOSED_EXCEPTION + ")"), replaced.events);
+        assertEquals(List.of("handle", "handleEnd"), decoder.events);
+        checkpoint2.succeed();
+      });
+    };
+    startServer(testAddress);
+    client
+      .request(requestOptions)
+      .compose(request -> request.end("chunk"))
+      .await();
+  }
+
+  @Test
   public void testContentDecoderHandleFailure(Checkpoint checkpoint) throws Exception {
     testContentDecoderFailure(checkpoint, () -> new ContentDecoderBase() {
       @Override
       protected void handleImpl(ByteBuf chunk) {
         throw FAILURE;
       }
-    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true);
+    }, List.of("handle", "future-failure", "handleClose(failure)", "stream-close"), true);
   }
 
   @Test
@@ -271,7 +301,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         flowController.pause();
         throw FAILURE;
       }
-    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true, TestUtils.randomAlphaString(1024 * 1024));
+    }, List.of("handle", "future-failure", "handleClose(failure)", "stream-close"), true, TestUtils.randomAlphaString(1024 * 1024));
   }
 
   @Test
@@ -281,7 +311,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       protected void handleEndImpl() {
         throw FAILURE;
       }
-    }, List.of("handle", "handleEnd", "stream-exception", "handleClose(failure)", "stream-close"), true);
+    }, List.of("handle", "handleEnd", "future-failure", "handleClose(failure)", "stream-close"), true);
   }
 
   @Test
@@ -291,7 +321,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       protected void handleCloseImpl(Throwable cause) {
         throw FAILURE;
       }
-    }, List.of("handle", "handleEnd", "handleClose", "context-exception", "stream-close"), false);
+    }, List.of("handle", "handleEnd", "future-success:" + RESULT, "handleClose", "context-exception", "stream-close"), false);
   }
 
   @Test
@@ -331,7 +361,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         });
       });
       try {
-        stream.contentDecoder(contentDecoder);
+        stream.contentDecoder(contentDecoder).onComplete(ar -> events.add(outcome(ar)));
       } catch (RuntimeException e) {
         events.add(e == FAILURE ? "init-thrown" : "init-thrown:" + e);
       }
@@ -618,8 +648,17 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   }
 
   static final RuntimeException FAILURE = new RuntimeException("expected failure");
+  static final String RESULT = "decoded";
 
-  abstract static class ContentDecoderBase implements ContentDecoder {
+  static String outcome(AsyncResult<?> ar) {
+    if (ar.succeeded()) {
+      return "future-success:" + ar.result();
+    } else {
+      return ar.cause() == FAILURE ? "future-failure" : "future-failure:" + ar.cause();
+    }
+  }
+
+  abstract static class ContentDecoderBase implements ContentDecoder<String> {
 
     final List<String> events = Collections.synchronizedList(new ArrayList<>());
     protected FlowController flowController;
@@ -641,9 +680,10 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     }
 
     @Override
-    public final void handleEnd() {
+    public final String handleEnd() {
       events.add("handleEnd");
       handleEndImpl();
+      return RESULT;
     }
 
     @Override

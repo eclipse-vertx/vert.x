@@ -134,9 +134,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream contentDecoder(ContentDecoder decoder) {
-    delegate.contentDecoder(decoder);
-    return this;
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
+    return delegate.contentDecoder(decoder);
   }
 
   @Override

@@ -20,7 +20,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.net.HostAndPort;
 
 /**
@@ -34,8 +33,6 @@ public interface HttpServerStream extends HttpStream {
 
   Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end);
   Future<Void> end(MultiMap headers);
-
-  HttpServerStream contentDecoder(ContentDecoder decoder);
 
   Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority);
 

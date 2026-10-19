@@ -117,9 +117,8 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
-    delegate.contentDecoder(decoder);
-    return this;
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
+    return delegate.contentDecoder(decoder);
   }
 
   @Override

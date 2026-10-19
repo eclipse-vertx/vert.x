@@ -495,7 +495,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         @Override
         protected void handleConsumerClosed() {
           StreamImpl stream = (StreamImpl)Stream.this;
-          ContentDecoder decoder = stream.currentDecoder();
+          ContentDecoder<?> decoder = stream.currentDecoder();
           Throwable cause = trailers == null ? HttpUtils.CONNECTION_CLOSED_EXCEPTION : null;
           if (cause != null) {
             stream.contentDecoder = ContentDecoder.NULL;
@@ -602,7 +602,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     private Handler<Void> closeHandler;
     private boolean trailersDispatched;
 
-    private ContentDecoder contentDecoder;
+    private ContentDecoder<?> contentDecoder;
     private boolean contentStarted;
 
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
@@ -610,19 +610,28 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public HttpClientStream contentDecoder(ContentDecoder decoder) {
+    public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
       if (contentStarted) {
         throw new IllegalStateException("Content has already started");
       }
+      ContentDecoder<?> previous = contentDecoder;
+      Future<T> result;
       if (decoder != null) {
-        decoder = new SafeContentDecoder(decoder, context, this::handleException);
-        decoder.init(this);
+        SafeContentDecoder<T> safeDecoder = new SafeContentDecoder<>(decoder, context);
+        safeDecoder.init(this);
+        contentDecoder = safeDecoder;
+        result = safeDecoder.future();
+      } else {
+        contentDecoder = null;
+        result = context.succeededFuture();
       }
-      contentDecoder = decoder;
-      return this;
+      if (previous != null) {
+        previous.handleClose(HttpUtils.STREAM_CLOSED_EXCEPTION);
+      }
+      return result;
     }
 
-    private ContentDecoder currentDecoder() {
+    private ContentDecoder<?> currentDecoder() {
       if (!contentStarted) {
         contentStarted = true;
         if (contentDecoder == null) {

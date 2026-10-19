@@ -12,7 +12,9 @@ package io.vertx.tests.http.decoder;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -46,37 +48,37 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
   @Test
   public void testContentDecoderLifecycleInvariantEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, false, false);
-    assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
+    assertEquals(List.of("init", "handle", "handleEnd", "handleClose", "future-success"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, false, false);
-    assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
+    assertEquals(List.of("init", "handle", "handleEnd", "handleClose", "future-success"), events);
   }
 
   @Test
   public void testContentDecoderSetOnPausedRequestEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, false, true);
-    assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
+    assertEquals(List.of("init", "handle", "handleEnd", "handleClose", "future-success"), events);
   }
 
   @Test
   public void testContentDecoderSetOnPausedRequestWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, false, true);
-    assertEquals(List.of("init", "handle", "handleEnd", "handleClose"), events);
+    assertEquals(List.of("init", "handle", "handleEnd", "handleClose", "future-success"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWhenConnectionClosedEventLoop(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.EVENT_LOOP, checkpoint1, checkpoint2, true, false);
-    assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
+    assertEquals(List.of("init", "handle", "handleClose(abrupt)", "future-failure"), events);
   }
 
   @Test
   public void testContentDecoderLifecycleInvariantWhenConnectionClosedWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     List<String> events = testContentDecoderLifecycleInvariant(ThreadingModel.WORKER, checkpoint1, checkpoint2, true, false);
-    assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
+    assertEquals(List.of("init", "handle", "handleClose(abrupt)", "future-failure"), events);
   }
 
   private List<String> testContentDecoderLifecycleInvariant(ThreadingModel threadingModel, Checkpoint checkpoint1, Checkpoint checkpoint2, boolean fail, boolean paused) throws Exception {
@@ -97,9 +99,10 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
     List<String> events = Collections.synchronizedList(new ArrayList<>());
     Buffer received = Buffer.buffer();
     AtomicReference<Throwable> setAfterStart = new AtomicReference<>();
+    AtomicReference<String> outcome = new AtomicReference<>();
     server.requestHandler(req -> {
       Context current = Vertx.currentContext();
-      ContentDecoder decoder = new ContentDecoder() {
+      ContentDecoder<Void> decoder = new ContentDecoder<>() {
         @Override
         public void init(FlowController flowController) {
           checkThread.run();
@@ -122,11 +125,12 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
           checkpoint2.succeed();
         }
         @Override
-        public void handleEnd() {
+        public Void handleEnd() {
           checkThread.run();
           assertSame(current, Vertx.currentContext());
           events.add("handleEnd");
           req.response().end();
+          return null;
         }
         @Override
         public void handleClose(Throwable cause) {
@@ -136,15 +140,20 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
           vertx.setTimer(100, id -> checkpoint1.succeed());
         }
       };
+      Handler<AsyncResult<Void>> outcomeHandler = ar -> {
+        checkThread.run();
+        assertSame(current, Vertx.currentContext());
+        outcome.set(ar.succeeded() ? "future-success" : "future-failure");
+      };
       if (paused) {
         req.pause();
         vertx.setTimer(100, id -> {
-          ((HttpServerRequestInternal)req).contentDecoder(decoder);
+          ((HttpServerRequestInternal)req).contentDecoder(decoder).onComplete(outcomeHandler);
           assertEquals(List.of("init"), events);
           req.resume();
         });
       } else {
-        ((HttpServerRequestInternal)req).contentDecoder(decoder);
+        ((HttpServerRequestInternal)req).contentDecoder(decoder).onComplete(outcomeHandler);
         assertEquals(List.of("init"), events);
       }
     });
@@ -165,6 +174,8 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
     if (!fail) {
       assertEquals(expected, received);
     }
-    return new ArrayList<>(events);
+    List<String> result = new ArrayList<>(events);
+    result.add(outcome.get());
+    return result;
   }
 }

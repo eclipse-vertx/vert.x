@@ -14,16 +14,16 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.Handler;
 
 /**
- * A decoder for content.
+ * A decoder for content producing a result of type {@code T}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface ContentDecoder extends Handler<ByteBuf> {
+public interface ContentDecoder<T> extends Handler<ByteBuf> {
 
   /**
    * A decoder discarding the content.
    */
-  ContentDecoder NULL = new ContentDecoder() {
+  ContentDecoder<Void> NULL = new ContentDecoder<>() {
     @Override
     public void init(FlowController flowController) {
     }
@@ -31,7 +31,8 @@ public interface ContentDecoder extends Handler<ByteBuf> {
     public void handle(ByteBuf chunk) {
     }
     @Override
-    public void handleEnd() {
+    public Void handleEnd() {
+      return null;
     }
     @Override
     public void handleClose(Throwable cause) {
@@ -59,8 +60,10 @@ public interface ContentDecoder extends Handler<ByteBuf> {
 
   /**
    * Signals the end of the stream and no more chunk will be delivered.
+   *
+   * @return the decoded result
    */
-  void handleEnd();
+  T handleEnd();
 
   /**
    * Signals the underlying stream is closed, content chunks might still be delivered when the queue is paused.
