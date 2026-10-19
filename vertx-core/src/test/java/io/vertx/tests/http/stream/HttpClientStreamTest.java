@@ -94,7 +94,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
     startServer(testAddress);
     HttpClientStream stream = client.openStream(requestOptions).await();
     List<String> events = Collections.synchronizedList(new ArrayList<>());
-    stream.contentDecoder(new ContentDecoder() {
+    stream.contentDecoder(new ContentDecoder<Void>() {
       @Override
       public void init(FlowController flowController) {
         events.add("init");
@@ -105,18 +105,19 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
         received.tryComplete();
       }
       @Override
-      public void handleEnd() {
+      public Void handleEnd() {
         events.add("handleEnd");
+        return null;
       }
       @Override
       public void handleClose(Throwable cause) {
         events.add(cause != null ? "handleClose(abrupt)" : "handleClose");
         vertx.setTimer(100, id -> {
-          assertEquals(List.of("init", "handle", "handleClose(abrupt)"), events);
+          assertEquals(List.of("init", "handle", "future-failure", "handleClose(abrupt)"), events);
           checkpoint.succeed();
         });
       }
-    });
+    }).onComplete(ar -> events.add(ar.succeeded() ? "future-success" : "future-failure"));
     HttpClientConnection connection = stream.connection();
     HttpRequestHead head = new HttpRequestHead(
       "https",
@@ -135,7 +136,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       protected void handleImpl(ByteBuf chunk) {
         throw HttpServerStreamTest.FAILURE;
       }
-    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true);
+    }, List.of("handle", "future-failure", "handleClose(failure)", "stream-close"), true);
   }
 
   @Test
@@ -146,7 +147,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
         flowController.pause();
         throw HttpServerStreamTest.FAILURE;
       }
-    }, List.of("handle", "stream-exception", "handleClose(failure)", "stream-close"), true, TestUtils.randomAlphaString(1024 * 1024));
+    }, List.of("handle", "future-failure", "handleClose(failure)", "stream-close"), true, TestUtils.randomAlphaString(1024 * 1024));
   }
 
   @Test
@@ -156,7 +157,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       protected void handleEndImpl() {
         throw HttpServerStreamTest.FAILURE;
       }
-    }, List.of("handle", "handleEnd", "stream-exception", "handleClose(failure)", "stream-close"), true);
+    }, List.of("handle", "handleEnd", "future-failure", "handleClose(failure)", "stream-close"), true);
   }
 
   @Test
@@ -166,7 +167,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       protected void handleCloseImpl(Throwable cause) {
         throw HttpServerStreamTest.FAILURE;
       }
-    }, List.of("handle", "handleEnd", "handleClose", "context-exception", "stream-close"), false);
+    }, List.of("handle", "handleEnd", "future-success:" + HttpServerStreamTest.RESULT, "handleClose", "context-exception", "stream-close"), false);
   }
 
   @Test
@@ -209,7 +210,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       });
     });
     try {
-      stream.contentDecoder(contentDecoder);
+      stream.contentDecoder(contentDecoder).onComplete(ar -> events.add(HttpServerStreamTest.outcome(ar)));
     } catch (RuntimeException e) {
       events.add(e == failure ? "init-thrown" : "init-thrown:" + e);
     }

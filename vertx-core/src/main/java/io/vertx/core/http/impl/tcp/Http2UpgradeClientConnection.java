@@ -212,9 +212,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public HttpClientStream contentDecoder(ContentDecoder decoder) {
-      delegate.contentDecoder(decoder);
-      return this;
+    public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
+      return delegate.contentDecoder(decoder);
     }
 
     @Override
@@ -305,7 +304,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradedStream.pushHandler(pushHandler);
       upgradedStream.customFrameHandler(unknownFrameHandler);
       upgradedStream.closeHandler(closeHandler);
-      upgradedStream.contentDecoder(contentDecoder);
       upgradingStream.headHandler(null);
       upgradingStream.trailersHandler(null);
       upgradingStream.priorityChangeHandler(null);
@@ -316,7 +314,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
       upgradingStream.pushHandler(null);
       upgradingStream.customFrameHandler(null);
       upgradingStream.closeHandler(null);
-      upgradingStream.contentDecoder(null);
       headHandler = null;
       trailersHandler = null;
       priorityHandler = null;
@@ -367,7 +364,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private Handler<HttpClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
-    private ContentDecoder contentDecoder;
+    private boolean upgradeRejected;
 
     UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, ClientMetrics<?, ?, ?> clientMetrics,
                     Http2ChannelUpgrade upgrade, Http1ClientConnection upgradingConnection) {
@@ -397,6 +394,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
         }
         @Override
         public void upgradeRejected() {
+          UpgradingStream.this.upgradeRejected = true;
           UpgradingStream.this.upgradedConnection.upgradeProcessed = true;
         }
         @Override
@@ -556,14 +554,14 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public HttpClientStream contentDecoder(ContentDecoder decoder) {
+    public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
       if (upgradedStream != null) {
-        upgradedStream.contentDecoder(decoder);
+        return upgradedStream.contentDecoder(decoder);
+      } else if (upgradeRejected) {
+        return upgradingStream.contentDecoder(decoder);
       } else {
-        upgradingStream.contentDecoder(decoder);
-        contentDecoder = decoder;
+        throw new IllegalStateException("Upgrade in progress");
       }
-      return this;
     }
 
     @Override

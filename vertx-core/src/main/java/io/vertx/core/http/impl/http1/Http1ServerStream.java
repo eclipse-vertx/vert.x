@@ -21,7 +21,6 @@ import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 
@@ -278,11 +277,6 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   @Override
   public Http1ServerStream customFrameHandler(Handler<HttpFrame> handler) {
     return (Http1ServerStream)super.customFrameHandler(handler);
-  }
-
-  @Override
-  public Http1ServerStream contentDecoder(ContentDecoder decoder) {
-    return (Http1ServerStream) super.contentDecoder(decoder);
   }
 
   @Override

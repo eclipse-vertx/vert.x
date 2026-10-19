@@ -16,7 +16,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.internal.http.ContentDecoder;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -28,8 +27,6 @@ public interface HttpClientStream extends HttpStream {
   HttpClientConnection connection();
 
   Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end);
-
-  HttpClientStream contentDecoder(ContentDecoder decoder);
 
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream resetHandler(Handler<Long> handler);

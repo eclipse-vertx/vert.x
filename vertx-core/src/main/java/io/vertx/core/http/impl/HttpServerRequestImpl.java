@@ -33,7 +33,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -44,7 +43,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerRequestImpl extends HttpServerRequestBase implements ContentDecoder {
+public class HttpServerRequestImpl extends HttpServerRequestBase implements ContentDecoder<Void> {
 
   private final ContextInternal context;
   private final HttpServerStream stream;
@@ -125,9 +124,8 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   }
 
   @Override
-  public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
-    stream.contentDecoder(decoder);
-    return this;
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
+    return stream.contentDecoder(decoder);
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -224,7 +222,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   public void handleTrailers(MultiMap trailers) {
   }
 
-  public void handleEnd() {
+  public Void handleEnd() {
     HttpEventHandler handler;
     synchronized (connection) {
       ended = true;
@@ -259,6 +257,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
     if (handler != null) {
       handler.handleEnd();
     }
+    return null;
   }
 
   public void handleReset(long errorCode) {

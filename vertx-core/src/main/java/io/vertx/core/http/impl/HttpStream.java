@@ -50,13 +50,13 @@ public interface HttpStream {
 
   /**
    * Sets a decoder for the content of this stream. The decoder must be set early in the lifecycle of the stream, before
-   * any chunk is received.
+   * any chunk is received. A previously set decoder is closed with a {@link HttpClosedException}.
    *
    * @param decoder the decoder
-   * @return this stream
+   * @return the result of the decoder, failed when the decoder fails or is closed before the end of the content
    * @throws IllegalStateException when the content has already started
    */
-  HttpStream contentDecoder(ContentDecoder decoder);
+  <T> Future<T> contentDecoder(ContentDecoder<T> decoder);
 
   HttpStream resetHandler(Handler<Long> handler);
   HttpStream exceptionHandler(Handler<Throwable> handler);

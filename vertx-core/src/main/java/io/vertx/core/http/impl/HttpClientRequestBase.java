@@ -62,7 +62,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
     stream.pushHandler(this::handlePush);
     stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.contentDecoder(new ContentDecoder() {
+      stream.contentDecoder(new ContentDecoder<Void>() {
         @Override
         public void init(FlowController flowController) {
           response.init(flowController);
@@ -73,8 +73,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
           response.handle(chunk);
         }
         @Override
-        public void handleEnd() {
-          response.handleEnd();
+        public Void handleEnd() {
+          return response.handleEnd();
         }
         @Override
         public void handleClose(Throwable cause) {

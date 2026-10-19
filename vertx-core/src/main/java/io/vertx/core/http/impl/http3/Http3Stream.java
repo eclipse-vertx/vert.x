@@ -65,7 +65,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private Handler<Void> closeHandler;
   private Handler<Throwable> exceptionHandler;
 
-  private ContentDecoder contentDecoder;
+  private ContentDecoder<?> contentDecoder;
   private boolean contentStarted;
 
   public Http3Stream(C connection, QuicStreamInternal stream, ContextInternal context, StreamObserver observer) {
@@ -127,7 +127,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       }
       context.dispatch(trailers, trailHandler);
     }
-    ContentDecoder decoder = currentDecoder();
+    ContentDecoder<?> decoder = currentDecoder();
     context.dispatch(null, v -> decoder.handleEnd());
   }
 
@@ -146,7 +146,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     } else {
       handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
-    ContentDecoder decoder = currentDecoder();
+    ContentDecoder<?> decoder = currentDecoder();
     ContextInternal prev = context.beginDispatch();
     try {
       Throwable cause = inputShutdown ? null : HttpUtils.CONNECTION_CLOSED_EXCEPTION;
@@ -384,19 +384,28 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return stream;
   }
 
-  public S contentDecoder(ContentDecoder decoder) {
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
     if (contentStarted) {
       throw new IllegalStateException("Content has already started");
     }
+    ContentDecoder<?> previous = contentDecoder;
+    Future<T> result;
     if (decoder != null) {
-      decoder = new SafeContentDecoder(decoder, context, this::handleException);
-      decoder.init(this);
+      SafeContentDecoder<T> safeDecoder = new SafeContentDecoder<>(decoder, context);
+      safeDecoder.init(this);
+      contentDecoder = safeDecoder;
+      result = safeDecoder.future();
+    } else {
+      contentDecoder = null;
+      result = context.succeededFuture();
     }
-    contentDecoder = decoder;
-    return (S)this;
+    if (previous != null) {
+      previous.handleClose(HttpUtils.STREAM_CLOSED_EXCEPTION);
+    }
+    return result;
   }
 
-  private ContentDecoder currentDecoder() {
+  private ContentDecoder<?> currentDecoder() {
     if (!contentStarted) {
       contentStarted = true;
       if (contentDecoder == null) {

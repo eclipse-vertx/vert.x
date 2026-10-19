@@ -33,7 +33,6 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -88,7 +87,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
-  private ContentDecoder contentDecoder;
+  private ContentDecoder<?> contentDecoder;
   private boolean contentStarted;
   private boolean decoderClosed;
   private boolean trailersReceived;
@@ -557,7 +556,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
       endDecode();
     }
     response.requestEnded = true;
-    ContentDecoder decoder = currentDecoder();
+    ContentDecoder<?> decoder = currentDecoder();
     ContextInternal prev = context.beginDispatch();
     try {
       decoder.handleEnd();
@@ -586,19 +585,28 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   @Override
-  public HttpServerRequestInternal contentDecoder(ContentDecoder decoder) {
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
     if (contentStarted) {
       throw new IllegalStateException("Content has already started");
     }
+    ContentDecoder<?> previous = contentDecoder;
+    Future<T> result;
     if (decoder != null) {
-      decoder = new SafeContentDecoder(decoder, context, this::onException);
-      decoder.init(this);
+      SafeContentDecoder<T> safeDecoder = new SafeContentDecoder<>(decoder, context);
+      safeDecoder.init(this);
+      contentDecoder = safeDecoder;
+      result = safeDecoder.future();
+    } else {
+      contentDecoder = null;
+      result = context.succeededFuture();
     }
-    contentDecoder = decoder;
-    return this;
+    if (previous != null) {
+      previous.handleClose(HttpUtils.STREAM_CLOSED_EXCEPTION);
+    }
+    return result;
   }
 
-  private ContentDecoder currentDecoder() {
+  private ContentDecoder<?> currentDecoder() {
     if (!contentStarted) {
       contentStarted = true;
       if (contentDecoder == null) {
@@ -692,7 +700,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     response.tryClose();
     if (!decoderClosed) {
       decoderClosed = true;
-      ContentDecoder decoder = currentDecoder();
+      ContentDecoder<?> decoder = currentDecoder();
       ContextInternal prev = context.beginDispatch();
       try {
         Throwable cause = trailersReceived ? null : HttpUtils.CONNECTION_CLOSED_EXCEPTION;

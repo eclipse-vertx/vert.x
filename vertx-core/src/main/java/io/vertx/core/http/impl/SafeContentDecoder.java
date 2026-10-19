@@ -11,30 +11,36 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 
 /**
- * Wraps a content decoder, when the decoder fails, the failure is reported to the {@code failureHandler}, the decoder
+ * Wraps a content decoder and reports its outcome with a {@link Future}, completed with the result of the decoder or
+ * failed when the decoder fails or is closed before the end of the content. When the decoder fails, the decoder
  * is closed with the failure and the rest of the content is discarded. A failure of the decoder close is reported to
  * the context.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SafeContentDecoder implements ContentDecoder {
+public class SafeContentDecoder<T> implements ContentDecoder<Void> {
 
-  private final ContentDecoder decoder;
+  private final ContentDecoder<T> decoder;
   private final ContextInternal context;
-  private final Handler<Throwable> failureHandler;
+  private final PromiseInternal<T> promise;
   private FlowController flowController;
   private boolean failed;
 
-  public SafeContentDecoder(ContentDecoder decoder, ContextInternal context, Handler<Throwable> failureHandler) {
+  public SafeContentDecoder(ContentDecoder<T> decoder, ContextInternal context) {
     this.decoder = decoder;
     this.context = context;
-    this.failureHandler = failureHandler;
+    this.promise = context.promise();
+  }
+
+  public Future<T> future() {
+    return promise.future();
   }
 
   @Override
@@ -55,19 +61,26 @@ public class SafeContentDecoder implements ContentDecoder {
   }
 
   @Override
-  public void handleEnd() {
+  public Void handleEnd() {
     if (!failed) {
+      T result;
       try {
-        decoder.handleEnd();
+        result = decoder.handleEnd();
       } catch (Throwable err) {
         fail(err);
+        return null;
       }
+      promise.complete(result);
     }
+    return null;
   }
 
   @Override
   public void handleClose(Throwable cause) {
     if (!failed) {
+      if (cause != null) {
+        promise.tryFail(cause);
+      }
       close(cause);
     }
   }
@@ -75,7 +88,7 @@ public class SafeContentDecoder implements ContentDecoder {
   private void fail(Throwable err) {
     failed = true;
     flowController.resume();
-    failureHandler.handle(err);
+    promise.fail(err);
     close(err);
   }
 

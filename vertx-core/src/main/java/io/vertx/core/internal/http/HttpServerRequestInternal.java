@@ -11,6 +11,7 @@
 package io.vertx.core.internal.http;
 
 import io.netty.buffer.ByteBufAllocator;
+import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -49,10 +50,10 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
    * any chunk is received.
    *
    * @param decoder the decoder
-   * @return this request
+   * @return the result of the decoder, failed when the decoder fails or is closed before the end of the content
    * @throws IllegalStateException when the content has already started
    */
-  public abstract HttpServerRequestInternal contentDecoder(ContentDecoder decoder);
+  public abstract <T> Future<T> contentDecoder(ContentDecoder<T> decoder);
 
   /**
    * @return the request query param decoder, the {@code maxSize} and {@code useSemiColonAsDelimiter} reflect the default
