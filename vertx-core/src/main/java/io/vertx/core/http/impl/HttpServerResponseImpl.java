@@ -415,6 +415,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         throw new IllegalStateException("Response has already been written");
       }
       ended = end;
+      if (end && !headWritten && requiresContentLengthHeader()) {
+        headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
+      }
       headersEndHandler = headWritten ? null : this.headersEndHandler;
     }
     if (headersEndHandler != null) {
@@ -424,9 +427,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       if (chunk != null) {
         bytesWritten += chunk.length();
-      }
-      if (end && !headWritten && requiresContentLengthHeader()) {
-        headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
       }
       sendHeaders = prepareHeaders();
     }
