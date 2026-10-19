@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -76,6 +77,10 @@ public class FormDecoder implements ContentDecoder<Void> {
       decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
     } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
       throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request", e);
+    }
+    if (!decoder.isMultipart() && HttpHeaderValues.MULTIPART_FORM_DATA.regionMatches(true, 0, contentType, 0, HttpHeaderValues.MULTIPART_FORM_DATA.length())) {
+      decoder.destroy();
+      throw new IllegalStateException("Request must have a boundary in the multipart/form-data content-type header to decode a multipart request");
     }
     this.attributes = attributes;
     this.exceptionHandler = exceptionHandler;

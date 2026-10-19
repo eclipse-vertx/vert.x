@@ -415,4 +415,24 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     assertWaitUntil(() -> !uploads.isEmpty());
     assertEquals(List.of("tmp-0.txt:hello"), uploads);
   }
+
+  @Test
+  public void testMultipartContentTypeWithoutBoundary() throws Exception {
+    AtomicReference<Throwable> thrown = new AtomicReference<>();
+    AtomicReference<Boolean> expectMultipart = new AtomicReference<>();
+    server.requestHandler(req -> {
+      try {
+        req.setExpectMultipart(true);
+      } catch (Throwable t) {
+        thrown.set(t);
+      }
+      expectMultipart.set(req.isExpectMultipart());
+      req.response().end();
+    });
+    startServer(testAddress);
+    assertEquals(200, sendForm("multipart/form-data; charset=UTF-8", Buffer.buffer("--XYZ--\r\n"), 0));
+    assertWaitUntil(() -> expectMultipart.get() != null);
+    assertTrue("Expected an IllegalStateException, got " + thrown.get(), thrown.get() instanceof IllegalStateException);
+    assertFalse(expectMultipart.get());
+  }
 }
