@@ -4198,6 +4198,16 @@ public class WebSocketTest extends VertxTestBase2 {
     testMaxFrameSize(exit, sent, true, true, Buffer.buffer(new byte[256]), 256, false);
   }
 
+  @Test
+  public void testUnboundedMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, false, true, Buffer.buffer(new byte[256]), Integer.MAX_VALUE, false);
+  }
+
+  @Test
+  public void testClientUnboundedMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, true, Buffer.buffer(new byte[256]), Integer.MAX_VALUE, false);
+  }
+
   private void testMaxFrameSize(Checkpoint exit, Checkpoint sent, boolean clientLimit, boolean compressed, Buffer body, int maxFrameSize, boolean expectFailure) {
     HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTP_PORT)
@@ -4271,6 +4281,16 @@ public class WebSocketTest extends VertxTestBase2 {
   @Test
   public void testClientAllowMessageSizeLesserOrEqualsThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
     testMaxMessageSize(exit, sent, true, true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  @Test
+  public void testUnboundedMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, false, true, Buffer.buffer(new byte[256]), Integer.MAX_VALUE, false);
+  }
+
+  @Test
+  public void testClientUnboundedMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, true, Buffer.buffer(new byte[256]), Integer.MAX_VALUE, false);
   }
 
   private void testMaxMessageSize(Checkpoint exit, Checkpoint sent, boolean clientLimit, boolean compressed, Buffer message, int maxMessageSize, boolean expectFailure) {
