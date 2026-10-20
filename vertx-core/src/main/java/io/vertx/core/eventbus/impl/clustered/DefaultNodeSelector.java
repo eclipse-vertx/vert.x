@@ -39,7 +39,7 @@ public class DefaultNodeSelector implements NodeSelector {
   private static class Node {
 
     final AtomicInteger wip = new AtomicInteger(1);
-    final Queue<Action> queue = PlatformDependent.newMpscQueue();
+    final Queue<Action> queue = PlatformDependent.newMpscQueue(16, 1 << 30);
     Object value;
 
     private void signal(Object value, int amount) {
