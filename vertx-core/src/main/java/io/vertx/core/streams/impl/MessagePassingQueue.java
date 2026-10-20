@@ -437,7 +437,7 @@ public abstract class MessagePassingQueue<E> {
     }
 
     public MpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
-      super(PlatformDependent.newMpscQueue(), consumer, lowWaterMark, highWaterMark);
+      super(PlatformDependent.newMpscQueue(16, 1 << 30), consumer, lowWaterMark, highWaterMark);
     }
 
     /**
