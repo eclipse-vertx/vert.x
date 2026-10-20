@@ -134,11 +134,11 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
   private void initializeWebSocketExtensions(ChannelPipeline pipeline) {
     ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
     if (server.config.getWebSocketConfig().getUsePerFrameCompression()) {
-      int maxAllocation = server.config.getWebSocketConfig().getMaxFrameSize() + 512;
+      int maxAllocation = (int) Math.min(server.config.getWebSocketConfig().getMaxFrameSize() + 512L, Integer.MAX_VALUE);
       extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel(), maxAllocation));
     }
     if (server.config.getWebSocketConfig().getUsePerMessageCompression()) {
-      int maxAllocation = server.config.getWebSocketConfig().getMaxMessageSize() + 512;
+      int maxAllocation = (int) Math.min(server.config.getWebSocketConfig().getMaxMessageSize() + 512L, Integer.MAX_VALUE);
       extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(
         server.config.getWebSocketConfig().getCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(),
