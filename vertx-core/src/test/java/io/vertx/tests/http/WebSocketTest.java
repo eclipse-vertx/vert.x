@@ -4144,30 +4144,55 @@ public class WebSocketTest extends VertxTestBase2 {
 
   @Test
   public void testDenyFrameSizeGreaterThanMaxFrameSize(Checkpoint exit, Checkpoint sent) {
-    testMaxFrameSize(exit, sent, false, Buffer.buffer(randomAlphaString(257)), 256, true);
+    testMaxFrameSize(exit, sent, false, false, Buffer.buffer(randomAlphaString(257)), 256, true);
   }
 
   @Test
   public void testAllowFrameSizeLesserOrEqualsThanMaxFrameSize(Checkpoint exit, Checkpoint sent) {
-    testMaxFrameSize(exit, sent, false, Buffer.buffer(randomAlphaString(256)), 256, false);
+    testMaxFrameSize(exit, sent, false, false, Buffer.buffer(randomAlphaString(256)), 256, false);
   }
 
   @Test
   public void testDenyFrameSizeGreaterThanMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
-    testMaxFrameSize(exit, sent, true, Buffer.buffer(new byte[1024]), 256, true);
+    testMaxFrameSize(exit, sent, false, true, Buffer.buffer(new byte[1024]), 256, true);
   }
 
   @Test
   public void testAllowFrameSizeLesserOrEqualsThanMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
-    testMaxFrameSize(exit, sent, true, Buffer.buffer(new byte[256]), 256, false);
+    testMaxFrameSize(exit, sent, false, true, Buffer.buffer(new byte[256]), 256, false);
   }
 
-  private void testMaxFrameSize(Checkpoint exit, Checkpoint sent, boolean compressed, Buffer body, int maxFrameSize, boolean expectFailure) {
-    server = vertx.createHttpServer(new HttpServerOptions()
+  @Test
+  public void testClientDenyFrameSizeGreaterThanMaxFrameSize(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, false, Buffer.buffer(randomAlphaString(257)), 256, true);
+  }
+
+  @Test
+  public void testClientAllowFrameSizeLesserOrEqualsThanMaxFrameSize(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, false, Buffer.buffer(randomAlphaString(256)), 256, false);
+  }
+
+  @Test
+  public void testClientDenyFrameSizeGreaterThanMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, true, Buffer.buffer(new byte[1024]), 256, true);
+  }
+
+  @Test
+  public void testClientAllowFrameSizeLesserOrEqualsThanMaxFrameSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxFrameSize(exit, sent, true, true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  private void testMaxFrameSize(Checkpoint exit, Checkpoint sent, boolean clientLimit, boolean compressed, Buffer body, int maxFrameSize, boolean expectFailure) {
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTP_PORT)
-      .setHost(HttpTestBase.DEFAULT_HTTP_HOST)
-      .setMaxWebSocketFrameSize(maxFrameSize));
-    server.webSocketHandler(ws -> {
+      .setHost(HttpTestBase.DEFAULT_HTTP_HOST);
+    WebSocketClientOptions clientOptions = new WebSocketClientOptions().setTryUsePerFrameCompression(compressed);
+    if (clientLimit) {
+      clientOptions.setMaxFrameSize(maxFrameSize);
+    } else {
+      serverOptions.setMaxWebSocketFrameSize(maxFrameSize);
+    }
+    Handler<WebSocketBase> receiver = ws -> {
       ws.exceptionHandler(err -> {
         if (compressed && err instanceof DecompressionException) {
           assertTrue(expectFailure);
@@ -4181,42 +4206,68 @@ public class WebSocketTest extends VertxTestBase2 {
         assertFalse(expectFailure);
         exit.succeed();
       });
-    });
+    };
+    Handler<WebSocketBase> sender = ws -> ws
+      .writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(body, true))
+      .onComplete(sent);
+    server = vertx.createHttpServer(serverOptions);
+    server.webSocketHandler(ws -> (clientLimit ? sender : receiver).handle(ws));
     server.listen().await();
-    client = vertx.createWebSocketClient(new WebSocketClientOptions().setTryUsePerFrameCompression(compressed));
-    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
-      ws
-        .writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(body, true))
-        .onComplete(sent);
-    }));
+    client = vertx.createWebSocketClient(clientOptions);
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> (clientLimit ? receiver : sender).handle(ws)));
   }
 
   @Test
   public void testDenyMessageSizeGreaterThanMaxMessageSize(Checkpoint exit, Checkpoint sent) {
-    testMaxMessageSize(exit, sent, false, Buffer.buffer(randomAlphaString(257)), 256, true);
+    testMaxMessageSize(exit, sent, false, false, Buffer.buffer(randomAlphaString(257)), 256, true);
   }
 
   @Test
   public void testAllowMessageSizeLesserOrEqualsThanMaxMessageSize(Checkpoint exit, Checkpoint sent) {
-    testMaxMessageSize(exit, sent, false, Buffer.buffer(randomAlphaString(256)), 256, false);
+    testMaxMessageSize(exit, sent, false, false, Buffer.buffer(randomAlphaString(256)), 256, false);
   }
 
   @Test
   public void testDenyMessageSizeGreaterThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
-    testMaxMessageSize(exit, sent, true, Buffer.buffer(new byte[1024]), 256, true);
+    testMaxMessageSize(exit, sent, false, true, Buffer.buffer(new byte[1024]), 256, true);
   }
 
   @Test
   public void testAllowMessageSizeLesserOrEqualsThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
-    testMaxMessageSize(exit, sent, true, Buffer.buffer(new byte[256]), 256, false);
+    testMaxMessageSize(exit, sent, false, true, Buffer.buffer(new byte[256]), 256, false);
   }
 
-  private void testMaxMessageSize(Checkpoint exit, Checkpoint sent, boolean compressed, Buffer message, int maxMessageSize, boolean expectFailure) {
-    server = vertx.createHttpServer(new HttpServerOptions()
+  @Test
+  public void testClientDenyMessageSizeGreaterThanMaxMessageSize(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, false, Buffer.buffer(randomAlphaString(257)), 256, true);
+  }
+
+  @Test
+  public void testClientAllowMessageSizeLesserOrEqualsThanMaxMessageSize(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, false, Buffer.buffer(randomAlphaString(256)), 256, false);
+  }
+
+  @Test
+  public void testClientDenyMessageSizeGreaterThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, true, Buffer.buffer(new byte[1024]), 256, true);
+  }
+
+  @Test
+  public void testClientAllowMessageSizeLesserOrEqualsThanMaxMessageSizeWithCompression(Checkpoint exit, Checkpoint sent) {
+    testMaxMessageSize(exit, sent, true, true, Buffer.buffer(new byte[256]), 256, false);
+  }
+
+  private void testMaxMessageSize(Checkpoint exit, Checkpoint sent, boolean clientLimit, boolean compressed, Buffer message, int maxMessageSize, boolean expectFailure) {
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTP_PORT)
-      .setHost(HttpTestBase.DEFAULT_HTTP_HOST)
-      .setMaxWebSocketMessageSize(maxMessageSize));
-    server.webSocketHandler(ws -> {
+      .setHost(HttpTestBase.DEFAULT_HTTP_HOST);
+    WebSocketClientOptions clientOptions = new WebSocketClientOptions().setTryUsePerMessageCompression(compressed);
+    if (clientLimit) {
+      clientOptions.setMaxMessageSize(maxMessageSize);
+    } else {
+      serverOptions.setMaxWebSocketMessageSize(maxMessageSize);
+    }
+    Handler<WebSocketBase> receiver = ws -> {
       ws.exceptionHandler(err -> {
         if (compressed && err instanceof DecompressionException) {
           assertTrue(expectFailure);
@@ -4230,13 +4281,14 @@ public class WebSocketTest extends VertxTestBase2 {
         assertFalse(expectFailure);
         exit.succeed();
       });
-    });
+    };
+    Handler<WebSocketBase> sender = ws -> ws
+      .writeBinaryMessage(message)
+      .onComplete(sent);
+    server = vertx.createHttpServer(serverOptions);
+    server.webSocketHandler(ws -> (clientLimit ? sender : receiver).handle(ws));
     server.listen().await();
-    client = vertx.createWebSocketClient(new WebSocketClientOptions().setTryUsePerMessageCompression(compressed));
-    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> {
-      ws
-        .writeBinaryMessage(message)
-        .onComplete(sent);
-    }));
+    client = vertx.createWebSocketClient(clientOptions);
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> (clientLimit ? receiver : sender).handle(ws)));
   }
 }
