@@ -1271,13 +1271,13 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(WebSocketClientOptions options) {
     ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
     if (options.getTryUsePerFrameCompression()) {
-      int maxAllocation = options.getMaxFrameSize() + 512;
+      int maxAllocation = (int) Math.min(options.getMaxFrameSize() + 512L, Integer.MAX_VALUE);
       extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getCompressionLevel(),
         false, maxAllocation));
     }
 
     if (options.getTryUsePerMessageCompression()) {
-      int maxAllocation = options.getMaxMessageSize() + 512;
+      int maxAllocation = (int) Math.min(options.getMaxMessageSize() + 512L, Integer.MAX_VALUE);
       extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
         options.getCompressionAllowClientNoContext(), options.getCompressionRequestServerNoContext(),
