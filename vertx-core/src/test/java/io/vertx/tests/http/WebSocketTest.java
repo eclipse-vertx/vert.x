@@ -1880,6 +1880,23 @@ public class WebSocketTest extends VertxTestBase2 {
   }
 
   @Test
+  public void testWriteAfterCloseFailsWithHttpClosedException(Checkpoint checkpoint) {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
+    server.listen().await();
+    client = vertx.createWebSocketClient();
+    vertx.runOnContext(v -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(TestUtils.onSuccess(ws -> {
+        ws.closeHandler(v2 -> {
+          ws.writeTextMessage("hello").onComplete(TestUtils.onFailure(err -> {
+            assertTrue(err instanceof HttpClosedException);
+            checkpoint.succeed();
+          }));
+        });
+      }));
+    });
+  }
+
+  @Test
   public void testWriteOnEnd(Checkpoint checkpoint) {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);

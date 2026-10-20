@@ -300,7 +300,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   public Future<Void> writeFrame(WebSocketFrame frame) {
     synchronized (this) {
       if (isClosed()) {
-        return context.failedFuture("WebSocket is closed");
+        return context.failedFuture(new HttpClosedException("WebSocket is closed"));
       }
       Promise<Void> promise = context.promise();
       conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
