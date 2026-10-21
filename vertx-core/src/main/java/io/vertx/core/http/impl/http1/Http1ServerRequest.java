@@ -155,10 +155,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
 
   void handleContent(Buffer buffer) {
     InboundMessageQueue<Buffer> queue = queue();
-    boolean drain = queue.add(buffer);
-    if (drain) {
-      queue.drain();
-    }
+    queue.write(buffer);
   }
 
   void handleEnd() {
@@ -176,10 +173,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   private void handleEnd(InboundMessageQueue<Buffer> queue) {
-    boolean drain = queue.add(HttpUtils.END_OF_STREAM);
-    if (drain) {
-      queue.drain();
-    }
+    queue.write(HttpUtils.END_OF_STREAM);
   }
 
   private void check100() {
