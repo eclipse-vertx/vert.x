@@ -240,7 +240,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     data.retain();
     int len = data.readableBytes();
     bytesRead += len;
-    inboundQueue.write(data);
+    inboundQueue.add(data);
     if (readable < 0) {
       connection.consumeCredits(id, len);
     } else {
@@ -271,7 +271,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.flushBytesRead();
     trailers = received;
     context.emit(null, this::handleTrailers);
-    inboundQueue.write(END_OF_STREAM_2);
+    inboundQueue.add(END_OF_STREAM_2);
   }
 
   @Override
@@ -316,7 +316,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public final void write(MessageWrite write) {
-    outboundQueue.write(write);
+    outboundQueue.add(write);
   }
 
   public final S pause() {
@@ -357,7 +357,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         eventLoop.execute(() -> writeHeaders0(headers, end, checkFlush, promise));
       }
     } else {
-      outboundQueue.write(new MessageWrite() {
+      outboundQueue.add(new MessageWrite() {
         @Override
         public void write() {
           writeHeaders0(headers, end, checkFlush, promise);
@@ -403,7 +403,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   public final void sendFile(ChunkedInput<ByteBuf> file, Promise<Void> promise) {
     bytesWritten += file.length();
-    outboundQueue.write(new MessageWrite() {
+    outboundQueue.add(new MessageWrite() {
       @Override
       public void write() {
         sendFile0(file, promise);

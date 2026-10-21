@@ -60,12 +60,12 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   }
 
   /**
-   * Write a {@code message} to the queue.
+   * Add a {@code message} to the queue.
    *
-   * @param message the message to be written
-   * @return whether the writer can continue/stop writing to the queue
+   * @param message the message to be added
+   * @return whether the producer can continue/stop adding to the queue
    */
-  public final boolean write(M message) {
+  public final boolean add(M message) {
     boolean inEventLoop = consumer.inThread();
     int flags;
     if (inEventLoop) {

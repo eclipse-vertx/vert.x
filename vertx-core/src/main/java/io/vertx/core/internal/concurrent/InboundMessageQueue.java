@@ -95,7 +95,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * @param msg the message
    * @return {@code true} when a {@link #drain()} should be called.
    */
-  public final boolean add(M msg) {
+  protected final boolean add0(M msg) {
     assert producer.inThread();
     if (producerClosed) {
       handleDispose(msg);
@@ -110,14 +110,14 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * {@link #add(Object)} + {@link #drain()}.
+   * {@link #add0(Object)} + {@link #drain()}.
    *
    * @param messages the messages
    */
-  public final void write(Iterable<M> messages) {
+  public final void add(Iterable<M> messages) {
     boolean drain = false;
     for (M msg : messages) {
-      drain |= add(msg);
+      drain |= add0(msg);
     }
     if (drain) {
       drain();
@@ -125,12 +125,12 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * {@link #add(Object)} + {@link #drain()}.
+   * {@link #add0(Object)} + {@link #drain()}.
    *
    * @param msg the message
    */
-  public final void write(M msg) {
-    if (add(msg)) {
+  public final void add(M msg) {
+    if (add0(msg)) {
       drain();
     }
   }

@@ -116,7 +116,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (full) {
       handleDiscard(message, true);
     } else {
-      pending.write(message);
+      pending.add(message);
     }
   }
 

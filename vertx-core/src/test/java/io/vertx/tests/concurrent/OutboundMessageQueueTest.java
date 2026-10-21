@@ -50,7 +50,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
         assertEquals(0, reentrant++);
         try {
           if (msg == 0) {
-            assertTrue(write(1));
+            assertTrue(add(1));
           }
           output.add(msg);
           return true;
@@ -60,7 +60,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       }
     };
     eventLoop.execute(() -> {
-      assertTrue(queue.write(0));
+      assertTrue(queue.add(0));
       assertEquals(List.of(0, 1), output);
       testComplete();
     });
@@ -76,7 +76,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
         assertEquals(0, reentrant++);
         try {
           if (msg == 0) {
-            assertTrue(write(1));
+            assertTrue(add(1));
           }
           output.add(msg);
           return false;
@@ -86,7 +86,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       }
     };
     eventLoop.execute(() -> {
-      assertTrue(queue.write(0));
+      assertTrue(queue.add(0));
       assertEquals(List.of(0), output);
       testComplete();
     });
@@ -107,7 +107,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
           switch (msg) {
             case 0:
               int count = 1;
-              while (write(count++)) {
+              while (add(count++)) {
               }
               assertEquals(16, count);
               assertEquals(0, drained);
@@ -139,7 +139,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       }
     };
     eventLoop.execute(() -> {
-      queue.write(0);
+      queue.add(0);
     });
     await();
   }
@@ -158,7 +158,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
           switch (msg) {
             case 0: {
               int count = 1;
-              while (write(count++)) {
+              while (add(count++)) {
               }
               assertEquals(16, count);
               assertEquals(0, drained);
@@ -166,7 +166,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
             }
             case 15: {
               int count = 16;
-              while (write(count++)) {
+              while (add(count++)) {
               }
               assertEquals(17, count);
               assertEquals(0, drained);
@@ -199,7 +199,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       }
     };
     eventLoop.execute(() -> {
-      queue.write(0);
+      queue.add(0);
     });
     await();
   }
@@ -227,7 +227,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
     };
     eventLoop.execute(() -> {
       int count = 1;
-      while (queue.write(count++)) {
+      while (queue.add(count++)) {
       }
       eventLoop.execute(() -> {
         overflow.set(true);
@@ -247,7 +247,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       @Override
       protected void handleDrained() {
         int msg = count.getAndIncrement();
-        write(msg);
+        add(msg);
         assertEquals(msg, test.get());
         testComplete();
       }
@@ -259,7 +259,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
     };
     eventLoop.execute(() -> {
       paused.set(true);
-      while (queue.write(count.getAndIncrement())) {
+      while (queue.add(count.getAndIncrement())) {
       }
       paused.set(false);
       queue.tryDrain();
@@ -273,9 +273,9 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       @Override
       public boolean test(Integer msg) {
         if (msg == 0) {
-          write(1);
+          add(1);
           close();
-          write(2);
+          add(2);
           assertEquals(List.of(2), output);
           return true;
         } else {
@@ -288,7 +288,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
       }
     };
     eventLoop.execute(() -> {
-      queue.write(0);
+      queue.add(0);
       assertEquals(List.of(2, 1), output);
       testComplete();
     });
@@ -311,7 +311,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
     eventLoop.execute(() -> {
       Thread thread = new Thread(() -> {
         int idx = 0;
-        while (queue.write(idx++)) {
+        while (queue.add(idx++)) {
           //
         }
       });

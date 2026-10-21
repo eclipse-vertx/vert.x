@@ -364,7 +364,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
         handleCloseFrame(frame);
         break;
     }
-    pending.write(frame);
+    pending.add(frame);
   }
 
   private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
