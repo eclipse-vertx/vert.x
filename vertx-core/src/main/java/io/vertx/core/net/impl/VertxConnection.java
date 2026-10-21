@@ -575,6 +575,11 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
+    public boolean write(MessageWrite msg) {
+      return add(msg);
+    }
+
+    @Override
     public boolean test(MessageWrite msg) {
       if (channelWritable) {
         msg.write();

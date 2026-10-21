@@ -305,9 +305,9 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
   protected void handleMessage(Object msg) {
     MessageHandler handler = messageHandler();
     if (msg == InboundBuffer.END_SENTINEL) {
-      pending.write(InboundBuffer.END_SENTINEL);
+      pending.add(InboundBuffer.END_SENTINEL);
     } else if (handler.accept(msg)) {
-      pending.write(handler.transform(msg));
+      pending.add(handler.transform(msg));
     } else {
       if (msg instanceof ReferenceCounted) {
         ReferenceCounted refCounter = (ReferenceCounted) msg;

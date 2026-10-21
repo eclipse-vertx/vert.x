@@ -161,12 +161,12 @@ public class ClientMultipartFormUpload implements ReadStream<Buffer> {
           HttpContent chunk = encoder.readChunk(ALLOC);
           ByteBuf content = chunk.content();
           Buffer buff = BufferInternal.buffer(content);
-          pending.write(buff);
+          pending.add(buff);
           if (encoder.isEndOfInput()) {
             ended = true;
             request = null;
             encoder = null;
-            pending.write(END_SENTINEL);
+            pending.add(END_SENTINEL);
           } else if (!writable) {
             break;
           }
@@ -174,7 +174,7 @@ public class ClientMultipartFormUpload implements ReadStream<Buffer> {
           ended = true;
           request = null;
           encoder = null;
-          pending.write(e);
+          pending.add(e);
           break;
         }
       } else {
@@ -182,9 +182,9 @@ public class ClientMultipartFormUpload implements ReadStream<Buffer> {
         Buffer buffer = BufferInternal.buffer(content);
         request = null;
         encoder = null;
-        pending.write(buffer);
+        pending.add(buffer);
         ended = true;
-        pending.write(END_SENTINEL);
+        pending.add(END_SENTINEL);
       }
     }
   }

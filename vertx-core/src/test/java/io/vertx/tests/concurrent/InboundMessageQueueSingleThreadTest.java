@@ -117,7 +117,7 @@ public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest
     AtomicInteger writable = new AtomicInteger();
     queue = buffer(elt -> {
       if (received.decrementAndGet() == 0) {
-        queue.write(next);
+        queue.add(next);
       }
     }, 4, 4)
       .drainHandler(v2 -> {
@@ -268,7 +268,7 @@ public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest
     queue = buffer(elt -> {
       emitted.add(elt);
       if (elt == 2) {
-        queue.write(Arrays.asList(4, 5));
+        queue.add(Arrays.asList(4, 5));
         // Check that we haven't re-entered the handler
         assertEquals(Arrays.asList(0, 1, 2), emitted);
       }
@@ -303,13 +303,13 @@ public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest
       protected void handleDispose(Integer msg) {
         dropped.add(msg);
         if (msg == 0) {
-          queue.write(1);
+          queue.add(1);
         }
       }
     };
     producerTask(() -> {
       queue.pause();
-      queue.write(0);
+      queue.add(0);
       queue.close();
       assertEquals(0, emitted.get());
       assertEquals(Arrays.asList(0, 1), dropped);

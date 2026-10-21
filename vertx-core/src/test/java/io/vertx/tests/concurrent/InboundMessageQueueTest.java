@@ -94,7 +94,7 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
       int count = 0;
       boolean drain = false;
       while (writable) {
-        drain |= add(sequence.getAndIncrement());
+        drain |= add0(sequence.getAndIncrement());
         count++;
       }
       size += count;
@@ -106,7 +106,7 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
 
     final boolean emit() {
       size++;
-      write(sequence.getAndIncrement());
+      add(sequence.getAndIncrement());
       return writable;
     }
 
@@ -114,7 +114,7 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
       size += count;
       boolean drain = false;
       for (int i = 0; i < count; i++) {
-        drain |= add(sequence.getAndIncrement());
+        drain |= add0(sequence.getAndIncrement());
       }
       if (drain) {
         drain();
@@ -588,7 +588,7 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
         assertEquals(Collections.emptyList(), emitted);
         assertEquals(Arrays.asList(0, 1, 2, 3, 4), disposed);
         producerTask(() -> {
-          queue.write(5);
+          queue.add(5);
           testComplete();
         });
       });

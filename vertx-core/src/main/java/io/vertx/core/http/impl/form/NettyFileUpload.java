@@ -126,12 +126,12 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
   private void receiveData(Buffer data) {
     if (data.length() != 0) {
-      pending.write(data);
+      pending.add(data);
     }
   }
 
   private void end() {
-    pending.write(HttpUtils.END_OF_STREAM);
+    pending.add(HttpUtils.END_OF_STREAM);
   }
 
   public void handleException(Throwable err) {

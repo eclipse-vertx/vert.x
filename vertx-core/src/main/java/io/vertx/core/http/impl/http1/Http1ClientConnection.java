@@ -553,11 +553,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     void onEnd(LastHttpContent trailer) {
       trailers = new HeadersAdaptor(trailer.trailingHeaders());
       context.emit(null, this::handleTrailers);
-      queue.write(HttpUtils.END_OF_STREAM_2);
+      queue.add(HttpUtils.END_OF_STREAM_2);
     }
 
     void onChunk(ByteBuf buff) {
-      queue.write(buff);
+      queue.add(buff);
     }
 
     abstract void handleEnd();
