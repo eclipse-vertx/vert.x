@@ -501,6 +501,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         } else {
           // Reset happening before stream allocation
           handleReset(code);
+          onClose(null);
           promise.complete();
         }
       }

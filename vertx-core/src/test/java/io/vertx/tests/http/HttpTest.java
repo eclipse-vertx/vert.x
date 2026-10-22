@@ -5789,6 +5789,39 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testResetClientRequestNotYetSentRecyclesLease() throws Exception {
+    testClientRequestNotYetSentRecyclesLease(req -> req.reset());
+  }
+
+  @Test
+  public void testCancelClientRequestNotYetSentRecyclesLease() throws Exception {
+    testClientRequestNotYetSentRecyclesLease(HttpClientRequest::cancel);
+  }
+
+  private void testClientRequestNotYetSentRecyclesLease(Function<HttpClientRequest, Future<?>> abort) throws Exception {
+    // Allow a single request at a time, the second request can only proceed when the lease is recycled
+    HttpServerConfig serverConfig = config.forServer().config();
+    if (serverConfig.getHttp2Config() != null) {
+      serverConfig.getHttp2Config().getInitialSettings().setMaxConcurrentStreams(1);
+    }
+    serverConfig.getQuicConfig().getTransportConfig().setInitialMaxStreamsBidi(1);
+    server = vertx.httpServerBuilder()
+      .with(serverConfig)
+      .with(config.forServer().sslOptions())
+      .build();
+    server.requestHandler(req -> req.response().end());
+    startServer(testAddress);
+    PoolOptions poolOptions = new PoolOptions().setHttp1MaxSize(1).setHttp2MaxSize(1).setHttp3MaxSize(1);
+    client = config.forClient().create(vertx, poolOptions);
+    HttpClientRequest request = client.request(requestOptions).await();
+    HttpConnection connection = request.connection();
+    abort.apply(request).await();
+    HttpClientRequest next = client.request(requestOptions).await(10, TimeUnit.SECONDS);
+    assertSame(connection, next.connection());
+    next.send().compose(HttpClientResponse::end).await(10, TimeUnit.SECONDS);
+  }
+
+  @Test
   public void testResetPartialClientRequest(Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
     });
