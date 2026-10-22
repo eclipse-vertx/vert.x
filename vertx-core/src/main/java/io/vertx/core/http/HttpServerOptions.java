@@ -15,7 +15,6 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -212,11 +211,6 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_HTTP2_MAX_SMALL_CONTINUATION_FRAMES = 16;
 
   /**
-   * Strict thread mode = false.
-   */
-  public static final boolean DEFAULT_STRICT_THREAD_MODE_STRICT = false;
-
-  /**
    * Use HTTP/2 multiplex implementation = {@code false}
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
@@ -234,7 +228,6 @@ public class HttpServerOptions extends NetServerOptions {
   private TracingPolicy tracingPolicy;
   private boolean registerWebSocketWriteHandlers;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
-  private boolean strictThreadMode;
   private boolean http2ClearTextEnabled;
   private boolean useSemicolonAsQueryParamDelimiter;
 
@@ -267,7 +260,6 @@ public class HttpServerOptions extends NetServerOptions {
     this.tracingPolicy = other.tracingPolicy;
     this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
-    this.strictThreadMode = other.strictThreadMode;
     this.http2ClearTextEnabled = other.http2ClearTextEnabled;
     this.useSemicolonAsQueryParamDelimiter = other.useSemicolonAsQueryParamDelimiter;
   }
@@ -299,7 +291,6 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
-    strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
     compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     compression = new CompressionConfig();
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
@@ -1328,32 +1319,11 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return whether the strict thread mode is used
+   * @return whether file regions can be used
    */
   @GenIgnore
   public boolean isFileRegionEnabled() {
     return !isCompressionSupported();
-  }
-
-  /**
-   * @return whether to use the strict thread mode.
-   */
-  @Unstable("Experimental")
-  public boolean getStrictThreadMode() {
-    return strictThreadMode;
-  }
-
-  /**
-   * Indicates the server that the HTTP request/response interactions will happen exclusively on the expected thread when
-   * the threading model is event-loop.
-   *
-   * @param strictThreadMode whether to use the strict thread mode
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Unstable("Experimental")
-  public HttpServerOptions setStrictThreadMode(boolean strictThreadMode) {
-    this.strictThreadMode = strictThreadMode;
-    return this;
   }
 
   /**

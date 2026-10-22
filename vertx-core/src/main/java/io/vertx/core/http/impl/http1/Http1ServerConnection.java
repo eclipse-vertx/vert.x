@@ -97,11 +97,9 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private final TransportMetrics<?> transportMetrics;
   final boolean handle100ContinueAutomatically;
   final SslContextManager sslContextManager;
-  final boolean strictThreadMode;
 
   public Http1ServerConnection(ThreadingModel threadingModel,
                                Supplier<ContextInternal> streamContextSupplier,
-                               boolean strictThreadMode,
                                boolean handle100ContinueAutomatically,
                                ServerSSLOptions sslOptions,
                                SslContextManager sslContextManager,
@@ -118,7 +116,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
                                TracingPolicy tracingPolicy,
                                HttpServerMetrics<?, ?> httpMetrics,
                                TransportMetrics<?> transportMetrics) {
-    super(context, chctx, strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP);
+    super(context, chctx);
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.maxFormAttributeSize = maxFormAttributeSize;
@@ -134,7 +132,6 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.tracingPolicy = tracingPolicy;
     this.wantClose = false;
-    this.strictThreadMode = strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP;
     this.eagerCreateRequestQueue = threadingModel != ThreadingModel.EVENT_LOOP;
     this.sslOptions = sslOptions;
   }

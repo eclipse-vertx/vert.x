@@ -227,7 +227,6 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       Http1ServerConnection conn = new Http1ServerConnection(
         ThreadingModel.EVENT_LOOP,
         () -> context,
-        true,
         false,
         null,
         null,

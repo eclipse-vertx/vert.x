@@ -105,12 +105,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
   }
 
-  private void checkThread() {
-    if (conn.strictThreadMode && !context.executor().inThread()) {
-      throw new IllegalStateException("Only the context thread can write a message");
-    }
-  }
-
   @Override
   public MultiMap headers() {
     return headers;
@@ -278,7 +272,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeHead() {
-    checkThread();
     checkHeadWritten();
     if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
@@ -314,7 +307,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeContinue() {
-    checkThread();
     Promise<Void> promise = context.promise();
     conn.write100Continue(promise);
     return promise.future();
@@ -322,7 +314,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
-    checkThread();
     PromiseInternal<Void> promise = context.promise();
     Http1xHeaders headersMultiMap;
     if (headers instanceof Http1xHeaders) {
@@ -354,7 +345,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
-    checkThread();
     ByteBuf data = ((BufferInternal)chunk).getByteBuf();
     if (trailersSent) {
       throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -652,7 +642,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void write(ByteBuf chunk, PromiseInternal<Void> promise) {
-    checkThread();
     checkValid();
     if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       if (version != HttpVersion.HTTP_1_0) {
@@ -672,7 +661,6 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
-    checkThread();
     if (netSocket != null) {
       return netSocket;
     }

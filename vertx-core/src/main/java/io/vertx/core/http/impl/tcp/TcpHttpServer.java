@@ -252,7 +252,6 @@ public class TcpHttpServer implements HttpServerInternal {
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),
-        config.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP,
         streamContextSupplier,
         this,
         compressors != null && !compressors.isEmpty() && compression.isCompressionEnabled(),
