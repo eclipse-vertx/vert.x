@@ -83,6 +83,25 @@ import java.util.function.Predicate;
  * in the flags. This number allows the producer flow controller to correctly account the producer writability:
  * {@link #WRITABLE_MASK}/{@link #UNWRITABLE_MASK} signals are observed by different threads, therefore a good
  * practice to compute the queue writability is to increment/decrement an atomic counter for each signal received.</p>
+ *
+ * <h3>Above high-water mark elements</h3>
+ *
+ * <p>The depth of an element is the number of pending elements its {@link #add} observed, including itself. An element
+ * added at a depth at or above the {@link #highWaterMark} is signalled twice, as a per-element level signal, unlike
+ * {@link #UNWRITABLE_MASK} which only triggers on the writability transition:</p>
+ *
+ * <ul>
+ *   <li>to the producer: {@link #add} returns the {@link #ABOVE_HWM_MASK} flag, only meaningful on {@link #add}
+ *   returns</li>
+ *   <li>to the consumer: {@link #elementAboveOrEqualsHighWaterMark()} tells whether the element currently proposed
+ *   to the consumer predicate was added at or above the mark, it shall only be called from within the predicate
+ *   on the consumer thread</li>
+ * </ul>
+ *
+ * <p>The consumer side reconstructs the depth of each element it is proposed: the number of consumed elements only
+ * changes in a drain, on the consumer thread, so the elements added between two consume operations all observed the
+ * same consumed count, and since the queue is FIFO, an element depth is its add order minus the consumed count
+ * recorded for the window of consume boundaries its add falls in.</p>
  */
 public abstract class MessagePassingQueue<E> {
 
@@ -103,6 +122,13 @@ public abstract class MessagePassingQueue<E> {
    * to attempt to release the ownership.
    */
   public static final int DRAIN_REQUIRED_MASK = 0x04;
+
+  /**
+   * When the masked bit is set, the element was added while the queue depth was at or above the
+   * high-water mark. Unlike {@link #UNWRITABLE_MASK} this is a per-add level signal, not a transition
+   * signal. It is only meaningful on {@link #add} returns.
+   */
+  public static final int ABOVE_HWM_MASK = 0x08;
 
   /**
    * The default high-water mark value: {@code 16}
@@ -137,6 +163,24 @@ public abstract class MessagePassingQueue<E> {
   // The number of times the queue was observed to be unwritable, this is accessed from consumer
   // todo : false sharing between overflow and writeQueueFull
   private int numberOfUnwritableTimes;
+
+  // Consumer thread only
+  // Exact reconstruction of each element add-time depth: the consumed count only changes in consume(),
+  // so elements added between two consume calls share the same consumed count at add time, and a
+  // FIFO of (adds, consumed) boundaries recorded at each consume gives depth = addIndex - consumed
+  private long polled;         // add index of the last element proposed to the consumer (FIFO order)
+  private long consumedTotal;  // total number of consumed elements
+  private long currentDepth;   // add-time depth of the element proposed to the consumer
+
+  // Ring buffer of consume boundaries, used as a FIFO of (added, consumed) pairs, see pushWindow:
+  // the pair at index i is stored at (windowHead + i) % windowAdded.length in both arrays,
+  // windowHead is the index of the first pair, windowCount the number of pairs. The initial capacity
+  // of 4 pairs covers the steady state, where full drains keep at most 2 windows; deeper stacking
+  // from early-stopped drains (refusal, maxIter) doubles the arrays on demand.
+  private long[] windowAdded = new long[4];
+  private long[] windowConsumed = new long[4];
+  private int windowHead;
+  private int windowCount;
 
   /**
    * Create a new instance.
@@ -198,9 +242,9 @@ public abstract class MessagePassingQueue<E> {
       val = wipIncrementAndGet();
     }
     if (val != 1) {
-      return val == highWaterMark ? UNWRITABLE_MASK : 0; // Check branch-less
+      return (val == highWaterMark ? UNWRITABLE_MASK : 0) | (val >= highWaterMark ? ABOVE_HWM_MASK : 0); // Check branch-less
     }
-    return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? UNWRITABLE_MASK : 0);
+    return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? (UNWRITABLE_MASK | ABOVE_HWM_MASK) : 0);
   }
 
   /**
@@ -225,6 +269,11 @@ public abstract class MessagePassingQueue<E> {
     }
     E elt = overflow;
     if (elt != null) {
+      // polled == consumedTotal <=> the ownership was just acquired and the overflow element has not
+      // been assigned yet: a parked refused element is assigned but not consumed, so polled > consumedTotal
+      if (polled == consumedTotal) {
+        takeDepth();
+      }
       if (!consumer.test(elt)) {
         return drainResult((int)wipGet());
       }
@@ -275,6 +324,7 @@ public abstract class MessagePassingQueue<E> {
         if (maxIter != Long.MAX_VALUE) {
           maxIter--;
         }
+        takeDepth();
         if (!consumer.test(elt)) {
           overflow = elt;
           break;
@@ -301,12 +351,80 @@ public abstract class MessagePassingQueue<E> {
    * @return the number of pending elements after consuming from the queue
    */
   private long consume(int amount) {
+    // Update before the decrement: a decrement to zero releases the ownership and the releasing
+    // operation publishes the consumer state to the next owner, at that point every element has
+    // been assigned and no window is pushed
+    long before = consumedTotal;
+    consumedTotal = before + amount;
     long pending = wipAddAndGet(-amount);
     long size = pending + amount;
+    // Total adds at the instant of the decrement: an add racing the decrement observes the
+    // post-decrement wip, its index is greater and it belongs to the next window
+    long added = size + before;
+    if (polled < added) {
+      pushWindow(added, before);
+    }
     if (size >= highWaterMark && (size - amount) < highWaterMark) {
       numberOfUnwritableTimes++;
     }
     return pending;
+  }
+
+  /**
+   * @return whether the element currently proposed to the consumer predicate was added while the queue
+   *         depth was at or above the high-water mark, i.e. the depth the element {@link #add} observed,
+   *         only meaningful when called from within the consumer predicate on the consumer thread
+   */
+  public final boolean elementAboveOrEqualsHighWaterMark() {
+    return currentDepth >= highWaterMark;
+  }
+
+  /**
+   * Assign the add-time depth of the next element proposed to the consumer: the element index in add
+   * order minus the number of elements consumed when it was added, given by the window of consume
+   * boundaries the index falls in.
+   */
+  private void takeDepth() {
+    long index = ++polled;
+    while (windowCount > 0 && index > windowAdded[windowHead]) {
+      windowHead = (windowHead + 1) % windowAdded.length;
+      windowCount--;
+    }
+    long consumed = windowCount > 0 ? windowConsumed[windowHead] : consumedTotal;
+    currentDepth = index - consumed;
+  }
+
+  /**
+   * Record a consume boundary: every element added up to the {@code added}-th and not covered by an earlier
+   * window observed {@code consumed} consumed elements when it was added, hence has depth
+   * {@code addIndex - consumed}. Called by {@link #consume} when elements remain to be proposed to the
+   * consumer, since they can no longer derive their depth from {@link #consumedTotal}. Windows expire in
+   * push order because elements are proposed in add order, so they are kept in a FIFO, parallel ring
+   * buffers of {@code (added, consumed)} pairs doubled when full, and {@link #takeDepth} pops a window
+   * once the add index passes its boundary.
+   *
+   * @param added the total number of elements added at the instant of the consume decrement
+   * @param consumed the total number of elements consumed before the decrement
+   */
+  private void pushWindow(long added, long consumed) {
+    int capacity = windowAdded.length;
+    if (windowCount == capacity) {
+      long[] nextAdded = new long[capacity * 2];
+      long[] nextConsumed = new long[capacity * 2];
+      for (int i = 0;i < windowCount;i++) {
+        int src = (windowHead + i) % capacity;
+        nextAdded[i] = windowAdded[src];
+        nextConsumed[i] = windowConsumed[src];
+      }
+      windowAdded = nextAdded;
+      windowConsumed = nextConsumed;
+      windowHead = 0;
+      capacity *= 2;
+    }
+    int idx = (windowHead + windowCount) % capacity;
+    windowAdded[idx] = added;
+    windowConsumed[idx] = consumed;
+    windowCount++;
   }
 
   protected void hook() {
@@ -321,6 +439,11 @@ public abstract class MessagePassingQueue<E> {
   public final List<E> clear() {
     // From event loop thread
     numberOfUnwritableTimes = 0;
+    polled = 0;
+    consumedTotal = 0;
+    currentDepth = 0;
+    windowHead = 0;
+    windowCount = 0;
     List<E> elts = new ArrayList<>();
     if (overflow != null) {
       elts.add(overflow);

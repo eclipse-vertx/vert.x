@@ -17,8 +17,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -122,7 +125,7 @@ public class MessagePassingQueueTest {
     for (int i = 1;i < 15;i++) {
       assertEquals(0, queue.write(i));
     }
-    assertEquals(UNWRITABLE_MASK, queue.write(15));
+    assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, queue.write(15));
   }
 
   @Test
@@ -132,7 +135,7 @@ public class MessagePassingQueueTest {
         for (int i = 1;i < 15;i++) {
           assertEquals(0, queue.write(i));
         }
-        assertEquals(UNWRITABLE_MASK, queue.write(15));
+        assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, queue.write(15));
       }
       return false;
     });
@@ -146,7 +149,7 @@ public class MessagePassingQueueTest {
         for (int i = 1;i < 15;i++) {
           assertEquals(0, queue.write(i));
         }
-        assertEquals(UNWRITABLE_MASK, queue.write(15));
+        assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, queue.write(15));
         return true;
       } else {
         return false;
@@ -154,7 +157,7 @@ public class MessagePassingQueueTest {
     });
     int flags = queue.write(0);
     assertFlagsSet(flags, DRAIN_REQUIRED_MASK);
-    assertEquals(UNWRITABLE_MASK, queue.write(16));
+    assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, queue.write(16));
   }
 
   @Test
@@ -204,8 +207,8 @@ public class MessagePassingQueueTest {
             for (int i = 1;i < 15;i++) {
               assertEquals(0, producerAdd(i));
             }
-            assertEquals(UNWRITABLE_MASK, producerAdd(15));
-            assertEquals(0, producerAdd(16));
+            assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, producerAdd(15));
+            assertEquals(ABOVE_HWM_MASK, producerAdd(16));
           });
           thread.start();
           try {
@@ -230,7 +233,7 @@ public class MessagePassingQueueTest {
             for (int i = 1;i < 15;i++) {
               assertEquals(0, producerAdd(i));
             }
-            assertEquals(UNWRITABLE_MASK, producerAdd(15));
+            assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, producerAdd(15));
           });
           thread.start();
           try {
@@ -257,7 +260,7 @@ public class MessagePassingQueueTest {
             for (int i = 1; i < 15; i++) {
               assertEquals(0, producerAdd(i));
             }
-            assertEquals(UNWRITABLE_MASK, producerAdd(15));
+            assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, producerAdd(15));
           });
           thread.start();
           try {
@@ -359,7 +362,7 @@ public class MessagePassingQueueTest {
       @Override
       protected void hook() {
         assertEquals(0, producerAdd(15));
-        assertEquals(UNWRITABLE_MASK, producerAdd(16));
+        assertEquals(UNWRITABLE_MASK | ABOVE_HWM_MASK, producerAdd(16));
       }
     };
     assertFlagsSet(DRAIN_REQUIRED_MASK, queue.write(0));
@@ -469,6 +472,263 @@ public class MessagePassingQueueTest {
 
   private static List<Integer> range(int start, int end) {
     return IntStream.range(start, end).boxed().collect(Collectors.toList());
+  }
+
+  @Test
+  public void testElementAboveHighWaterMark() {
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      output.add(elt);
+      return true;
+    });
+    assertEquals(DRAIN_REQUIRED_MASK, producerAdd(0));
+    for (int i = 1;i < 20;i++) {
+      producerAdd(i);
+    }
+    queue.drain();
+    assertEquals(range(0, 20), output);
+    assertEquals(range(15, 20), above);
+  }
+
+  @Test
+  public void testElementAboveHighWaterMarkHysteresis() {
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      return true;
+    });
+    for (int i = 0;i < 18;i++) {
+      producerAdd(i);
+    }
+    // Consume 6 elements, depth decreases to 12, above the low-water mark: still unwritable
+    assertFlagsClear(queue.drain(6), WRITABLE_MASK);
+    // Depths 13..16, only the last one reaches the high-water mark again
+    for (int i = 18;i < 22;i++) {
+      producerAdd(i);
+    }
+    assertFlagsSet(queue.drain(), WRITABLE_MASK);
+    assertEquals(Arrays.asList(15, 16, 17, 21), above);
+  }
+
+  @Test
+  public void testElementAboveHighWaterMarkRefusal() {
+    AtomicBoolean paused = new AtomicBoolean(true);
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        if (paused.get()) {
+          return false;
+        }
+        above.add(elt);
+      }
+      return true;
+    });
+    for (int i = 0;i < 18;i++) {
+      producerAdd(i);
+    }
+    // Element 15 (depth 16) is refused and parked, keeping its depth
+    assertFlagsSet(queue.drain(), DRAIN_REQUIRED_MASK);
+    assertEquals(0, above.size());
+    paused.set(false);
+    queue.drain();
+    assertEquals(range(15, 18), above);
+  }
+
+  @Test
+  public void testElementAboveHighWaterMarkAfterClear() {
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      return true;
+    });
+    for (int i = 0;i < 18;i++) {
+      producerAdd(i);
+    }
+    queue.clear();
+    for (int i = 100;i < 120;i++) {
+      producerAdd(i);
+    }
+    queue.drain();
+    assertEquals(range(115, 120), above);
+  }
+
+  @Test
+  public void testDepthInterleavedAddDuringDrain() {
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (elt == 0) {
+        // Added while element 0 is under test, before the consume: depth 2
+        assertFlagsSet(queue.add(1), UNWRITABLE_MASK, ABOVE_HWM_MASK);
+      }
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      return true;
+    }, 1, 2);
+    queue.write(0);
+    assertEquals(Collections.singletonList(1), above);
+  }
+
+  @Test
+  public void testParkedElementKeepsDepth() {
+    AtomicBoolean paused = new AtomicBoolean(true);
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        if (paused.get()) {
+          return false;
+        }
+        above.add(elt);
+      }
+      return true;
+    }, 1, 3);
+    for (int i = 0;i < 3;i++) {
+      producerAdd(i);   // depths 1..3
+    }
+    // Element 2 (depth 3) is refused and parked
+    queue.drain();
+    assertEquals(0, above.size());
+    producerAdd(3);     // depth 2
+    producerAdd(4);     // depth 3
+    paused.set(false);
+    // Element 2 is re-tested with its original depth
+    queue.drain();
+    assertEquals(Arrays.asList(2, 4), above);
+  }
+
+  @Test
+  public void testDepthAcrossConsumeWindows() {
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      return true;
+    }, 1, 4);
+    for (int i = 0;i < 6;i++) {
+      producerAdd(i);   // depths 1..6
+    }
+    queue.drain(2);     // assigns 0,1 - first consume boundary
+    producerAdd(6);     // depth 5
+    producerAdd(7);     // depth 6
+    queue.drain(2);     // assigns 2,3 - second consume boundary
+    producerAdd(8);     // depth 5
+    queue.drain();      // assigns 4..8 across three windows
+    assertEquals(range(3, 9), above);
+  }
+
+  @Test
+  public void testOverflowElementDepth() {
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      return true;
+    }, 1, 1);
+    assertFlagsSet(queue.add(0), DRAIN_REQUIRED_MASK, UNWRITABLE_MASK, ABOVE_HWM_MASK);
+    queue.drain();
+    assertEquals(Collections.singletonList(0), above);
+  }
+
+  @Test
+  public void testAboveHighWaterMarkFlag() {
+    queue = new MessagePassingQueue.MpSc<>(elt -> false, 1, 2);
+    int flags = queue.add(0);
+    assertFlagsSet(flags, DRAIN_REQUIRED_MASK);
+    assertFlagsClear(flags, UNWRITABLE_MASK, ABOVE_HWM_MASK);
+    flags = queue.add(1);
+    assertFlagsSet(flags, UNWRITABLE_MASK, ABOVE_HWM_MASK);
+    flags = queue.add(2);
+    assertFlagsSet(flags, ABOVE_HWM_MASK);
+    assertFlagsClear(flags, UNWRITABLE_MASK);
+    flags = queue.add(3);
+    assertFlagsSet(flags, ABOVE_HWM_MASK);
+    assertFlagsClear(flags, UNWRITABLE_MASK);
+  }
+
+  @Test
+  public void testClearResetsDepthTracking() {
+    AtomicBoolean paused = new AtomicBoolean(true);
+    List<Integer> above = new ArrayList<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (paused.get()) {
+        return false;
+      }
+      if (queue.elementAboveOrEqualsHighWaterMark()) {
+        above.add(elt);
+      }
+      return true;
+    }, 1, 2);
+    for (int i = 0;i < 4;i++) {
+      producerAdd(i);
+    }
+    queue.drain();
+    assertEquals(4, queue.clear().size());
+    paused.set(false);
+    for (int i = 10;i < 13;i++) {
+      producerAdd(i);   // depths 1..3
+    }
+    queue.drain();
+    assertEquals(Arrays.asList(11, 12), above);
+  }
+
+  @Test
+  public void testDepthSelfCheck() {
+    // Scripted schedule mixing partial drains, refusals, re-tests and clear: the harness tracks the
+    // true add-time depth of every element and the consumer asserts the accessor against it for each
+    // test, the backlog of the partial drains also grows the window ring buffers beyond their
+    // initial capacity
+    long[] expectedDepth = new long[64];
+    int[] pending = new int[1];
+    int[] accepted = new int[1];
+    Set<Integer> refusals = new HashSet<>(Arrays.asList(7, 20));
+    queue = new MessagePassingQueue.MpSc<>(elt -> {
+      assertEquals(expectedDepth[elt] >= 3, queue.elementAboveOrEqualsHighWaterMark());
+      if (refusals.remove(elt)) {
+        return false;
+      }
+      pending[0]--;
+      accepted[0]++;
+      return true;
+    }, 1, 3);
+    int nextId = 0;
+    for (int i = 0;i < 15;i++) {
+      for (int j = 0;j < 3;j++) {
+        int id = nextId++;
+        expectedDepth[id] = ++pending[0];
+        queue.add(id);
+      }
+      queue.drain(1);
+    }
+    while ((queue.drain() & DRAIN_REQUIRED_MASK) != 0) {
+      // Re-drain after a refusal
+    }
+    assertEquals(0, pending[0]);
+    assertEquals(45, accepted[0]);
+    assertTrue(refusals.isEmpty());
+    for (int j = 0;j < 5;j++) {
+      int id = nextId++;
+      expectedDepth[id] = ++pending[0];
+      queue.add(id);
+    }
+    assertEquals(5, queue.clear().size());
+    pending[0] = 0;
+    for (int j = 0;j < 4;j++) {
+      int id = nextId++;
+      expectedDepth[id] = ++pending[0];
+      queue.add(id);
+    }
+    queue.drain();
+    assertEquals(0, pending[0]);
+    assertEquals(49, accepted[0]);
   }
 
   @Test
