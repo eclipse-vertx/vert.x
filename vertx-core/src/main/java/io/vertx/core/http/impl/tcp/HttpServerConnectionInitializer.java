@@ -52,7 +52,6 @@ public class HttpServerConnectionInitializer {
 
   private final ContextInternal context;
   private final ThreadingModel threadingModel;
-  private final boolean strictThreadMode;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final TcpHttpServer server;
   private final String serverOrigin;
@@ -80,7 +79,6 @@ public class HttpServerConnectionInitializer {
 
   public HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
-                                  boolean strictThreadMode,
                                   Supplier<ContextInternal> streamContextSupplier,
                                   TcpHttpServer server,
                                   boolean useCompression,
@@ -168,7 +166,6 @@ public class HttpServerConnectionInitializer {
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
     this.compressionManager = compressionManager;
-    this.strictThreadMode = strictThreadMode;
     this.sslOptions = sslOptions;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
@@ -303,7 +300,6 @@ public class HttpServerConnectionInitializer {
       Http1ServerConnection conn = new Http1ServerConnection(
         threadingModel,
         streamContextSupplier,
-        strictThreadMode,
         handle100ContinueAutomatically,
         sslOptions,
         sslContextManager,

@@ -42,11 +42,7 @@ abstract class Http1Connection extends VertxConnection implements io.vertx.core.
   private Handler<Void> shutdownHandler;
 
   Http1Connection(ContextInternal context, ChannelHandlerContext chctx) {
-    this(context, chctx, false);
-  }
-
-  Http1Connection(ContextInternal context, ChannelHandlerContext chctx, boolean strictMode) {
-    super(context, chctx, strictMode);
+    super(context, chctx);
   }
 
   public synchronized Http1Connection shutdownHandler(@Nullable Handler<Void> handler) {

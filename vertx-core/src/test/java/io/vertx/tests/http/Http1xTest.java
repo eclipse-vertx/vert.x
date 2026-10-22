@@ -5721,33 +5721,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testStrictThreadMode() throws Exception {
-    server = vertx.createHttpServer(new HttpServerOptions().setStrictThreadMode(true));
-    server.requestHandler(request -> {
-      Context ctx = vertx.getOrCreateContext();
-      new Thread(() -> {
-        HttpServerResponse response = request.response();
-        try {
-          response.end();
-          Assert.fail();
-        } catch (IllegalStateException e) {
-          ctx.runOnContext(v -> {
-            response.end();
-          });
-        }
-      }).start();
-    });
-    startServer(testAddress);
-
-    client.request(requestOptions)
-      .compose(request -> request
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::end)
-      ).await();
-  }
-
-  @Test
   public void testRequestHeadersConstant() throws Exception {
     System.setProperty(SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.name, "true");
     try {

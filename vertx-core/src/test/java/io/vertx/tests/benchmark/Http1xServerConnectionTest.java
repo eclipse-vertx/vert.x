@@ -58,7 +58,6 @@ public class Http1xServerConnectionTest extends VertxTestBase {
       Http1ServerConnection conn = new Http1ServerConnection(
         ThreadingModel.EVENT_LOOP,
         () -> context,
-        true,
         false,
         null,
         null,

@@ -64,7 +64,6 @@ public class HttpServerConfig {
   private FormDecoderConfig formDecoderConfig;
   private QueryParamDecoderConfig queryParamDecoderConfig;
   private boolean handle100ContinueAutomatically;
-  private boolean strictThreadMode;
   private ObservabilityConfig observabilityConfig;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
@@ -135,7 +134,6 @@ public class HttpServerConfig {
     this.formDecoderConfig = formDecoderConfig;
     this.queryParamDecoderConfig = queryParamDecoderConfig;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
-    this.strictThreadMode = options.getStrictThreadMode();
     this.observabilityConfig = observabilityConfig;
     this.http1Config = new Http1ServerConfig(options.getHttp1Config());
     this.http2Config = new Http2ServerConfig(options.getHttp2Config());
@@ -153,7 +151,6 @@ public class HttpServerConfig {
     this.formDecoderConfig = null;
     this.queryParamDecoderConfig = null;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
-    this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
     this.observabilityConfig = null;
     this.http1Config = null;
     this.http2Config = null;
@@ -174,7 +171,6 @@ public class HttpServerConfig {
     this.formDecoderConfig = other.formDecoderConfig != null ? new FormDecoderConfig(other.formDecoderConfig) : null;
     this.queryParamDecoderConfig = other.queryParamDecoderConfig != null ? new QueryParamDecoderConfig(other.queryParamDecoderConfig) : null;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
-    this.strictThreadMode = other.strictThreadMode;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : null;
@@ -420,25 +416,6 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setHandle100ContinueAutomatically(boolean handle100ContinueAutomatically) {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
-    return this;
-  }
-
-  /**
-   * @return whether to use the strict thread mode.
-   */
-  public boolean getStrictThreadMode() {
-    return strictThreadMode;
-  }
-
-  /**
-   * Indicates the server that the HTTP request/response interactions will happen exclusively on the expected thread when
-   * the threading model is event-loop.
-   *
-   * @param strictThreadMode whether to use the strict thread mode
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerConfig setStrictThreadMode(boolean strictThreadMode) {
-    this.strictThreadMode = strictThreadMode;
     return this;
   }
 

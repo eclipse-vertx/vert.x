@@ -59,7 +59,7 @@ public class VertxConnection extends ConnectionBase {
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   public final VoidChannelPromise voidPromise;
-  private final OutboundWriteQueue outboundMessageQueue;
+  private final OutboundMessageQueue<MessageWrite> outboundMessageQueue;
 
   // State accessed exclusively from the event loop thread
   private Deque<Object> pending;
@@ -77,10 +77,6 @@ public class VertxConnection extends ConnectionBase {
   private ChannelPromise closeSent;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
-    this(context, chctx, false);
-  }
-
-  public VertxConnection(ContextInternal context, ChannelHandlerContext chctx, boolean strictThreadMode) {
     super(context, chctx);
 
     EventLoopExecutor executor;
@@ -91,7 +87,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     this.channelWritable = chctx.channel().isWritable();
-    this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(executor);
+    this.outboundMessageQueue = new InternalMessageChannel(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
   }
 
@@ -447,7 +443,7 @@ public class VertxConnection extends ConnectionBase {
 
   // Write to channel boolean return for now is not used so avoids reading a volatile
   public final boolean writeToChannel(MessageWrite msg) {
-    return outboundMessageQueue.write(msg);
+    return outboundMessageQueue.add(msg);
   }
 
   /**
@@ -529,54 +525,15 @@ public class VertxConnection extends ConnectionBase {
     return writeFuture;
   }
 
-  private interface OutboundWriteQueue {
-    boolean isWritable();
-    boolean write(MessageWrite msg);
-    boolean tryDrain();
-    void close();
-  }
-
-  private final class DirectOutboundMessageQueue implements OutboundWriteQueue {
-
-    @Override
-    public boolean isWritable() {
-      return channelWritable;
-    }
-
-    @Override
-    public boolean write(MessageWrite msg) {
-      msg.write();
-      if (!read) {
-        checkFlush();
-      }
-      return true;
-    }
-
-    @Override
-    public boolean tryDrain() {
-      handleWriteQueueDrained();
-      return false;
-    }
-
-    @Override
-    public void close() {
-    }
-  }
-
   /**
    * Version of {@link OutboundMessageQueue} accessing internal connection base state.
    */
-  private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite>, OutboundWriteQueue {
+  private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite> {
 
     private boolean notClosing;
 
     public InternalMessageChannel(io.vertx.core.internal.EventExecutor eventLoop) {
       super(eventLoop);
-    }
-
-    @Override
-    public boolean write(MessageWrite msg) {
-      return add(msg);
     }
 
     @Override

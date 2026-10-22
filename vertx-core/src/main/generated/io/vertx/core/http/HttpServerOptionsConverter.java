@@ -192,11 +192,6 @@ public class HttpServerOptionsConverter {
             obj.setHttp2MaxSmallContinuationFrames(((Number)member.getValue()).intValue());
           }
           break;
-        case "strictThreadMode":
-          if (member.getValue() instanceof Boolean) {
-            obj.setStrictThreadMode((Boolean)member.getValue());
-          }
-          break;
         case "http2MultiplexImplementation":
           if (member.getValue() instanceof Boolean) {
             obj.setHttp2MultiplexImplementation((Boolean)member.getValue());
@@ -261,7 +256,6 @@ public class HttpServerOptionsConverter {
       json.put("http2RstFloodWindowDurationTimeUnit", obj.getHttp2RstFloodWindowDurationTimeUnit().name());
     }
     json.put("http2MaxSmallContinuationFrames", obj.getHttp2MaxSmallContinuationFrames());
-    json.put("strictThreadMode", obj.getStrictThreadMode());
     json.put("http2MultiplexImplementation", obj.getHttp2MultiplexImplementation());
   }
 }
