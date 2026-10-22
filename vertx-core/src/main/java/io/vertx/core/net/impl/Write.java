@@ -11,15 +11,29 @@
 package io.vertx.core.net.impl;
 
 /**
- * A message write operation.
+ * A write operation.
  */
 @FunctionalInterface
-public interface MessageWrite {
+public interface Write {
 
   /**
-   * Write the message.
+   * Perform the write operation.
    */
-  void write();
+  void perform();
+
+  /**
+   *  Signal the operation is enqueued.
+   *
+   * @param full whether the queue was full when the operation was enqueued
+   */
+  default void enqueued(boolean full) {
+  }
+
+  /**
+   * Signal the drain
+   */
+  default void drain() {
+  }
 
   /**
    * Cancel the write operation.

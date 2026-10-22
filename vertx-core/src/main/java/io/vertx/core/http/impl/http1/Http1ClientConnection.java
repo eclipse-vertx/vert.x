@@ -57,7 +57,7 @@ import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.Write;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -386,9 +386,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> listener) {
-    writeToChannel(new MessageWrite() {
+    writeToChannel(new Write() {
       @Override
-      public void write() {
+      public void perform() {
         if (stream.reset) {
           listener.fail("Stream reset");
           return;
@@ -404,9 +404,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void writeBuffer(Stream stream, ByteBuf buff, boolean end, Promise<Void> listener) {
-    writeToChannel(new MessageWrite() {
+    writeToChannel(new Write() {
       @Override
-      public void write() {
+      public void perform() {
         if (stream.reset) {
           listener.fail("Stream reset");
           return;
