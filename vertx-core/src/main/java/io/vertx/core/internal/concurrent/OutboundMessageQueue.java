@@ -63,7 +63,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    * Add a {@code message} to the queue.
    *
    * @param message the message to be added
-   * @return whether the producer can continue/stop adding to the queue
+   * @return whether the element was added to the queue strictly under the queue high water mark
    */
   public final boolean add(M message) {
     boolean inEventLoop = consumer.inThread();
@@ -75,7 +75,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       }
       flags = mqp.add(message);
       if (draining == 0 && (flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0) {
-        flags = drainMessageQueue();
+        drainMessageQueue();
       }
     } else {
       if (eventuallyClosed) {
@@ -87,13 +87,14 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
         consumer.execute(this::drain);
       }
     }
-    int val;
     if ((flags & MessagePassingQueue.UNWRITABLE_MASK) != 0) {
-      val = numberOfUnwritableSignals.incrementAndGet();
-    } else {
-      val = numberOfUnwritableSignals.get();
+      numberOfUnwritableSignals.incrementAndGet();
     }
-    return val <= 0;
+    return (flags & MessagePassingQueue.ABOVE_HWM_MASK) == 0;
+  }
+
+  protected final boolean aboveOrEqualsHighWaterMark() {
+    return mqp.elementAboveOrEqualsHighWaterMark();
   }
 
   /**
