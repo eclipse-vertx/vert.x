@@ -480,7 +480,7 @@ public class MessagePassingQueueTest {
   public void testClearDuringOverflowPublication() throws Exception {
     CountDownLatch inWindow = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
-    MessagePassingQueue.MpSc<Object> q = new MessagePassingQueue.MpSc<>(elt -> true, (elt, depth) -> {
+    MessagePassingQueue.MpSc<Object> q = new MessagePassingQueue.MpSc<>(elt -> true, (Behavior<Object>) (element, depth, seq) -> {
       inWindow.countDown();
       try {
         release.await();
@@ -514,12 +514,8 @@ public class MessagePassingQueueTest {
     Map<Integer, Integer> seqs = new HashMap<>();
     queue = new MessagePassingQueue.MpSc<>(elt -> true, new MessagePassingQueue.Behavior<Integer>() {
       @Override
-      public void setDepth(Integer element, int depth) {
-        depths.put(element, depth);
-      }
-      @Override
       public void stamp(Integer element, int depth, int seq) {
-        setDepth(element, depth);
+        depths.put(element, depth);
         seqs.put(element, seq);
       }
     }, 1, 4);
@@ -546,7 +542,7 @@ public class MessagePassingQueueTest {
   @Test
   public void testDepthSetOnAdd() {
     Map<Integer, Integer> depths = new HashMap<>();
-    queue = new MessagePassingQueue.MpSc<>(elt -> true, depths::put, 1, 4);
+    queue = new MessagePassingQueue.MpSc<>(elt -> true, (Behavior<Integer>) (element, depth, seq) -> depths.put(element, depth), 1, 4);
     for (int i = 0;i < 6;i++) {
       queue.add(i);
       assertEquals(i + 1, (int) depths.get(i));
