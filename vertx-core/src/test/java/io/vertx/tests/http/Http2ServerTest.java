@@ -86,6 +86,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2765,6 +2766,45 @@ public class Http2ServerTest extends Http2TestBase {
         testComplete();
       }));
     await();
+  }
+
+  @Test
+  public void testUpgradeToClearTextHeaderNamesRegardlessOfDefaultLocale() throws Exception {
+    // Under a Turkish default locale "If-None-Match".toLowerCase() is "ıf-none-match" (dotless ı), which is not
+    // a valid HTTP/2 header name and used to fail the upgraded connection after 101 Switching Protocols
+    Locale defaultLocale = Locale.getDefault();
+    Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+    try {
+      server.close();
+      server = vertx.createHttpServer(new HttpServerOptions(serverOptions)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setUseAlpn(false)
+        .setSsl(false));
+      server.requestHandler(req -> {
+        Assert.assertEquals(HttpVersion.HTTP_2, req.version());
+        Assert.assertEquals("\"etag\"", req.getHeader("if-none-match"));
+        Assert.assertEquals("1", req.getHeader("x-request-id"));
+        req.response().end();
+      });
+      startServer(testAddress);
+      client = vertx.createHttpClient(clientOptions.
+        setUseAlpn(false).
+        setSsl(false));
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.GET))
+        .compose(req -> req
+          .putHeader("If-None-Match", "\"etag\"")
+          .putHeader("X-Request-ID", "1")
+          .send())
+        .onComplete(TestUtils.onSuccess(resp -> {
+          Assert.assertEquals(200, resp.statusCode());
+          Assert.assertEquals(HttpVersion.HTTP_2, resp.version());
+          testComplete();
+        }));
+      await();
+    } finally {
+      Locale.setDefault(defaultLocale);
+    }
   }
 
   private void testUpgradeToClearText(HttpMethod method, Buffer expected, Handler<HttpServerOptions> optionsConfig) throws Exception {
