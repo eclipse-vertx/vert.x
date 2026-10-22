@@ -85,9 +85,9 @@ public class MessagePassingQueueStressTest extends VertxTestBase {
       }
       consumed.increment();
       return true;
-    }, (elt, depth) -> {
-      elt.depth = depth;
-      elt.check = ~depth;
+    }, (element, depth, seq) -> {
+      element.depth = depth;
+      element.check = ~depth;
     }, 1, 4);
     Thread[] threads = new Thread[numThreads];
     CyclicBarrier barrier = new CyclicBarrier(1 + numThreads);
@@ -142,17 +142,10 @@ public class MessagePassingQueueStressTest extends VertxTestBase {
         }
         consumed.increment();
         return true;
-      }, new MessagePassingQueue.Behavior<Element>() {
-        @Override
-        public void setDepth(Element elt, int depth) {
-          elt.depth = depth;
-          elt.check = ~depth;
-        }
-        @Override
-        public void stamp(Element elt, int depth, int seq) {
-          setDepth(elt, depth);
-          elt.seq = seq;
-        }
+      }, (elt, depth, seq) -> {
+        elt.depth = depth;
+        elt.check = ~depth;
+        elt.seq = seq;
       }, 1, 4);
       Thread[] threads = new Thread[numThreads];
       CyclicBarrier barrier = new CyclicBarrier(1 + numThreads);

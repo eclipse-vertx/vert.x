@@ -104,7 +104,7 @@ public abstract class MessagePassingQueue<E> {
   // consume never exceeds the depth (no borrow)
   private static final long ADD = (1L << 32) + 1;
 
-  private static final Behavior<?> NOOP = (element, depth) -> {
+  private static final Behavior<?> NOOP = (Behavior<Object>) (element, depth, seq) -> {
   };
 
   public interface Behavior<E> {
@@ -114,11 +114,7 @@ public abstract class MessagePassingQueue<E> {
       return (Behavior<T>) MessagePassingQueue.NOOP;
     }
 
-    void setDepth(E element, int depth);
-
-    default void stamp(E element, int depth, int seq) {
-      setDepth(element, depth);
-    }
+    void stamp(E element, int depth, int seq);
   }
 
   /**
