@@ -35,7 +35,7 @@ import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
-import io.vertx.core.net.impl.WritePromise;
+import io.vertx.core.internal.streams.WritePromise;
 
 import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 

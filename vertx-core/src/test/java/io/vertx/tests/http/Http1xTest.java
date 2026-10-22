@@ -2490,6 +2490,20 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testClientInvalidHttpMessageFromNonEventLoopThread() throws Exception {
+    server.requestHandler(req -> Assert.fail());
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(new RequestOptions(requestOptions).setURI("/a\rb"))
+      .await();
+    try {
+      request.send().await(20, TimeUnit.SECONDS);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
   public void testClientMaxInitialLineLengthOption(Checkpoint checkpoint) {
 
     int maxInitialLineLength = 3000;
@@ -6061,11 +6075,14 @@ public class Http1xTest extends HttpTest {
         Promise<Void> promise = Promise.promise();
         response.handler(chunk -> {
           response.pause();
-          request.reset();
-          vertx.setTimer(100, id -> {
-            promise.succeed();
-          });
+          request.reset().onComplete(TestUtils.onSuccess(v -> {
+            vertx.setTimer(100, id -> {
+              promise.succeed();
+            });
+          }));
         });
+        response.pause();
+        response.fetch(1);
         return promise.future();
       }));
   }

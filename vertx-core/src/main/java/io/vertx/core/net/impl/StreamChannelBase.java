@@ -32,6 +32,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.net.StreamChannelInternal;
+import io.vertx.core.internal.streams.WritePromise;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;

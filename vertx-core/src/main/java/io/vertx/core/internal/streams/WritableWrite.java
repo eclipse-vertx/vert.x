@@ -8,27 +8,42 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.streams;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 
 /**
- * A write promise.
+ * A write known writable at submission, e.g. the first write of a stream: no signal ever fires. The
+ * future carries the outcome of the write, completed by the holder of this promise.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class WritePromise extends FutureImpl<Void> implements MessageWrite, PromiseInternal<Void> {
+public final class WritableWrite extends FutureImpl<Void> implements PromiseInternal<Void>, WriteResult {
 
-  public WritePromise(ContextInternal context) {
+  public WritableWrite() {
+  }
+
+  public WritableWrite(ContextInternal context) {
     super(context);
   }
 
   @Override
-  public void cancel(Throwable cause) {
-    tryFail(cause);
+  public boolean isWritable() {
+    return true;
+  }
+
+  @Override
+  public WriteResult drainHandler(Handler<Void> handler) {
+    return this;
+  }
+
+  @Override
+  public WriteResult disposeHandler(Handler<Void> handler) {
+    return this;
   }
 
   @Override
