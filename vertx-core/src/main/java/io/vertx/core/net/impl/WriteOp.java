@@ -11,22 +11,38 @@
 package io.vertx.core.net.impl;
 
 /**
- * A message write operation.
+ * A write operation.
  */
-@FunctionalInterface
-public interface MessageWrite {
+public interface WriteOp {
 
   /**
-   * Write the message.
+   * Perform the write operation.
    */
   void write();
 
   /**
-   * Cancel the write operation.
+   * Cancel the write.
    *
    * @param cause the cancellation cause
    */
-  default void cancel(Throwable cause) {
-  }
+  void cancel(Throwable cause);
 
+  /**
+   * Signal the operation is enqueued.
+   */
+  void init(int depth, int seq, boolean writable);
+
+  int depth();
+
+  int seq();
+
+  /**
+   * Signal the drain, exclusively called when the operation was enqueued as non-writable.
+   */
+  void onDrain();
+
+  /**
+   * Signal the operation will never drain: the stream is closed.
+   */
+  void onDispose();
 }

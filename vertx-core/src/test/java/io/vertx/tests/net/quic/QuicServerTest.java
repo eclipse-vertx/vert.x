@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.net.QuicConnectionInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.*;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
@@ -1047,6 +1048,36 @@ public class QuicServerTest extends VertxTestBase {
       server.close().await();
     }
     assertWaitUntil(() -> exceptionCaught.get() != null);
+  }
+
+  @Test
+  public void testWriteResult() throws Exception {
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
+    server.streamHandler(stream -> {
+      stream.handler(buff -> {
+        while (true) {
+          WriteResult writeResult = (WriteResult) stream.write(buff);
+          if (!writeResult.isWritable()) {
+            writeResult.drainHandler(v -> {
+              testComplete();
+            });
+            break;
+          }
+        }
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(vertx);
+    try {
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream();
+      stream.create();
+      stream.write("ping");
+      await();
+    } finally {
+      client.close();
+      server.close().await();
+    }
   }
 
   /*  @Test

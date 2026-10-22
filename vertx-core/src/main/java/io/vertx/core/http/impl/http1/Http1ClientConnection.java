@@ -57,7 +57,7 @@ import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.WritePromise;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -385,40 +385,35 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return removed;
   }
 
-  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> listener) {
-    writeToChannel(new MessageWrite() {
+  private Future<Void> writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end) {
+    WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
         if (stream.reset) {
-          listener.fail("Stream reset");
-          return;
+          tryFail("Stream reset");
+        } else {
+          stream.request = request;
+          beginRequest(stream, request, buf, end, this);
         }
-        stream.request = request;
-        beginRequest(stream, request, buf, end, listener);
       }
-      @Override
-      public void cancel(Throwable cause) {
-        listener.fail(cause);
-      }
-    });
+    };
+    writeToChannel(write);
+    return write;
   }
 
-  private void writeBuffer(Stream stream, ByteBuf buff, boolean end, Promise<Void> listener) {
-    writeToChannel(new MessageWrite() {
+  private Future<Void> writeBuffer(Stream stream, ByteBuf buff, boolean end) {
+    WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
         if (stream.reset) {
-          listener.fail("Stream reset");
-          return;
+          tryFail("Stream reset");
+        } else {
+          writeBufferToChannel(stream, buff, end, this);
         }
-        writeBufferToChannel(stream, buff, end, listener);
       }
-
-      @Override
-      public void cancel(Throwable cause) {
-        listener.fail(cause);
-      }
-    });
+    };
+    writeToChannel(write);
+    return write;
   }
 
   private abstract static class Stream {
@@ -749,17 +744,13 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
-      PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
-      return promise.future();
+      return conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end);
     }
 
     @Override
     public Future<Void> write(Buffer buff, boolean end) {
       if (buff != null || end) {
-        Promise<Void> listener = context.promise();
-        conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);
-        return listener.future();
+        return conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end);
       } else {
         throw new IllegalStateException("???");
       }

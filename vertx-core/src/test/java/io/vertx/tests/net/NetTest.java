@@ -36,6 +36,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -4877,5 +4878,47 @@ public class NetTest {
     } catch (Exception e) {
       assertEquals(SSLHandshakeException.class, e.getClass());
     }
+  }
+
+  @Test
+  public void testWriteResult(Checkpoint checkpoint) throws Exception {
+    server.connectHandler(so -> {
+      so.handler(chunk -> {
+        while (true) {
+          WriteResult writeResult = (WriteResult) so.write(chunk);
+          if (!writeResult.isWritable()) {
+            writeResult.drainHandler(v -> {
+              checkpoint.succeed();
+            });
+            break;
+          }
+        }
+      });
+    });
+    startServer();
+    NetSocket socket = client.connect(testAddress).await();
+    socket.write("test").await();
+  }
+
+  @Test
+  public void testWriteResultClose(Checkpoint checkpoint) throws Exception {
+    server.connectHandler(so -> {
+      so.handler(chunk -> {
+        while (true) {
+          WriteResult writeResult = (WriteResult) so.write(chunk);
+          if (!writeResult.isWritable()) {
+            writeResult.disposeHandler(v -> {
+              checkpoint.succeed();
+            });
+            break;
+          }
+        }
+        so.close();
+      });
+    });
+    startServer();
+    NetSocket socket = client.connect(testAddress).await();
+    socket.pause();
+    socket.write("test").await();
   }
 }

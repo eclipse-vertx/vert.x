@@ -31,9 +31,10 @@ import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.WriteOp;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.*;
@@ -6873,7 +6874,31 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         .compose(HttpClientResponse::body));
     TestUtils.assertWaitUntil(() -> ref1.get() != null);
     TestUtils.assertWaitUntil(() -> ref2.get() != null);
-    assertTrue(ref1.get() instanceof MessageWrite);
-    assertTrue(ref2.get() instanceof MessageWrite);
+    assertTrue(ref1.get() instanceof WriteOp);
+    assertTrue(ref2.get() instanceof WriteOp);
+  }
+
+  @Test
+  public void testWriteResult() throws Exception {
+    Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(256));
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      while (true) {
+        WriteResult writeResult = (WriteResult) response.write(chunk);
+        if (!writeResult.isWritable()) {
+          writeResult.drainHandler(v -> {
+            response.end();
+          });
+          break;
+        }
+      }
+    });
+    startServer();
+    client.request(new RequestOptions(requestOptions).setPort(server.actualPort()))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
   }
 }
