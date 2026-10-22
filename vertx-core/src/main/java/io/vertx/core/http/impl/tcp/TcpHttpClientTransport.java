@@ -163,6 +163,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
     ConnectOptions connectOptions = new ConnectOptions();
     connectOptions.setRemoteAddress(server);
+    connectOptions.setLocalAddress(params.localAddress);
     if (proxyHttps) {
       // Forward mode through an HTTPS proxy: the socket's TLS terminates at the proxy, so the peer /
       // SNI is the proxy (the server), not the origin authority.
