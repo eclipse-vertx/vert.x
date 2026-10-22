@@ -459,6 +459,26 @@ public class KeyStoreTest extends VertxTestBase {
     TrustManager[] keyManagers = helper.getTrustMgrs((VertxInternal) vertx);
     assertTrue(keyManagers.length > 0);
   }
+  @Test
+  public void testCopyKeyStoreOptions() {
+    KeyStoreOptions options = new KeyStoreOptions();
+    options.setPassword("secret");
+    options.setPath("/path/to/keystore.p12");
+    options.setValue(Buffer.buffer("dummy"));
+    options.setType("PKCS11");
+    options.setProvider("SunPKCS11-hsm");
+    options.setAlias("server-key");
+    options.setAliasPassword("key-secret");
+    KeyStoreOptions copy = new KeyStoreOptions(options);
+    assertEquals("secret", copy.getPassword());
+    assertEquals("/path/to/keystore.p12", copy.getPath());
+    assertEquals(Buffer.buffer("dummy"), copy.getValue());
+    assertEquals("PKCS11", copy.getType());
+    assertEquals("SunPKCS11-hsm", copy.getProvider());
+    assertEquals("server-key", copy.getAlias());
+    assertEquals("key-secret", copy.getAliasPassword());
+  }
+
 
   /*
   @Test
