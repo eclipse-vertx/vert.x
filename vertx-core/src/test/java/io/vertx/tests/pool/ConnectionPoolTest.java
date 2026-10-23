@@ -211,6 +211,31 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testEmptyConcurrencyWithManyWaiters() {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 }, 3);
+    Connection expected = new Connection();
+    AtomicInteger seq = new AtomicInteger();
+    for (int i = 0;i < 3;i++) {
+      int expectedSeq = i + 1;
+      pool
+        .acquire(context, 0, TestUtils.onSuccess2(lease -> {
+          Assert.assertSame(lease.get(), expected);
+          Assert.assertEquals(expectedSeq, seq.getAndIncrement());
+          if (expectedSeq == 3) {
+            testComplete();
+          }
+        }));
+    }
+    ConnectionRequest request = mgr.assertRequest();
+    request.concurrency(0).connect(expected, 0);
+    Assert.assertEquals(0, seq.getAndIncrement());
+    request.concurrency(3);
+    await();
+  }
+
+  @Test
   public void testDecreaseConcurrency() throws Exception {
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 });
