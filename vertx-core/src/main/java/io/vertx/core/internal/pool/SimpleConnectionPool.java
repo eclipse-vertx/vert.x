@@ -860,7 +860,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       }
       node.queued = true;
       node.prev = head;
-      node.next = head.prev;
+      node.next = head.next;
       head.next.prev = node;
       head.next = node;
       size++;
