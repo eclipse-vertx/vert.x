@@ -26,7 +26,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.Write;
 import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
@@ -647,9 +647,9 @@ public class VertxConnectionTest extends VertxTestBase {
           while (channel.isWritable()) {
             chctx.write(Unpooled.copiedBuffer(TestUtils.randomAlphaString(1024), StandardCharsets.UTF_8));
           }
-          writeToChannel(new MessageWrite() {
+          writeToChannel(new Write() {
             @Override
-            public void write() {
+            public void perform() {
               written.set(true);
             }
             @Override
@@ -703,9 +703,9 @@ public class VertxConnectionTest extends VertxTestBase {
             chctx.write(Unpooled.copiedBuffer(TestUtils.randomAlphaString(1024), StandardCharsets.UTF_8));
           }
           VertxConnection connection = this;
-          writeToChannel(new MessageWrite() {
+          writeToChannel(new Write() {
             @Override
-            public void write() {
+            public void perform() {
               written.set(true);
               ChannelPromise cp = connection.channel().newPromise();
               cp.addListener((ChannelFutureListener) future -> last.set(future.isSuccess()));
@@ -746,9 +746,9 @@ public class VertxConnectionTest extends VertxTestBase {
       protected void handleEvent(Object event) {
         VertxConnection connection = this;
         if ("test".equals(event)) {
-          writeToChannel(new MessageWrite() {
+          writeToChannel(new Write() {
             @Override
-            public void write() {
+            public void perform() {
               written.set(true);
               ChannelPromise cp = connection.channel().newPromise();
               cp.addListener((ChannelFutureListener) future -> last.set(future.isSuccess()));
@@ -758,7 +758,7 @@ public class VertxConnectionTest extends VertxTestBase {
             @Override
             public void cancel(Throwable cause) {
               cancelled.set(true);
-              MessageWrite.super.cancel(cause);
+              Write.super.cancel(cause);
             }
           });
         } else {

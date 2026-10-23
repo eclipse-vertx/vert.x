@@ -27,6 +27,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -1049,5 +1050,10 @@ public class Http2Test extends HttpTest {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .await();
+  }
+
+  @Ignore("Todo")
+  @Test
+  public void testWriteResult() {
   }
 }
