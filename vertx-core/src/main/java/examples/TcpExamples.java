@@ -247,6 +247,25 @@ public class TcpExamples {
       });
   }
 
+  public void connectingToAServerFromALocalAddress(Vertx vertx) {
+
+    NetClient client = vertx.createNetClient();
+    client
+      .connect(new ConnectOptions()
+        .setHost("localhost")
+        .setPort(4321)
+        // Bind the connection to this network interface, with an ephemeral port
+        .setLocalAddress(SocketAddress.inetSocketAddress(0, "192.168.0.10")))
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          NetSocket socket = res.result();
+          System.out.println("Connected from " + socket.localAddress());
+        } else {
+          System.out.println("Failed to connect: " + res.cause().getMessage());
+        }
+      });
+  }
+
   public void configurationOfTcpClientReconnect(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig().
