@@ -30,7 +30,7 @@ public class Http2HeadersAdaptorsTest extends HeadersTest {
 
   @Override
   protected HttpHeaders newMultiMap() {
-    return new HttpHeaders(new DefaultHttp2Headers());
+    return new HttpHeaders(HttpHeaders.newHttp2Headers());
   }
 
   @Test
@@ -138,6 +138,17 @@ public class Http2HeadersAdaptorsTest extends HeadersTest {
     assertFalse(headers(HttpMethod.CONNECT, "localhost:8080", "localhost:8081").validate());
     assertFalse(headers(HttpMethod.CONNECT, "localhost:a", null).validate());
     assertFalse(headers(HttpMethod.CONNECT, null, "localhost:a").validate());
+  }
+
+  @Test
+  public void testValidateHeaders() {
+    HttpHeaders headers = newMultiMap();
+    headers.add("Foo-Bar", "value");
+    assertHeaderNames(headers, "foo-bar");
+    for (String name : Arrays.asList("", "foo bar", "foo:", "f\u00f6o")) {
+      assertThrows(IllegalArgumentException.class, () -> headers.add(name, "value"));
+    }
+    assertThrows(IllegalArgumentException.class, () -> headers.add("foo", "value\r\n bar"));
   }
 
   @Test

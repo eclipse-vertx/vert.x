@@ -13,7 +13,6 @@ package io.vertx.core.http.impl.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -152,7 +151,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
 
     @Override
     public void write() {
-      HttpRequestHeaders headers = new HttpRequestHeaders(new DefaultHttp2Headers());
+      HttpRequestHeaders headers = new HttpRequestHeaders(HttpHeaders.newHttp2Headers());
       headers.method(request.method);
       headers.trace(request.traceOperation);
       boolean e;
