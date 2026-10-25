@@ -20,7 +20,7 @@ public class InboundReadQueueTest {
     for (int i = 1;i < 15;i++) {
       assertEquals(0L, queue.add(i));
     }
-    assertEquals(MessagePassingQueue.UNWRITABLE_MASK, queue.add(17));
+    assertTrue((queue.add(17) & MessagePassingQueue.UNWRITABLE_MASK) != 0);
   }
 
   @Test

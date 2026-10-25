@@ -7,7 +7,10 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.LongAdder;
 
 import static io.vertx.core.streams.impl.MessagePassingQueue.numberOfUnwritableSignals;
@@ -63,6 +66,123 @@ public class MessagePassingQueueStressTest extends VertxTestBase {
       threads[i].join();
     }
     assertEquals(numThreads * numEmissions * numReps, counter.intValue());
+  }
+
+  @Test
+  public void testDepthStampProducerDrain() throws Exception {
+    int numThreads = 10;
+    int numEmissions = 10;
+    int numReps = 1000;
+    class Element {
+      int depth;
+      int check;
+    }
+    LongAdder consumed = new LongAdder();
+    LongAdder violations = new LongAdder();
+    MessagePassingQueue.MpSc<Element> queue = new MessagePassingQueue.MpSc<>(elt -> {
+      if (elt.depth < 1 || elt.check != ~elt.depth) {
+        violations.increment();
+      }
+      consumed.increment();
+      return true;
+    }, (elt, depth) -> {
+      elt.depth = depth;
+      elt.check = ~depth;
+    }, 1, 4);
+    Thread[] threads = new Thread[numThreads];
+    CyclicBarrier barrier = new CyclicBarrier(1 + numThreads);
+    for (int i = 0;i < numThreads;i++) {
+      Thread thread = new Thread(() -> {
+        try {
+          barrier.await();
+        } catch (Exception e) {
+          fail(e);
+          return;
+        }
+        for (int j = 0;j < numReps;j++) {
+          for (int k = 0;k < numEmissions;k++) {
+            int flags = queue.add(new Element());
+            if ((flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0) {
+              queue.drain();
+            }
+          }
+        }
+      });
+      thread.start();
+      threads[i] = thread;
+    }
+    barrier.await();
+    for (int i = 0;i < numThreads;i++) {
+      threads[i].join();
+    }
+    assertEquals(numThreads * numEmissions * numReps, consumed.intValue());
+    assertEquals(0, violations.intValue());
+  }
+
+  @Test
+  public void testDepthVisibility() throws Exception {
+    int numThreads = 10;
+    int numReps = 10_000;
+    class Element {
+      int depth;
+      int check;
+      int seq;
+    }
+    LongAdder consumed = new LongAdder();
+    LongAdder violations = new LongAdder();
+    AtomicIntegerArray seen = new AtomicIntegerArray(numThreads * numReps);
+    ExecutorService consumerThread = Executors.newSingleThreadExecutor();
+    try {
+      MessagePassingQueue.MpSc<Element> queue = new MessagePassingQueue.MpSc<>(elt -> {
+        if (elt.depth < 1 || elt.check != ~elt.depth) {
+          violations.increment();
+        }
+        if (elt.seq < 1 || elt.seq > seen.length() || seen.getAndIncrement(elt.seq - 1) != 0) {
+          violations.increment();
+        }
+        consumed.increment();
+        return true;
+      }, new MessagePassingQueue.Behavior<Element>() {
+        @Override
+        public void setDepth(Element elt, int depth) {
+          elt.depth = depth;
+          elt.check = ~depth;
+        }
+        @Override
+        public void stamp(Element elt, int depth, int seq) {
+          setDepth(elt, depth);
+          elt.seq = seq;
+        }
+      }, 1, 4);
+      Thread[] threads = new Thread[numThreads];
+      CyclicBarrier barrier = new CyclicBarrier(1 + numThreads);
+      for (int i = 0;i < numThreads;i++) {
+        Thread thread = new Thread(() -> {
+          try {
+            barrier.await();
+          } catch (Exception e) {
+            fail(e);
+            return;
+          }
+          for (int j = 0;j < numReps;j++) {
+            int flags = queue.add(new Element());
+            if ((flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0) {
+              consumerThread.execute(queue::drain);
+            }
+          }
+        });
+        thread.start();
+        threads[i] = thread;
+      }
+      barrier.await();
+      for (int i = 0;i < numThreads;i++) {
+        threads[i].join();
+      }
+      assertWaitUntil(() -> consumed.intValue() == numThreads * numReps);
+      assertEquals(0, violations.intValue());
+    } finally {
+      consumerThread.shutdown();
+    }
   }
 
   @Repeat(times = 50)
