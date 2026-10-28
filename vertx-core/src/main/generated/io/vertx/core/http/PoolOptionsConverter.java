@@ -52,6 +52,11 @@ public class PoolOptionsConverter {
             obj.setMaxWaitQueueSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "connectionSelection":
+          if (member.getValue() instanceof String) {
+            obj.setConnectionSelection(io.vertx.core.http.ConnectionSelection.valueOf((String)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -71,5 +76,8 @@ public class PoolOptionsConverter {
     json.put("cleanerPeriod", obj.getCleanerPeriod());
     json.put("eventLoopSize", obj.getEventLoopSize());
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
+    if (obj.getConnectionSelection() != null) {
+      json.put("connectionSelection", obj.getConnectionSelection().name());
+    }
   }
 }

@@ -2070,6 +2070,37 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testPoolRoundRobinSelection() throws Exception {
+    testPoolConnectionSelection(ConnectionSelection.ROUND_ROBIN);
+  }
+
+  @Test
+  public void testPoolLeastRequestsSelection() throws Exception {
+    testPoolConnectionSelection(ConnectionSelection.LEAST_REQUESTS);
+  }
+
+  private void testPoolConnectionSelection(ConnectionSelection selection) throws Exception {
+    List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(requests::add);
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).setHttp2MultiplexingLimit(2),
+      new PoolOptions().setHttp2MaxSize(2).setConnectionSelection(selection));
+    // Open two connections
+    List<Future<Buffer>> responses = new ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      responses.add(client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)));
+    }
+    AsyncTestBase.assertWaitUntil(() -> requests.size() == 3);
+    requests.forEach(req -> req.response().end());
+    Future.all(responses).await();
+    // LIFO would select the same connection for both requests
+    HttpClientRequest req1 = client.request(requestOptions).await();
+    HttpClientRequest req2 = client.request(requestOptions).await();
+    Assert.assertNotSame(req1.connection(), req2.connection());
+  }
+
+  @Test
   public void testDefaultFlowControlWindows() throws Exception {
     waitFor(2);
     AtomicInteger connectionWindowSizeIncrement = new AtomicInteger();
