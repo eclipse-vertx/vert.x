@@ -359,8 +359,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send() {
-    end();
-    return response();
+    return end().compose(v -> response());
   }
 
   /**
@@ -369,8 +368,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send(String body) {
-    end(body);
-    return response();
+    return end(body).compose(v -> response());
   }
 
   /**
@@ -379,8 +377,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send(Buffer body) {
-    end(body);
-    return response();
+    return end(body).compose(v -> response());
   }
 
   /**

@@ -6829,4 +6829,27 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     }
     checkpoint.awaitSuccess();
   }
+
+  @Test
+  public void testSendAfterRequestEndedWithFailure() throws Exception {
+    server.requestHandler(req -> req.response().end());
+    startServer(testAddress);
+    HttpClientRequest request = client
+      .request(requestOptions)
+      .await();
+    request
+      .end()
+      .await();
+    List<Future<HttpClientResponse>> variants = Arrays.asList(
+      request.send(),
+      request.send("body"),
+      request.send(Buffer.buffer("body")));
+    for (Future<HttpClientResponse> variant : variants) {
+      try {
+        variant.await(20, java.util.concurrent.TimeUnit.SECONDS);
+        fail();
+      } catch (IllegalStateException expected) {
+      }
+    }
+  }
 }
