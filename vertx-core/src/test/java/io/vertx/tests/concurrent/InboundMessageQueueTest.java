@@ -574,7 +574,7 @@ public abstract class InboundMessageQueueTest extends VertxTestBase {
     List<Integer> disposed = Collections.synchronizedList(new ArrayList<>());
     queue = new TestChannel(emitted::add, 1, 1) {
       @Override
-      protected void handleDispose(Integer msg) {
+      protected void handleRelease(Integer msg) {
         disposed.add(msg);
       }
     };

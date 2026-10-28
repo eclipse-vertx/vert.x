@@ -113,7 +113,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         }
       }
       @Override
-      protected void handleDispose(MessageWrite messageWrite) {
+      protected void handleRelease(MessageWrite messageWrite) {
         Throwable cause = failure;
         if (cause == null) {
           cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
@@ -682,7 +682,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
 
     @Override
-    protected void handleDispose(ByteBuf msg) {
+    protected void handleRelease(ByteBuf msg) {
       if (msg != END_OF_STREAM_2) {
         msg.release();
       }

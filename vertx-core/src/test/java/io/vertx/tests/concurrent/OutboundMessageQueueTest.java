@@ -283,7 +283,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
         }
       }
       @Override
-      protected void handleDispose(Integer elt) {
+      protected void handleRelease(Integer elt) {
         output.add(elt);
       }
     };
