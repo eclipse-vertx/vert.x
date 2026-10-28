@@ -182,8 +182,12 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public void onClose(GoAway goAway) {
+    close(goAway, true);
+  }
+
+  private void close(GoAway goAway, boolean observe) {
     if (!trailersSent || !trailersReceived) {
-      StreamObserver observer = observer();
+      StreamObserver observer = observe ? observer() : null;
       if (observer != null) {
         observer.observeReset();
       }
@@ -501,7 +505,8 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         } else {
           // Reset happening before stream allocation
           handleReset(code);
-          onClose(null);
+          // Nothing was sent, so the observer did not begin the request
+          close(null, false);
           promise.complete();
         }
       }
