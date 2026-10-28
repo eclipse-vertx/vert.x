@@ -487,7 +487,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           }
         }
         @Override
-        protected void handleDispose(ByteBuf msg) {
+        protected void handleRelease(ByteBuf msg) {
           if (msg != END_OF_STREAM_2) {
             msg.release();
           }

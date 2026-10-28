@@ -70,7 +70,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
     int flags;
     if (inEventLoop) {
       if (closed) {
-        handleDispose(message);
+        handleRelease(message);
         return true;
       }
       flags = mqp.add(message);
@@ -79,7 +79,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       }
     } else {
       if (eventuallyClosed) {
-        handleDispose(message);
+        handleRelease(message);
         return true;
       }
       flags = mqp.add(message);
@@ -169,7 +169,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   private void releaseMessages() {
     List<M> messages = mqp.clear();
     for (M elt : messages) {
-      handleDispose(elt);
+      handleRelease(elt);
     }
   }
 
@@ -190,6 +190,6 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    *
    * @param msg the message
    */
-  protected void handleDispose(M msg) {
+  protected void handleRelease(M msg) {
   }
 }

@@ -535,7 +535,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void handleDispose(MessageWrite write) {
+    protected void handleRelease(MessageWrite write) {
       if (channel.isActive()) {
         write.write();
       } else {

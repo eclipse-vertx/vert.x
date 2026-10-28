@@ -300,7 +300,7 @@ public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest
     List<Integer> dropped = Collections.synchronizedList(new ArrayList<>());
     queue = new TestChannel(elt -> emitted.incrementAndGet(), 4, 4) {
       @Override
-      protected void handleDispose(Integer msg) {
+      protected void handleRelease(Integer msg) {
         dropped.add(msg);
         if (msg == 0) {
           queue.add(1);
