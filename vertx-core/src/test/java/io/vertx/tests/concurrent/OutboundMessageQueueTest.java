@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -40,6 +41,54 @@ public class OutboundMessageQueueTest extends VertxTestBase {
     output = Collections.synchronizedList(new ArrayList<>());
     eventLoop = ((ContextInternal)vertx.getOrCreateContext()).executor();
   }
+
+  @Test
+  public void testAddAboveHighWaterMarkInThread() {
+    queue = new OutboundMessageQueue<>(eventLoop, 2, 4) {
+      @Override
+      public boolean test(Integer msg) {
+        return false;
+      }
+    };
+    eventLoop.execute(() -> {
+      assertTrue(queue.add(0));
+      assertTrue(queue.add(1));
+      assertTrue(queue.add(3));
+      assertFalse(queue.add(4));
+      assertFalse(queue.add(5));
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testAddAboveHighWaterMarkOtherThread() {
+    queue = new OutboundMessageQueue<>(eventLoop, 2, 4) {
+      @Override
+      public boolean test(Integer msg) {
+        return true;
+      }
+    };
+    eventLoop.execute(() -> {
+      Thread th = new Thread(() -> {
+        assertTrue(queue.add(0));
+        assertTrue(queue.add(1));
+        assertTrue(queue.add(3));
+        assertFalse(queue.add(4));
+        assertFalse(queue.add(5));
+        testComplete();
+      });
+      th.start();
+      try {
+        th.join();
+      } catch (InterruptedException e) {
+        fail(e);
+      }
+    });
+    await();
+  }
+
+
 
   @Test
   public void testReentrantWriteAccept() {
@@ -283,7 +332,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
         }
       }
       @Override
-      protected void handleDispose(Integer elt) {
+      protected void handleRelease(Integer elt) {
         output.add(elt);
       }
     };
@@ -329,4 +378,41 @@ public class OutboundMessageQueueTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testLostUnwritableSignalOnRefusedOwnershipAdd() {
+    queue = new OutboundMessageQueue<>(eventLoop, 1, 1) {
+      @Override
+      public boolean test(Integer msg) {
+        return false;
+      }
+    };
+    eventLoop.execute(() -> {
+      queue.add(0);
+      assertFalse(queue.isWritable());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testWritabilityDriftAfterInlineDrainTransition() throws Exception {
+    AtomicBoolean accept = new AtomicBoolean(true);
+    queue = new OutboundMessageQueue<>(eventLoop, 1, 1) {
+      @Override
+      public boolean test(Integer msg) {
+        return accept.get();
+      }
+    };
+    CountDownLatch latch = new CountDownLatch(1);
+    eventLoop.execute(() -> {
+      queue.add(0);
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    accept.set(false);
+    queue.add(1);
+    assertFalse(queue.isWritable());
+  }
+
 }

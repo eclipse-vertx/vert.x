@@ -83,8 +83,39 @@ import java.util.function.Predicate;
  * in the flags. This number allows the producer flow controller to correctly account the producer writability:
  * {@link #WRITABLE_MASK}/{@link #UNWRITABLE_MASK} signals are observed by different threads, therefore a good
  * practice to compute the queue writability is to increment/decrement an atomic counter for each signal received.</p>
+ *
+ * <h3>Element depth and sequence</h3>
+ *
+ * <p>The depth of an element is the number of pending elements its {@link #add} observed, including itself; the
+ * sequence of an element is its add order, a 32-bit modular counter. Both are set on the element at {@link #add} time
+ * through the {@link Behavior} contract, before the element is published, so the consumer reads the values the
+ * producer observed. The depth lets the consumer apply a per-element treatment based on the queue depth at which the
+ * element was added, for example whether it was added at or above the {@link #highWaterMark}, independently of the
+ * writability transition signalled by {@link #UNWRITABLE_MASK}. The sequence orders elements by their add, while the
+ * queue delivers them in publication order: concurrent adds can be delivered out of their add order, and the sequence
+ * lets the consumer perform its accounting in add order, e.g. determining when the queue becomes writable again from
+ * the perspective of a given element.</p>
  */
 public abstract class MessagePassingQueue<E> {
+
+  // The wip value packs the add sequence (high 32 bits, incremented by every add) and the queue
+  // depth (low 32 bits, incremented by add, decremented by consume): a single atomic addition
+  // maintains both halves since the depth is bounded by the queue capacity (no carry) and a
+  // consume never exceeds the depth (no borrow)
+  private static final long ADD = (1L << 32) + 1;
+
+  private static final Behavior<?> NOOP = (Behavior<Object>) (element, depth, seq) -> {
+  };
+
+  public interface Behavior<E> {
+
+    @SuppressWarnings("unchecked")
+    static <T> Behavior<T> noop() {
+      return (Behavior<T>) MessagePassingQueue.NOOP;
+    }
+
+    void stamp(E element, int depth, int seq);
+  }
 
   /**
    * When the masked bit is set, the queue became unwritable, this triggers only when the chanqueuenel transitions
@@ -117,6 +148,7 @@ public abstract class MessagePassingQueue<E> {
   // Immutable
 
   private final Predicate<E> consumer;
+  private final Behavior<E> behavior;
   protected final long highWaterMark;
   protected final long lowWaterMark;
 
@@ -153,6 +185,27 @@ public abstract class MessagePassingQueue<E> {
     Arguments.require(lowWaterMark <= highWaterMark, "The high-water mark must greater or equals to the low-water mark");
     this.queue = queue;
     this.consumer = Objects.requireNonNull(consumer, "Consumer must be not null");
+    this.behavior = Behavior.noop();
+    this.lowWaterMark = lowWaterMark;
+    this.highWaterMark = highWaterMark;
+  }
+
+  /**
+   * Create a new instance.
+   *
+   * @param consumer the predicate accepting the elements
+   * @param lowWaterMark the low-water mark, must be positive
+   * @param highWaterMark the high-water mark, must be greater than the low-water mark
+   *
+   * @throws NullPointerException if consumer is null
+   * @throws IllegalArgumentException if any mark violates the condition
+   */
+  public MessagePassingQueue(Queue<E> queue, Predicate<E> consumer, Behavior<E> behavior,  long lowWaterMark, long highWaterMark) {
+    Arguments.require(lowWaterMark > 0, "The low-water mark must be > 0");
+    Arguments.require(lowWaterMark <= highWaterMark, "The high-water mark must greater or equals to the low-water mark");
+    this.queue = queue;
+    this.consumer = Objects.requireNonNull(consumer, "Consumer must be not null");
+    this.behavior = behavior;
     this.lowWaterMark = lowWaterMark;
     this.highWaterMark = highWaterMark;
   }
@@ -189,18 +242,16 @@ public abstract class MessagePassingQueue<E> {
     if (element == null) {
       throw new NullPointerException();
     }
-    long val;
-    if (wipCompareAndSet(0L, 1L)) {
+    long val = wipAddAndGet(ADD);
+    int depth = (int) val;
+    behavior.stamp(element, depth, (int) (val >>> 32));
+    if (depth == 1) {
       overflow = element;
-      val = 1;
+      return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? UNWRITABLE_MASK : 0);
     } else {
       queue.add(element);
-      val = wipIncrementAndGet();
+      return depth == highWaterMark ? UNWRITABLE_MASK : 0;
     }
-    if (val != 1) {
-      return val == highWaterMark ? UNWRITABLE_MASK : 0; // Check branch-less
-    }
-    return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? UNWRITABLE_MASK : 0);
   }
 
   /**
@@ -264,14 +315,14 @@ public abstract class MessagePassingQueue<E> {
   // Note : we can optimize this by passing pending as argument of this method to avoid the initial
   private int drainLoop(long maxIter) {
     E elt;
-    long pending = wipGet();
+    long pending = (int) wipGet();
 //    if (pending == 0) {
 //      throw new IllegalStateException();
 //    }
     do {
       int consumed;
       for (consumed = 0;consumed < pending && maxIter > 0L;consumed++) {
-        elt = queue.poll();
+        elt = poll();
         if (maxIter != Long.MAX_VALUE) {
           maxIter--;
         }
@@ -295,13 +346,27 @@ public abstract class MessagePassingQueue<E> {
   }
 
   /**
+   * Poll the next element, spinning when the queue is empty: polls are bounded by wip, so the
+   * element is guaranteed to be added by a producer that has already incremented.
+   *
+   * @return the polled element
+   */
+  private E poll() {
+    E elt;
+    for (elt = queue.poll();elt == null;elt = queue.poll()) {
+      Thread.yield();
+    }
+    return elt;
+  }
+
+  /**
    * Consume a number of elements from the queue, this method updates the queue {@link #numberOfUnwritableTimes} counter.
    *
    * @param amount the amount to consume
    * @return the number of pending elements after consuming from the queue
    */
   private long consume(int amount) {
-    long pending = wipAddAndGet(-amount);
+    long pending = (int) wipAddAndGet(-amount);
     long size = pending + amount;
     if (size >= highWaterMark && (size - amount) < highWaterMark) {
       numberOfUnwritableTimes++;
@@ -325,13 +390,23 @@ public abstract class MessagePassingQueue<E> {
     if (overflow != null) {
       elts.add(overflow);
       overflow = null;
-      if (wipDecrementAndGet() == 0) {
+      if ((int) wipAddAndGet(-1) == 0) {
         return elts;
       }
     }
-    for (long pending = wipGet();pending != 0;pending = wipAddAndGet(-pending)) {
+    for (long pending = (int) wipGet();pending != 0;pending = (int) wipAddAndGet(-pending)) {
       for (int i = 0;i < pending;i++) {
-        elts.add(queue.poll());
+        E elt = queue.poll();
+        while (elt == null) {
+          elt = overflow;
+          if (elt != null) {
+            overflow = null;
+          } else {
+            Thread.yield();
+            elt = queue.poll();
+          }
+        }
+        elts.add(elt);
       }
     }
     return elts;
@@ -369,9 +444,6 @@ public abstract class MessagePassingQueue<E> {
   /**
    * WIP operations
    */
-  protected abstract boolean wipCompareAndSet(long expect, long update);
-  protected abstract long wipIncrementAndGet();
-  protected abstract long wipDecrementAndGet();
   protected abstract long wipGet();
   protected abstract long wipAddAndGet(long delta);
 
@@ -391,27 +463,16 @@ public abstract class MessagePassingQueue<E> {
       this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
     }
 
+    public SingleThread(Predicate<E> consumer, Behavior<E> behavior) {
+      this(consumer, behavior, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+
     public SingleThread(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
       super(new ArrayDeque<>(1), consumer, lowWaterMark, highWaterMark);
     }
 
-    @Override
-    protected boolean wipCompareAndSet(long expect, long update) {
-      if (wip == expect) {
-        wip = update;
-        return true;
-      }
-      return false;
-    }
-
-    @Override
-    protected long wipIncrementAndGet() {
-      return ++wip;
-    }
-
-    @Override
-    protected long wipDecrementAndGet() {
-      return --wip;
+    public SingleThread(Predicate<E> consumer, Behavior<E> behavior, int lowWaterMark, int highWaterMark) {
+      super(new ArrayDeque<>(1), consumer, behavior, lowWaterMark, highWaterMark);
     }
 
     @Override
@@ -436,8 +497,16 @@ public abstract class MessagePassingQueue<E> {
       this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
     }
 
+    public MpSc(Predicate<E> consumer, Behavior<E> behavior) {
+      this(consumer, behavior, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+
     public MpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
       super(PlatformDependent.newMpscQueue(16, 1 << 30), consumer, lowWaterMark, highWaterMark);
+    }
+
+    public MpSc(Predicate<E> consumer, Behavior<E> behavior, int lowWaterMark, int highWaterMark) {
+      super(PlatformDependent.newMpscQueue(16, 1 << 30), consumer, behavior, lowWaterMark, highWaterMark);
     }
 
     /**
@@ -463,21 +532,6 @@ public abstract class MessagePassingQueue<E> {
     }
 
     @Override
-    protected boolean wipCompareAndSet(long expect, long update) {
-      return WIP_UPDATER.compareAndSet(this, expect, update);
-    }
-
-    @Override
-    protected long wipIncrementAndGet() {
-      return WIP_UPDATER.incrementAndGet(this);
-    }
-
-    @Override
-    protected long wipDecrementAndGet() {
-      return WIP_UPDATER.decrementAndGet(this);
-    }
-
-    @Override
     protected long wipGet() {
       return WIP_UPDATER.get(this);
     }
@@ -498,23 +552,17 @@ public abstract class MessagePassingQueue<E> {
     public SpSc(Predicate<E> consumer) {
       this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
     }
+
+    public SpSc(Predicate<E> consumer, Behavior<E> behavior) {
+      this(consumer, behavior, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+
     public SpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
       super(PlatformDependent.newSpscQueue(), consumer, lowWaterMark, highWaterMark);
     }
 
-    @Override
-    protected boolean wipCompareAndSet(long expect, long update) {
-      return WIP_UPDATER.compareAndSet(this, expect, update);
-    }
-
-    @Override
-    protected long wipIncrementAndGet() {
-      return WIP_UPDATER.incrementAndGet(this);
-    }
-
-    @Override
-    protected long wipDecrementAndGet() {
-      return WIP_UPDATER.decrementAndGet(this);
+    public SpSc(Predicate<E> consumer, Behavior<E> behavior, int lowWaterMark, int highWaterMark) {
+      super(PlatformDependent.newSpscQueue(), consumer, behavior, lowWaterMark, highWaterMark);
     }
 
     @Override

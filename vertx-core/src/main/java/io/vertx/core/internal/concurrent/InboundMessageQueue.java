@@ -98,7 +98,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   protected final boolean add0(M msg) {
     assert producer.inThread();
     if (producerClosed) {
-      handleDispose(msg);
+      handleRelease(msg);
       return false;
     }
     int res = mqp.add(msg);
@@ -325,7 +325,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   protected M releaseMessage(M message) {
-    handleDispose(message);
+    handleRelease(message);
     return null;
   }
 
@@ -355,6 +355,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    *
    * @param msg the message to dispose
    */
-  protected void handleDispose(M msg) {
+  protected void handleRelease(M msg) {
   }
 }

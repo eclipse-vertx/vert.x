@@ -18,9 +18,14 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -469,6 +474,81 @@ public class MessagePassingQueueTest {
 
   private static List<Integer> range(int start, int end) {
     return IntStream.range(start, end).boxed().collect(Collectors.toList());
+  }
+
+  @Test
+  public void testClearDuringOverflowPublication() throws Exception {
+    CountDownLatch inWindow = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    MessagePassingQueue.MpSc<Object> q = new MessagePassingQueue.MpSc<>(elt -> true, (Behavior<Object>) (element, depth, seq) -> {
+      inWindow.countDown();
+      try {
+        release.await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    Object element = new Object();
+    Thread producer = new Thread(() -> q.add(element));
+    producer.start();
+    // The producer is suspended between its wip increment and its overflow publication
+    assertTrue(inWindow.await(10, TimeUnit.SECONDS));
+    AtomicReference<List<Object>> cleared = new AtomicReference<>();
+    CountDownLatch done = new CountDownLatch(1);
+    Thread clearer = new Thread(() -> {
+      cleared.set(q.clear());
+      done.countDown();
+    });
+    clearer.start();
+    assertFalse(done.await(100, TimeUnit.MILLISECONDS));
+    release.countDown();
+    assertTrue(done.await(10, TimeUnit.SECONDS));
+    assertEquals(Collections.singletonList(element), cleared.get());
+    producer.join();
+    clearer.join();
+  }
+
+  @Test
+  public void testStampSequence() {
+    Map<Integer, Integer> depths = new HashMap<>();
+    Map<Integer, Integer> seqs = new HashMap<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> true, new MessagePassingQueue.Behavior<Integer>() {
+      @Override
+      public void stamp(Integer element, int depth, int seq) {
+        depths.put(element, depth);
+        seqs.put(element, seq);
+      }
+    }, 1, 4);
+    for (int i = 0;i < 3;i++) {
+      queue.add(i);
+    }
+    queue.drain();
+    for (int i = 3;i < 5;i++) {
+      queue.add(i);
+    }
+    queue.drain();
+    for (int i = 0;i < 5;i++) {
+      // The sequence is the global add order, unaffected by consumption
+      assertEquals(i + 1, (int) seqs.get(i));
+    }
+    // The depth restarts after the drain
+    assertEquals(1, (int) depths.get(0));
+    assertEquals(2, (int) depths.get(1));
+    assertEquals(3, (int) depths.get(2));
+    assertEquals(1, (int) depths.get(3));
+    assertEquals(2, (int) depths.get(4));
+  }
+
+  @Test
+  public void testDepthSetOnAdd() {
+    Map<Integer, Integer> depths = new HashMap<>();
+    queue = new MessagePassingQueue.MpSc<>(elt -> true, (Behavior<Integer>) (element, depth, seq) -> depths.put(element, depth), 1, 4);
+    for (int i = 0;i < 6;i++) {
+      queue.add(i);
+      assertEquals(i + 1, (int) depths.get(i));
+    }
+    queue.drain();
+    assertEquals(6, depths.size());
   }
 
   @Test

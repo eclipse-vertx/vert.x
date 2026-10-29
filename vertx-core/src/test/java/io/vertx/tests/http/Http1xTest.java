@@ -6060,11 +6060,14 @@ public class Http1xTest extends HttpTest {
       .compose(response -> {
         Promise<Void> promise = Promise.promise();
         response.handler(chunk -> {
-          request.reset();
-          vertx.setTimer(100, id -> {
-            promise.succeed();
-          });
+          request.reset().onComplete(TestUtils.onSuccess(v -> {
+            vertx.setTimer(100, id -> {
+              promise.complete();
+            });
+          }));
         });
+        response.pause();
+        response.fetch(1);
         return promise.future();
       }));
   }
