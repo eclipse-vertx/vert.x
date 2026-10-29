@@ -360,6 +360,10 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return stream.reset((int)code);
   }
 
+  final boolean isHeadersSent() {
+    return headersSent;
+  }
+
   public final Object metric() {
     return observer != null ? observer.metric() : null;
   }

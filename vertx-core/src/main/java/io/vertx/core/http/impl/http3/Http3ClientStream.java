@@ -25,6 +25,7 @@ import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
 
 import java.util.Map;
@@ -45,6 +46,32 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
     super(connection, stream, context, observer);
 
     this.observer = observer;
+  }
+
+  @Override
+  public Future<Void> writeReset(long code) {
+    boolean unsent = !isHeadersSent();
+    Future<Void> fut = super.writeReset(code);
+    return unsent ? fut.compose(v -> closeUnsent((int) code)) : fut;
+  }
+
+  @Override
+  public Future<Boolean> cancel() {
+    boolean unsent = !isHeadersSent();
+    Future<Boolean> fut = super.cancel();
+    return unsent ? fut.compose(res -> closeUnsent(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(res)) : fut;
+  }
+
+  /**
+   * Close a stream reset before the request headers were sent, so the stream closes and its connection lease
+   * is recycled: abort the inbound side as well, and close the channel since Netty does not close it after a reset.
+   */
+  private Future<Void> closeUnsent(int code) {
+    return stream.abort(code).compose(v -> {
+      PromiseInternal<Void> promise = context.promise();
+      stream.channelHandlerContext().channel().close().addListener(promise);
+      return promise.future();
+    });
   }
 
   @Override
