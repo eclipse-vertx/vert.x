@@ -4,6 +4,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.concurrent.OutboundWriteQueue;
+import io.vertx.core.internal.concurrent.WriteOp;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.VertxRunner;
 import org.junit.Assert;
@@ -19,17 +20,40 @@ import java.util.concurrent.locks.LockSupport;
 @RunWith(VertxRunner.class)
 public class OutboundWriteQueueTest {
 
-  static class Element {
+  static class Element extends WriteOp {
 
-    boolean writable;
-    int depth;
-    int seq;
     boolean written;
-    int drained;
-    int disposed;
+    volatile int drained;
+    volatile int disposed;
     Throwable failure;
     Runnable listener;
 
+    @Override
+    public void cancel(Throwable cause) {
+      failure = cause;
+    }
+
+    int depth() {
+      return WriteOp.depthOf(this);
+    }
+
+    int seq() {
+      return WriteOp.seqOf(this);
+    }
+
+    @Override
+    protected void handleDrain() {
+      drained++;
+      Runnable l = listener;
+      if (l != null) {
+        l.run();
+      }
+    }
+
+    @Override
+    protected void handleDispose() {
+      disposed++;
+    }
   }
 
   private boolean writable;
@@ -47,42 +71,8 @@ public class OutboundWriteQueueTest {
 
     void write(Element element) {
       add(element);
-    }
-
-    @Override
-    protected void init(Element element, int depth, int seq, boolean writable) {
-      element.writable = writable;
-      element.depth = depth;
-      element.seq = seq;
-    }
-
-    @Override
-    protected int depthOf(Element element) {
-      return element.depth;
-    }
-
-    @Override
-    protected int seqOf(Element element) {
-      return element.seq;
-    }
-
-    @Override
-    protected void handleDrain(Element element) {
-      element.drained++;
-      Runnable listener = element.listener;
-      if (listener != null) {
-        listener.run();
-      }
-    }
-
-    @Override
-    protected void handleCancel(Element msg, Throwable cause) {
-      msg.failure = cause;
-    }
-
-    @Override
-    protected void handleDispose(Element msg) {
-      msg.disposed++;
+      element.drainHandlerSet();
+      element.disposeHandlerSet();
     }
   }
 
@@ -112,7 +102,7 @@ public class OutboundWriteQueueTest {
         elt = new Element();
         owq.write(elt);
       }
-      while (elt.writable);
+      while (elt.isWritable());
       Element last = elt;
       last.listener = () -> {
         if (last.written) {
@@ -138,15 +128,22 @@ public class OutboundWriteQueueTest {
           return false;
         }
       }
-      @Override
-      protected void handleDrain(Element element) {
+    };
+    eventLoop.execute(() -> {
+      Element elt;
+      do {
+        elt = new Element();
+        owq.write(elt);
+      }
+      while (elt.isWritable());
+      elt.listener = () -> {
         writable = false;
         Thread thread = new Thread(() -> {
           while (true) {
-            Element elt = new Element();
-            write(elt);
-            if (!elt.writable) {
-              elt.listener = () -> {
+            Element elt2 = new Element();
+            owq.write(elt2);
+            if (!elt2.isWritable()) {
+              elt2.listener = () -> {
                 drained.set(true);
               };
               break;
@@ -159,17 +156,6 @@ public class OutboundWriteQueueTest {
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        super.handleDrain(element);
-      }
-    };
-    eventLoop.execute(() -> {
-      Element elt;
-      do {
-        elt = new Element();
-        owq.write(elt);
-      }
-      while (elt.writable);
-      elt.listener = () -> {
         eventLoop.execute(() -> {
           if (!drained.get()) {
             checkpoint1.succeed();
@@ -206,7 +192,7 @@ public class OutboundWriteQueueTest {
         owq.write(elt);
         written++;
       }
-      while (elt.writable);
+      while (elt.isWritable());
       accept.set(written - 1);
       owq.tryDrain();
       Assert.assertEquals(0, elt.drained);
@@ -241,7 +227,7 @@ public class OutboundWriteQueueTest {
         elt = new Element();
         owq.write(elt);
       }
-      while (elt.writable);
+      while (elt.isWritable());
       Element collected = elt;
       Element refused = new Element();
       owq.write(refused);
@@ -281,7 +267,7 @@ public class OutboundWriteQueueTest {
         elt = new Element();
         owq.write(elt);
       }
-      while (elt.writable);
+      while (elt.isWritable());
       Element collected1 = elt;
       Element collected2 = new Element();
       owq.write(collected2);
@@ -298,7 +284,7 @@ public class OutboundWriteQueueTest {
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
-      Assert.assertTrue(witness.depth < 3);
+      Assert.assertTrue(witness.depth() < 3);
       accept.set(1);
       owq.tryDrain();
       Assert.assertTrue(collected2.written);
@@ -368,7 +354,7 @@ public class OutboundWriteQueueTest {
         elt = new Element();
         owq.write(elt);
       }
-      while (elt.writable);
+      while (elt.isWritable());
       Element collected = elt;
       owq.write(boom);
       accept.set(4);
@@ -411,7 +397,7 @@ public class OutboundWriteQueueTest {
       Element m3 = new Element();
       owq.write(m3);
       owq.write(boom);
-      Assert.assertFalse(boom.writable);
+      Assert.assertFalse(boom.isWritable());
       accept.set(3);
       owq.tryDrain();
       Assert.assertTrue(m3.written);
@@ -444,7 +430,7 @@ public class OutboundWriteQueueTest {
         elt = new Element();
         owq.write(elt);
       }
-      while (elt.writable);
+      while (elt.isWritable());
       Element collected = elt;
       Element refused = new Element();
       owq.write(refused);
@@ -489,7 +475,7 @@ public class OutboundWriteQueueTest {
         elt = new Element();
         owq.write(elt);
       }
-      while (elt.writable);
+      while (elt.isWritable());
       Element collected = elt;
       closer[0] = collected;
       Element refused = new Element();
@@ -521,8 +507,8 @@ public class OutboundWriteQueueTest {
         return true;
       }
       @Override
-      protected void init(Element element, int depth, int seq, boolean writable) {
-        super.init(element, depth, seq, writable);
+      public void stamp(Element element, int depth, int seq) {
+        super.stamp(element, depth, seq);
         // Deschedule some publications to invert the poll order against the stamps
         if ((seq & 255) == 0) {
           LockSupport.parkNanos(1_000_000);
@@ -553,8 +539,8 @@ public class OutboundWriteQueueTest {
           for (Element[] slice : elements) {
             for (Element elt : slice) {
               Assert.assertTrue(elt.written);
-              Assert.assertEquals(elt.depth >= 3 ? 1 : 0, elt.drained);
-              if (elt.depth >= 3) {
+              Assert.assertEquals(elt.depth() >= 3 ? 1 : 0, elt.drained);
+              if (elt.depth() >= 3) {
                 collected++;
               }
             }
@@ -585,8 +571,8 @@ public class OutboundWriteQueueTest {
         }
       }
       @Override
-      protected void init(Element element, int depth, int seq, boolean writable) {
-        super.init(element, depth, seq, writable);
+      public void stamp(Element element, int depth, int seq) {
+        super.stamp(element, depth, seq);
         if (element == stale) {
           parked.countDown();
           try {
@@ -622,8 +608,8 @@ public class OutboundWriteQueueTest {
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
-      Assert.assertTrue(stale.depth < 3);
-      Assert.assertTrue(stale.seq < collected[2].seq);
+      Assert.assertTrue(stale.depth() < 3);
+      Assert.assertTrue(stale.seq() < collected[2].seq());
       accept.set(5);
       owq.tryDrain();
       Assert.assertFalse(stale.written);

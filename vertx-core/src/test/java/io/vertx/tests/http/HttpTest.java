@@ -34,7 +34,6 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.WriteOp;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.*;
@@ -6874,8 +6873,8 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         .compose(HttpClientResponse::body));
     TestUtils.assertWaitUntil(() -> ref1.get() != null);
     TestUtils.assertWaitUntil(() -> ref2.get() != null);
-    assertTrue(ref1.get() instanceof WriteOp);
-    assertTrue(ref2.get() instanceof WriteOp);
+    assertTrue(ref1.get() instanceof WriteResult);
+    assertTrue(ref2.get() instanceof WriteResult);
   }
 
   @Test

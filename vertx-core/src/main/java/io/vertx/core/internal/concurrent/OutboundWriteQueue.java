@@ -6,7 +6,7 @@ import io.vertx.core.streams.impl.MessagePassingQueue;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public abstract class OutboundWriteQueue<M> extends OutboundMessageQueue<M> {
+public abstract class OutboundWriteQueue<M extends WriteOp> extends OutboundMessageQueue<M> {
 
   private static final Deque<?> EMPTY = new ArrayDeque<>(0);
 
@@ -32,28 +32,30 @@ public abstract class OutboundWriteQueue<M> extends OutboundMessageQueue<M> {
   }
 
   @Override
-  public final void stamp(M element, int depth, int seq) {
-    init(element, depth, seq, depth < highWaterMark);
+  public void stamp(M element, int depth, int seq) {
+    element.depth = depth;
+    element.seq = seq;
+    element.writable = depth < highWaterMark;
   }
-
-  protected abstract void init(M element, int depth, int seq, boolean writable);
-
-  protected abstract int depthOf(M element);
-
-  protected abstract int seqOf(M element);
 
   protected abstract boolean handleWrite(M msg);
 
-  protected abstract void handleDrain(M msg);
+  protected void handleDrain(M msg) {
+    msg.onDrain();
+  }
 
-  protected abstract void handleDispose(M msg);
+  protected void handleDispose(M msg) {
+    msg.onDispose();
+  }
 
-  protected abstract void handleCancel(M msg, Throwable cause);
+  protected void handleCancel(M msg, Throwable cause) {
+    msg.cancel(cause);
+  }
 
   @Override
   public boolean test(M msg) {
-    int depth = depthOf(msg);
-    int seq = seqOf(msg);
+    int depth = msg.depth;
+    int seq = msg.seq;
     if (depth < lowWaterMark && !collected.isEmpty() && seq - maxSeq > 0) {
       promoted = collected.size();
     }

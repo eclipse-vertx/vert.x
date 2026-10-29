@@ -57,7 +57,7 @@ import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.WritePromise;
+import io.vertx.core.internal.streams.WritePromise;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;

@@ -34,7 +34,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.WritePromise;
+import io.vertx.core.internal.streams.WritePromise;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;

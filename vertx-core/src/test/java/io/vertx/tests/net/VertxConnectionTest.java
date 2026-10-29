@@ -23,6 +23,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.internal.concurrent.WriteOp;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -644,7 +645,7 @@ public class VertxConnectionTest extends VertxTestBase {
           while (channel.isWritable()) {
             chctx.write(Unpooled.copiedBuffer(TestUtils.randomAlphaString(1024), StandardCharsets.UTF_8));
           }
-          writeToChannel(new WriteOpBase() {
+          writeToChannel(new WriteOp() {
             @Override
             public void write() {
               written.set(true);
@@ -700,7 +701,7 @@ public class VertxConnectionTest extends VertxTestBase {
             chctx.write(Unpooled.copiedBuffer(TestUtils.randomAlphaString(1024), StandardCharsets.UTF_8));
           }
           VertxConnection connection = this;
-          writeToChannel(new WriteOpBase() {
+          writeToChannel(new WriteOp() {
             @Override
             public void write() {
               written.set(true);
@@ -743,7 +744,7 @@ public class VertxConnectionTest extends VertxTestBase {
       protected void handleEvent(Object event) {
         VertxConnection connection = this;
         if ("test".equals(event)) {
-          writeToChannel(new WriteOpBase() {
+          writeToChannel(new WriteOp() {
             @Override
             public void write() {
               written.set(true);
