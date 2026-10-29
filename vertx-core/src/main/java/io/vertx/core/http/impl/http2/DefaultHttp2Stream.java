@@ -31,10 +31,11 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
+import io.vertx.core.internal.concurrent.WriteOp;
+import io.vertx.core.internal.streams.OutboundWriteStream;
 import io.vertx.core.internal.streams.WritePromise;
 
 import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
@@ -46,7 +47,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
-  private final OutboundMessageQueue<WritePromise> outboundQueue;
+  private final OutboundWriteStream outboundQueue;
   private final InboundMessageQueue<ByteBuf> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
@@ -101,24 +102,23 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = writable;
     this.readable = -1;
-    this.outboundQueue = new OutboundMessageQueue<>(connection.context().executor()) {
-      // TODO implement stop drain to optimize flushes ?
+    this.outboundQueue = new OutboundWriteStream(connection.context().executor()) {
       @Override
-      public boolean test(WritePromise msg) {
+      protected boolean write(WriteOp op) {
         if (DefaultHttp2Stream.this.writable) {
-          msg.write();
+          op.write();
           return true;
         } else {
           return false;
         }
       }
       @Override
-      protected void handleRelease(WritePromise messageWrite) {
+      protected void release(WriteOp op) {
         Throwable cause = failure;
         if (cause == null) {
           cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
         }
-        messageWrite.cancel(cause);
+        op.cancel(cause);
       }
       @Override
       protected void handleDrained() {
