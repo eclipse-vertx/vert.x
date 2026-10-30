@@ -12,7 +12,9 @@
 package io.vertx.tests.http;
 
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
@@ -4326,5 +4328,252 @@ public class WebSocketTest extends VertxTestBase2 {
     server.listen().await();
     client = vertx.createWebSocketClient(clientOptions);
     client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(TestUtils.onSuccess(ws -> (clientLimit ? receiver : sender).handle(ws)));
+  }
+
+  @Test
+  public void testFramePipelinedWithUpgradeRequest() throws Exception {
+    testFramePipelinedWithUpgradeRequest(server -> server.webSocketHandler(ws -> {
+      ws.textMessageHandler(msg -> ws.writeTextMessage("echo:" + msg));
+    }));
+  }
+
+  @Test
+  public void testFramePipelinedWithUpgradeRequestPausedWebSocket() throws Exception {
+    testFramePipelinedWithUpgradeRequest(server -> server.webSocketHandler(ws -> {
+      ws.pause();
+      ws.textMessageHandler(msg -> ws.writeTextMessage("echo:" + msg));
+      vertx.setTimer(10, id -> ws.resume());
+    }));
+  }
+
+  @Test
+  public void testFramePipelinedWithUpgradeRequestHandshakeHandler() throws Exception {
+    testFramePipelinedWithUpgradeRequest(server -> server.webSocketHandshakeHandler(handshake -> {
+      handshake.accept().onComplete(TestUtils.onSuccess(ws -> {
+        ws.textMessageHandler(msg -> ws.writeTextMessage("echo:" + msg));
+      }));
+    }));
+  }
+
+  /**
+   * The server receives a text frame pipelined with the upgrade request, it must deliver it to the WebSocket
+   * once upgraded and release its buffer.
+   */
+  private void testFramePipelinedWithUpgradeRequest(Consumer<HttpServer> serverConfig) throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    serverConfig.accept(server);
+    List<ByteBuf> frames = Collections.synchronizedList(new ArrayList<>());
+    trackServerWebSocketFrames(server, frames, pipeline -> {});
+    server.listen().await();
+    NetSocket so = vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    Promise<List<String>> echo = Promise.promise();
+    so.handler(readTextFramesAfter101(1, echo));
+    so.write(upgradeRequestWithPipelinedTextFrame("hi"));
+    assertEquals(Collections.singletonList("echo:hi"), echo.future().await(10, TimeUnit.SECONDS));
+    so.close();
+    assertEquals(1, frames.size());
+    assertEquals(0, frames.get(0).refCnt());
+  }
+
+  /**
+   * The {@code 101} response write does not complete immediately: the pipelined frame must be buffered until it does,
+   * meanwhile the server must stop reading the channel (so a client cannot grow the buffer) and resume afterwards.
+   */
+  @Test
+  public void testFramePipelinedWithUpgradeRequestDelayedResponse() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server.webSocketHandler(ws -> ws.textMessageHandler(msg -> ws.writeTextMessage("echo:" + msg)));
+    List<ByteBuf> frames = Collections.synchronizedList(new ArrayList<>());
+    CompletableFuture<Runnable> release101 = new CompletableFuture<>();
+    CompletableFuture<Boolean> autoReadWhileHeld = new CompletableFuture<>();
+    trackServerWebSocketFrames(server, frames, pipeline -> {
+      // Hold the 101 response write until the test releases it
+      pipeline.addFirst("hold101", new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+          if (msg instanceof ByteBuf && ((ByteBuf) msg).toString(StandardCharsets.ISO_8859_1).startsWith("HTTP/1.1 101")) {
+            // The pipelined frame is still in the connection inbound queue at this point, it is buffered (and the
+            // channel reads paused) once the current read is done: check that afterwards
+            ctx.executor().execute(() -> autoReadWhileHeld.complete(ctx.channel().config().isAutoRead()));
+            release101.complete(() -> ctx.executor().execute(() -> ctx.writeAndFlush(msg, promise)));
+            return;
+          }
+          ctx.write(msg, promise);
+        }
+      });
+    });
+    server.listen().await();
+    NetSocket so = vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    Promise<List<String>> echo = Promise.promise();
+    so.handler(readTextFramesAfter101(2, echo));
+    so.write(upgradeRequestWithPipelinedTextFrame("hi"));
+    Runnable release = release101.get(10, TimeUnit.SECONDS);
+    assertFalse("Channel reads should be paused while the 101 is pending", autoReadWhileHeld.get(10, TimeUnit.SECONDS));
+    assertEquals(1, frames.size());
+    release.run();
+    // A frame sent after the 101 is read and delivered too: channel reads were resumed
+    so.write(maskedTextFrame("again"));
+    assertEquals(Arrays.asList("echo:hi", "echo:again"), echo.future().await(10, TimeUnit.SECONDS));
+    so.close();
+    assertEquals(2, frames.size());
+    assertEquals(0, frames.get(0).refCnt());
+    assertEquals(0, frames.get(1).refCnt());
+  }
+
+  /**
+   * The pipelined frame has the RSV1 bit set (per-message compression), which no extension decoder could process
+   * since extensions are negotiated by the {@code 101}: the server must reject it as a protocol violation instead of
+   * delivering it to the application (the server supports per-message compression by default, so the WebSocket
+   * decoder lets the frame through).
+   */
+  @Test
+  public void testFramePipelinedWithUpgradeRequestWithExtensionBits() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    CompletableFuture<Throwable> failure = new CompletableFuture<>();
+    CompletableFuture<Void> closed = new CompletableFuture<>();
+    server.webSocketHandler(ws -> {
+      ws.textMessageHandler(msg -> fail("Should not deliver a frame with RSV bits: " + msg));
+      ws.exceptionHandler(failure::complete);
+      ws.closeHandler(v -> closed.complete(null));
+    });
+    List<ByteBuf> frames = Collections.synchronizedList(new ArrayList<>());
+    trackServerWebSocketFrames(server, frames, pipeline -> {});
+    server.listen().await();
+    NetSocket so = vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    CompletableFuture<Void> clientClosed = new CompletableFuture<>();
+    so.closeHandler(v -> clientClosed.complete(null));
+    so.write(upgradeRequest().appendBuffer(maskedTextFrame("hi", (byte) 0x40 /* RSV1 */)));
+    assertTrue(failure.get(10, TimeUnit.SECONDS) instanceof CorruptedWebSocketFrameException);
+    closed.get(10, TimeUnit.SECONDS);
+    clientClosed.get(10, TimeUnit.SECONDS);
+    assertEquals(1, frames.size());
+    assertEquals(0, frames.get(0).refCnt());
+  }
+
+  /**
+   * The server receives a text frame pipelined with the upgrade request and the {@code 101} response write fails,
+   * it must release the frame buffer when the upgrade fails and not when the connection is closed.
+   */
+  @Test
+  public void testFramePipelinedWithUpgradeRequestFailedUpgrade() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server.webSocketHandler(ws -> fail("upgrade should fail"));
+    CompletableFuture<Integer> refCntAfterFailure = new CompletableFuture<>();
+    List<ByteBuf> frames = Collections.synchronizedList(new ArrayList<>());
+    trackServerWebSocketFrames(server, frames, pipeline -> {
+      // Fail the 101 response write: the handshaker writes the response from the encoder context, so it can only
+      // be intercepted downstream of the encoder, as encoded bytes
+      pipeline.addFirst("fail101", new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+          if (msg instanceof ByteBuf && ((ByteBuf) msg).toString(StandardCharsets.ISO_8859_1).startsWith("HTTP/1.1 101")) {
+            ReferenceCountUtil.release(msg);
+            promise.setFailure(new IOException("simulated 101 write failure"));
+            // The write fails synchronously, within the read of the upgrade request: the pipelined frame is still in
+            // the connection inbound queue at this point and only handled once that read is done. Check the frame
+            // refcount afterwards (and before the connection closes).
+            ctx.executor().execute(() -> refCntAfterFailure.complete(frames.isEmpty() ? -1 : frames.get(0).refCnt()));
+            return;
+          }
+          ctx.write(msg, promise);
+        }
+      });
+    });
+    server.listen().await();
+    NetSocket so = vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    so.write(upgradeRequestWithPipelinedTextFrame("hi"));
+    assertEquals(0, (int) refCntAfterFailure.get(10, TimeUnit.SECONDS));
+    assertEquals(1, frames.size());
+    so.close();
+  }
+
+  /**
+   * @return an HTTP upgrade request immediately followed by a masked text frame, i.e. sent before the {@code 101}
+   */
+  private static Buffer upgradeRequestWithPipelinedTextFrame(String text) {
+    return upgradeRequest().appendBuffer(maskedTextFrame(text));
+  }
+
+  private static Buffer upgradeRequest() {
+    return Buffer.buffer("GET / HTTP/1.1\r\n" +
+      "Host: localhost\r\n" +
+      "Upgrade: websocket\r\n" +
+      "Connection: Upgrade\r\n" +
+      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
+      "Sec-WebSocket-Version: 13\r\n" +
+      "\r\n");
+  }
+
+  private static Buffer maskedTextFrame(String text) {
+    return maskedTextFrame(text, (byte) 0);
+  }
+
+  /**
+   * @return a masked (client to server) final text frame with the given extra bits (RSV) in the first byte
+   */
+  private static Buffer maskedTextFrame(String text, byte rsvBits) {
+    byte[] mask = { 1, 2, 3, 4 };
+    byte[] payload = text.getBytes(StandardCharsets.UTF_8);
+    assertTrue(payload.length < 126);
+    Buffer frame = Buffer.buffer()
+      .appendByte((byte) (0x80 | rsvBits | 0x01)) // FIN + RSV + text opcode
+      .appendByte((byte) (0x80 | payload.length)) // MASK + length
+      .appendBytes(mask);
+    for (int i = 0; i < payload.length; i++) {
+      frame.appendByte((byte) (payload[i] ^ mask[i % 4]));
+    }
+    return frame;
+  }
+
+  /**
+   * @return a socket handler expecting a {@code 101} response followed by {@code count} unmasked (server to client)
+   *         text frames with a short payload, completing {@code result} with the payloads
+   */
+  private static Handler<Buffer> readTextFramesAfter101(int count, Promise<List<String>> result) {
+    Buffer received = Buffer.buffer();
+    return buff -> {
+      received.appendBuffer(buff);
+      String s = received.toString(StandardCharsets.ISO_8859_1);
+      int idx = s.indexOf("\r\n\r\n");
+      if (idx < 0) {
+        return;
+      }
+      assertTrue(s.startsWith("HTTP/1.1 101 "));
+      List<String> payloads = new ArrayList<>();
+      int pos = idx + 4;
+      while (payloads.size() < count && received.length() >= pos + 2) {
+        assertEquals((byte) 0x81, received.getByte(pos)); // FIN + text
+        int len = received.getByte(pos + 1) & 0x7F;
+        if (received.length() < pos + 2 + len) {
+          break;
+        }
+        payloads.add(received.getString(pos + 2, pos + 2 + len));
+        pos += 2 + len;
+      }
+      if (payloads.size() == count) {
+        result.tryComplete(payloads);
+      }
+    };
+  }
+
+  /**
+   * Install a handler collecting in {@code frames} the buffers of the WebSocket frames read by the server connections,
+   * to check they are eventually released. The handler is installed just before the Vert.x handler so it sees the
+   * frames as decoded, regardless of which Vert.x connection handles them.
+   */
+  private static void trackServerWebSocketFrames(HttpServer server, List<ByteBuf> frames, Consumer<ChannelPipeline> pipelineConfig) {
+    server.connectionHandler(conn -> {
+      ChannelPipeline pipeline = ((Http1ServerConnection) conn).channelHandlerContext().pipeline();
+      pipelineConfig.accept(pipeline);
+      pipeline.addBefore("handler", "tracker", new ChannelInboundHandlerAdapter() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) {
+          if (msg instanceof io.netty.handler.codec.http.websocketx.WebSocketFrame) {
+            frames.add(((io.netty.handler.codec.http.websocketx.WebSocketFrame) msg).content());
+          }
+          ctx.fireChannelRead(msg);
+        }
+      });
+    });
   }
 }

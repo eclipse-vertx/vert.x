@@ -170,6 +170,9 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     Http1ServerResponse response = request.response();
     ChannelPromise p = channel.newPromise();
     try {
+      // Replaces the HTTP decoder with the WebSocket decoder then writes the 101: frames the client pipelined with
+      // the upgrade request are decoded here and delivered to the HTTP connection, which keeps them until the
+      // outcome of the upgrade is signaled below
       handshaker.handshake(channel, fullRequest, (HttpHeaders) response.headers(), p);
     } catch (Exception e) {
       // Synchronous Netty handshake failure - no message written
@@ -187,6 +190,9 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       if (future.isSuccess()) {
         // Response if fully written, update the response accordingly
         response.handleHandshakeCompleted();
+        // Resume reading the channel if it was paused while buffering frames pipelined with the upgrade request:
+        // must be done before the WebSocket is handed over to the application, which may pause it
+        httpConn.webSocketHandshakeCompleted();
         // remove compressor as it's not needed anymore once connection was upgraded to websockets
         ChannelPipeline pipeline = channel.pipeline();
         ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
@@ -218,7 +224,12 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
         }
         webSocket.registerHandler(httpConn.context().owner().eventBus());
         promise.tryComplete(webSocket);
+        // Forward the frames pipelined with the upgrade request: must be done after the promise completion so the
+        // application handlers (including a pause) are set when the frames are delivered
+        httpConn.webSocketUpgraded(handler);
       } else {
+        // Release the frames pipelined with the upgrade request
+        httpConn.webSocketUpgradeFailed();
         // TEST THIS ????
         promise.tryFail(future.cause());
       }
