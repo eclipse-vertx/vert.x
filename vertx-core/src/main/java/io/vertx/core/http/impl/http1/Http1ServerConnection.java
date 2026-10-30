@@ -20,7 +20,10 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.websocketx.CorruptedWebSocketFrameException;
+import io.netty.handler.codec.http.websocketx.WebSocketCloseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -48,6 +51,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.function.Supplier;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -92,6 +96,20 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private boolean createStream;
+
+  // WebSocket upgrade: a client may send frames before receiving the 101 response (RFC 6455 forbids it, but a server
+  // must still cope with it). The Netty handshaker replaces the HTTP decoder with the WebSocket decoder before writing
+  // the 101, and the WebSocket handler only replaces this connection in the pipeline once the 101 write completes.
+  // Frames decoded in between are delivered to this connection and must not be dropped since they are pooled buffers
+  // that only this connection can release.
+  //
+  // - pendingWebSocketFrames: frames received while the outcome of the upgrade is not yet known, reading the channel
+  //   is paused while this buffer is not empty so a client cannot make it grow (see webSocketHandshakeCompleted)
+  // - webSocketHandler: set when the upgrade completed, frames received afterwards are forwarded to it
+  // - webSocketUpgradeFailed: set when the upgrade failed, frames received afterwards are released
+  private ArrayDeque<WebSocketFrame> pendingWebSocketFrames;
+  private VertxHandler<?> webSocketHandler;
+  private boolean webSocketUpgradeFailed;
 
   public final HttpServerMetrics httpMetrics;
   private final TransportMetrics<?> transportMetrics;
@@ -247,6 +265,154 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     // concrete type check first
     if (msg instanceof DefaultHttpContent || msg instanceof HttpContent) {
       onContent(msg);
+    } else if (msg instanceof WebSocketFrame) {
+      onWebSocketFrame((WebSocketFrame) msg);
+    } else {
+      // Unexpected message: release it rather than leak it (no-op when it is not reference counted)
+      ReferenceCountUtil.release(msg);
+    }
+  }
+
+  /**
+   * Handle a WebSocket frame sent by the client along with the upgrade request, i.e. before the {@code 101} response.
+   * <p>
+   * Such frame is decoded when the WebSocket decoder replaces the HTTP decoder, before the WebSocket handler replaces
+   * the handler of this connection in the pipeline. It is buffered until the upgrade completes and then forwarded to
+   * the WebSocket handler, or released when the upgrade fails.
+   * <p>
+   * The upgrade outcome can be known by the time the frame gets here: the accept usually happens within the read of
+   * the upgrade request, the frame is therefore decoded while {@link #handleMessage} is being executed and is queued
+   * by {@link #read} until the current message is handled. When the 101 write completes synchronously, the handshake
+   * listener runs (and calls {@link #webSocketUpgraded} or {@link #webSocketUpgradeFailed}) before this frame is
+   * dequeued. This is the common case, buffering only happens when the 101 write completes asynchronously.
+   */
+  private void onWebSocketFrame(WebSocketFrame frame) {
+    if (webSocketUpgradeFailed) {
+      // The upgrade failed before this frame left the inbound queue, nothing will ever consume it
+      ReferenceCountUtil.release(frame);
+      return;
+    }
+    VertxHandler<?> handler = webSocketHandler;
+    if (handler == null) {
+      // Upgrade in progress: the 101 write has not completed yet
+      if (pendingWebSocketFrames == null) {
+        pendingWebSocketFrames = new ArrayDeque<>();
+        // Stop reading the channel until the outcome of the upgrade is known: a client flooding the connection
+        // before it receives the 101 cannot make this buffer grow beyond the frames decoded from the bytes already
+        // received, i.e. at most a couple of socket reads. Reading is resumed by webSocketHandshakeCompleted() or
+        // webSocketUpgradeFailed().
+        doPause();
+      }
+      pendingWebSocketFrames.add(frame);
+      return;
+    }
+    // The upgrade completed while this frame was in the inbound queue
+    ChannelHandlerContext ctx = chctx.pipeline().context(handler);
+    if (ctx == null) {
+      // The WebSocket handler was already removed from the pipeline (e.g. the WebSocket was closed by the application
+      // when it was handed over), nothing will ever consume this frame
+      ReferenceCountUtil.release(frame);
+      return;
+    }
+    if (forwardWebSocketFrame(handler, ctx, frame)) {
+      // This frame is dequeued outside of a Netty read event of the WebSocket handler, signal the read completion so
+      // that anything written by the application in reaction to the frame is flushed
+      handler.channelReadComplete(ctx);
+    }
+  }
+
+  /**
+   * Forward to the WebSocket handler a frame that was decoded before the WebSocket handler was in the pipeline.
+   * <p>
+   * The handler is invoked directly instead of firing the frame in the pipeline: the frame has already been through
+   * the handlers preceding this one (e.g. logging or traffic shaping) and is only missing the handover to the WebSocket
+   * connection, firing it again from the head of the pipeline would process it twice.
+   *
+   * @return {@code true} when the frame was forwarded, {@code false} when the frame was rejected and released
+   */
+  private static boolean forwardWebSocketFrame(VertxHandler<?> handler, ChannelHandlerContext ctx, WebSocketFrame frame) {
+    int rsv = frame.rsv();
+    if (rsv != 0) {
+      // Extensions (e.g. compression) are negotiated by the 101 response and their decoders are added to the pipeline
+      // once it is written, so no extension decoder processed this frame and nothing can interpret its RSV bits (the
+      // WebSocket decoder lets them through when the server supports extensions). The client sent an extension frame
+      // before knowing whether the extension was accepted, this is a protocol violation: fail the WebSocket like the
+      // WebSocket decoder does when the server supports no extension.
+      ReferenceCountUtil.release(frame);
+      handler.exceptionCaught(ctx, new CorruptedWebSocketFrameException(WebSocketCloseStatus.PROTOCOL_ERROR,
+        "RSV != 0 and no extension negotiated, RSV:" + rsv));
+      return false;
+    }
+    handler.channelRead(ctx, frame);
+    return true;
+  }
+
+  /**
+   * Signal the {@code 101} response has been written, before the WebSocket handler replaces this connection handler
+   * in the pipeline: reading the channel is resumed when it was paused by {@link #onWebSocketFrame}.
+   * <p>
+   * This must happen before the WebSocket is handed over to the application (and therefore cannot be done by
+   * {@link #webSocketUpgraded}): the application may pause the WebSocket, which also stops reading the channel,
+   * resuming afterwards would override the application pause.
+   */
+  public void webSocketHandshakeCompleted() {
+    assert chctx.executor().inEventLoop();
+    doResume();
+  }
+
+  /**
+   * Signal the WebSocket upgrade completed, the {@code handler} replaced this connection handler in the pipeline.
+   * WebSocket frames received by this connection during the upgrade are forwarded to the {@code handler}.
+   * <p>
+   * The caller must invoke this method after the WebSocket has been handed over to the application, so that the
+   * application handlers are set when the frames are delivered, like for a frame received after the upgrade.
+   *
+   * @param handler the WebSocket handler
+   */
+  public void webSocketUpgraded(VertxHandler<?> handler) {
+    assert chctx.executor().inEventLoop();
+    webSocketHandler = handler;
+    ArrayDeque<WebSocketFrame> frames = pendingWebSocketFrames;
+    if (frames != null) {
+      pendingWebSocketFrames = null;
+      ChannelHandlerContext ctx = chctx.pipeline().context(handler);
+      if (ctx == null) {
+        // The WebSocket handler was already removed from the pipeline, see onWebSocketFrame
+        frames.forEach(ReferenceCountUtil::release);
+        return;
+      }
+      WebSocketFrame frame;
+      while ((frame = frames.poll()) != null) {
+        if (!forwardWebSocketFrame(handler, ctx, frame)) {
+          // The WebSocket failed, the remaining frames are not delivered
+          frames.forEach(ReferenceCountUtil::release);
+          return;
+        }
+      }
+      // Single read completion for the batch, see onWebSocketFrame
+      handler.channelReadComplete(ctx);
+    }
+  }
+
+  /**
+   * Signal the WebSocket upgrade failed, WebSocket frames received by this connection during the upgrade are released
+   * and reading the channel is resumed when it was paused by {@link #onWebSocketFrame}.
+   * <p>
+   * The connection is left with the WebSocket decoder installed and this handler in the pipeline, any WebSocket frame
+   * received from now on is released as well since nothing can consume it.
+   */
+  public void webSocketUpgradeFailed() {
+    assert chctx.executor().inEventLoop();
+    webSocketUpgradeFailed = true;
+    releasePendingWebSocketFrames();
+    doResume();
+  }
+
+  private void releasePendingWebSocketFrames() {
+    ArrayDeque<WebSocketFrame> frames = pendingWebSocketFrames;
+    if (frames != null) {
+      pendingWebSocketFrames = null;
+      frames.forEach(ReferenceCountUtil::release);
     }
   }
 
@@ -537,6 +703,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   }
 
   protected void handleClosed() {
+    // The connection can be closed while the upgrade is in progress
+    releasePendingWebSocketFrames();
     Http1ServerRequest responseInProgress = this.responseInProgress;
     Http1ServerRequest requestInProgress = this.requestInProgress;
     for (Http1ServerRequest req = responseInProgress; req != null;req = req.next) {
