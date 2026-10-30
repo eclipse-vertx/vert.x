@@ -114,7 +114,7 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
     Http2Headers prepare = (Http2Headers)headers;
     if (prepare.status() != null && compressionManager != null) {
       Http2ServerStream stream = stream(streamId);
-      compressionManager.setContentEncoding(stream.headers().unwrap(), prepare);
+      compressionManager.setContentEncoding((HttpRequestHeaders) stream.headers(), prepare);
     }
     writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) prepare, end), promise);
   }
