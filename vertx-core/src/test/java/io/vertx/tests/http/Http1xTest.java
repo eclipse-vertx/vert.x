@@ -3975,6 +3975,16 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPoolLIFOPolicy() throws Exception {
+    testPoolLIFOPolicy(0, 1);
+  }
+
+  @Test
+  public void testPoolLIFOPolicyWithResponsesInReverseOrder() throws Exception {
+    // The most recently used connection is the first one created
+    testPoolLIFOPolicy(1, 0);
+  }
+
+  private void testPoolLIFOPolicy(int firstResponse, int lastResponse) throws Exception {
     List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
     server.requestHandler(requests::add);
     startServer(testAddress);
@@ -3993,7 +4003,7 @@ public class Http1xTest extends HttpTest {
       int val = i;
       assertWaitUntil(() -> requests.size() == val + 1);
     }
-    for (int i = 0;i < 2;i++) {
+    for (int i : new int[]{firstResponse, lastResponse}) {
       requests.get(i).response().end();
       connections.get(i).await();
       // Make sure that connection lastResponseReceivedTimestamp are distinct
@@ -4008,7 +4018,7 @@ public class Http1xTest extends HttpTest {
     assertWaitUntil(() -> requests.size() == 3);
     requests.get(2).response().end();
     HttpConnection connection = future.await();
-    assertSame(connection, connections.get(1).result());
+    assertSame(connection, connections.get(lastResponse).result());
   }
 
   @Test
