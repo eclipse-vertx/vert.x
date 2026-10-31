@@ -50,12 +50,10 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
       PoolConnection<HttpClientConnection> pooled = connections.get(i);
       if (pooled.available() > 0) {
         HttpClientConnection conn = pooled.get();
-        if (selected == null) {
+        long timestamp = conn.lastResponseReceivedTimestamp();
+        if (selected == null || timestamp > last) {
           selected = pooled;
-        } else {
-          if (conn.lastResponseReceivedTimestamp() > last) {
-            selected = pooled;
-          }
+          last = timestamp;
         }
       }
     }
