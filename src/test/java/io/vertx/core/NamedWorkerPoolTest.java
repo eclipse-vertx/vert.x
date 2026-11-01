@@ -181,8 +181,9 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         }
         return null;
       }, true).onComplete(onSuccess(v -> complete()));
-      latch.countDown();
     }
+    // Release the first task only when all tasks are queued, otherwise the task queue can be drained in between
+    latch.countDown();
     await();
   }
 
