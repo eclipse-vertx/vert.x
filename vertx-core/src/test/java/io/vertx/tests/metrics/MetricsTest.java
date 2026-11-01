@@ -1237,7 +1237,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testServerLifecycle() {
+  public void testServerLifecycle() throws Exception {
     AtomicInteger lifecycle = new AtomicInteger();
     vertx = Vertx
       .builder()
@@ -1256,7 +1256,7 @@ public class MetricsTest extends VertxTestBase {
         }
       })
       .build();
-    vertx.createHttpServer().requestHandler(req -> {}).listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
+    vertx.createHttpServer().requestHandler(req -> {}).listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").await(20, TimeUnit.SECONDS);
     vertx.close().await();
     TestUtils.assertWaitUntil(() -> lifecycle.get() == 2);
   }
