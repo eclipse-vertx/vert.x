@@ -49,7 +49,7 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
   private Handler<Void> evictionHandler;
   private final long keepAliveTimeoutMillis;
   private final long creationTimestamp;
-  private long expirationTimestampMillis;
+  private volatile long expirationTimestampMillis;
   private final long concurrency;
 
   public Http3ClientConnection(QuicConnectionInternal connection,
@@ -66,6 +66,8 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
     this.creationTimestamp = System.currentTimeMillis();
     this.concurrency = concurrency;
+    // Ensure that the expirationTimestampMillis is initialized
+    refresh();
   }
 
   public void init() {

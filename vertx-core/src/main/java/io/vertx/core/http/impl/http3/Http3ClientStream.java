@@ -108,8 +108,9 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
 
   @Override
   protected void handleClose() {
-    super.handleClose();
+    // Prepare this connection for returning as handleClose() will return it to the pool.
     connection.refresh();
+    super.handleClose();
   }
 
   @Override
