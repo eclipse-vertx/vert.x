@@ -20,6 +20,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.lang.ref.Cleaner;
 import java.time.Duration;
 import java.util.concurrent.Callable;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -55,6 +56,10 @@ class WorkerExecutorImpl extends CleanableResource<WorkerPool> implements Metric
 
   @Override
   public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+    WorkerPool pool = get();
+    if (pool == null) {
+      throw new RejectedExecutionException();
+    }
     ContextInternal context = vertx.getOrCreateContext();
     TaskQueue orderedTasks;
     if (ordered) {
@@ -67,7 +72,7 @@ class WorkerExecutorImpl extends CleanableResource<WorkerPool> implements Metric
     } else {
       orderedTasks = null;
     }
-    return ExecuteBlocking.executeBlocking(getOrDie(), context, blockingCodeHandler, orderedTasks);
+    return ExecuteBlocking.executeBlocking(pool, context, blockingCodeHandler, orderedTasks);
   }
 
   @Override
