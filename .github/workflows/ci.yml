@@ -21,6 +21,7 @@ jobs:
   Test:
     name: Run tests
     runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
     container: ${{ inputs.container || null }}
     steps:
       - name: Install container dependencies
