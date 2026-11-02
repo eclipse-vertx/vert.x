@@ -282,6 +282,7 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testMulticastJoinLeave() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
     String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
     testMulticastJoinLeave("0.0.0.0", new DatagramSocketOptions(), new DatagramSocketOptions().setMulticastNetworkInterface(iface), (groupAddress, handler) -> {
       peer1.listenMulticastGroup(groupAddress, iface, null).onComplete(handler);
@@ -292,6 +293,7 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testMulticastJoinLeaveReuseMulticastNetworkInterface() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
     String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
     DatagramSocketOptions options = new DatagramSocketOptions().setMulticastNetworkInterface(iface);
     testMulticastJoinLeave("0.0.0.0", options, options, (groupAddress, handler) -> {
