@@ -67,14 +67,20 @@ public class HttpConnectOptions {
    */
   public static final long DEFAULT_CONNECT_TIMEOUT = -1L;
 
+  /**
+   * The default local address = {@code null} (client default)
+   */
+  public static final SocketAddress DEFAULT_LOCAL_ADDRESS = null;
+
   private HttpVersion protocolVersion;
   private ProxyOptions proxyOptions;
   private Address server;
   private String host;
   private Integer port;
   private Boolean ssl;
-  private ClientSSLOptions sslOptions;;
+  private ClientSSLOptions sslOptions;
   private long connectTimeout;
+  private SocketAddress localAddress;
 
   /**
    * Default constructor
@@ -98,6 +104,7 @@ public class HttpConnectOptions {
     setSsl(other.ssl);
     sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     setConnectTimeout(other.connectTimeout);
+    setLocalAddress(other.localAddress);
   }
 
   /**
@@ -123,6 +130,7 @@ public class HttpConnectOptions {
     ssl = DEFAULT_SSL;
     sslOptions = null;
     connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    localAddress = DEFAULT_LOCAL_ADDRESS;
   }
 
   /**
@@ -294,6 +302,33 @@ public class HttpConnectOptions {
     } catch (MalformedURLException e) {
       throw new VertxException("Invalid url: " + surl, e);
     }
+  }
+
+  /**
+   * Get the local address to bind the connection to, when none is provided the client default local address
+   * is used and when the client does not define one, the operating system chooses the local address.
+   *
+   * @return the local address
+   */
+  public SocketAddress getLocalAddress() {
+    return localAddress;
+  }
+
+  /**
+   * Set the local address to bind the connection to.
+   *
+   * <p> When set, the connection is bound to this address before connecting to the server, an ephemeral
+   * port is used when the port is {@code 0}. This overrides the default local address of the client, if any.
+   *
+   * @param localAddress the local address, must be an inet socket address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpConnectOptions setLocalAddress(SocketAddress localAddress) {
+    if (localAddress != null && localAddress.isDomainSocket()) {
+      throw new IllegalArgumentException("Cannot set a domain socket local address");
+    }
+    this.localAddress = localAddress;
+    return this;
   }
 
   public JsonObject toJson() {
