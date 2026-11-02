@@ -10,6 +10,7 @@
  */
 package io.vertx.core.internal;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 
@@ -190,28 +191,43 @@ public abstract class ServiceResource<A, R> {
       } else {
         lock.unlock();
         Future<R> f = safeStart(context, args);
-        f.onComplete(ar -> {
-          if (ar.succeeded()) {
-            // Remove map empty ????
-            var res = context.registerResource(timeout -> safeStop(context, args, timeout));
-            if (res == null) {
-              // Owner stopped: we close immediately since we will not be able to receive close signal
-              Future<Void> result2 = safeStop(context, args, Duration.ZERO);
-              result2.onComplete(ar2 -> {
-                completion.fail(new IllegalStateException("Owner undeployed or closed"));
-                end();
+        f.onComplete(new Completable<R>() {
+          @Override
+          public void complete(R result, Throwable failure) {
+            if (failure == null) {
+              // Remove map empty ????
+              CloseableResource<?> res = context.registerResource(new CloseableResource<Void>() {
+                @Override
+                public Void get() {
+                  return null;
+                }
+                @Override
+                public Future<Void> shutdown(Duration timeout) {
+                  return safeStop(context, args, timeout);
+                }
               });
+              if (res == null) {
+                // Owner stopped: we close immediately since we will not be able to receive close signal
+                Future<Void> result2 = safeStop(context, args, Duration.ZERO);
+                result2.onComplete(new Completable<Void>() {
+                  @Override
+                  public void complete(Void result3, Throwable failure2) {
+                    completion.fail(new IllegalStateException("Owner undeployed or closed"));
+                    end();
+                  }
+                });
+              } else {
+                lock.lock();
+                hook = res;
+                started = true;
+                lock.unlock();
+                completion.succeed(result);
+                end();
+              }
             } else {
-              lock.lock();
-              hook = res;
-              started = true;
-              lock.unlock();
-              completion.succeed(ar.result());
+              completion.fail(failure);
               end();
             }
-          } else {
-            completion.fail(ar.cause());
-            end();
           }
         });
       }
@@ -236,12 +252,15 @@ public abstract class ServiceResource<A, R> {
         hook = null;
         lock.unlock();
         f = h;
-        f.onComplete(ar -> {
-          lock.lock();
-          started = false;
-          lock.unlock();
-          completion.succeed();
-          end();
+        f.onComplete(new Completable<Void>() {
+          @Override
+          public void complete(Void result, Throwable failure) {
+            lock.lock();
+            started = false;
+            lock.unlock();
+            completion.succeed();
+            end();
+          }
         });
       } else {
         lock.unlock();

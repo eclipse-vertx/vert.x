@@ -284,11 +284,14 @@ public class TcpHttpServer implements HttpServerInternal {
     }
     closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
     Promise<HttpServer> result = context.promise();
-    tcpServer.listen(listenContext, address).onComplete(ar -> {
-      if (ar.succeeded()) {
-        result.complete(this);
-      } else {
-        result.fail(ar.cause());
+    tcpServer.listen(listenContext, address).onComplete(new Completable<Object>() {
+      @Override
+      public void complete(Object value, Throwable failure) {
+        if (failure == null) {
+          result.complete(TcpHttpServer.this);
+        } else {
+          result.fail(failure);
+        }
       }
     });
     return result.future();

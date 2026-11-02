@@ -61,7 +61,9 @@ public class BlockedThreadChecker {
             }
           }
         }
-        events.forEach(handler::handle);
+        for (BlockedThreadEvent event : events) {
+          handler.handle(event);
+        }
       }
     }, intervalUnit.toMillis(interval), intervalUnit.toMillis(interval));
   }
