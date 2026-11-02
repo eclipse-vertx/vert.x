@@ -12,7 +12,9 @@
 package io.vertx.core.http;
 
 
-import io.netty.channel.ChannelPipeline;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -29,6 +31,7 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
@@ -3096,6 +3099,106 @@ public class WebSocketTest extends VertxTestBase {
           });
         }));
       });
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerWebSocketHandshakeWithEaggerWebSocketMessages() {
+    waitFor(2);
+    server = vertx.createHttpServer();
+    List<io.netty.handler.codec.http.websocketx.WebSocketFrame> frames = Collections.synchronizedList(new ArrayList<>());
+    server.connectionHandler(conn -> {
+      ChannelPipeline pipeline = ((ConnectionBase) conn).channel().pipeline();
+      pipeline.addBefore("handler", "test", new ChannelInboundHandlerAdapter() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          if (msg instanceof io.netty.handler.codec.http.websocketx.WebSocketFrame) {
+            frames.add((io.netty.handler.codec.http.websocketx.WebSocketFrame) msg);
+          }
+          super.channelRead(ctx, msg);
+        }
+      });
+    });
+    server.requestHandler(req -> {
+      req.toWebSocket();
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      handshake(vertx.createHttpClient(), req -> {
+        Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+        NetSocketInternal soi = conn.toNetSocket();
+        req.send();
+        ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+        pipeline.addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+        pipeline.remove("codec");
+        soi.writeMessage(new PingWebSocketFrame(Unpooled.copiedBuffer("ping", StandardCharsets.UTF_8)))
+          .onComplete(onSuccess(v2 -> complete()));
+        soi.closeHandler(v2 -> {
+          synchronized (frames) {
+            frames.forEach(frame -> assertEquals(0, frame.refCnt()));
+          }
+          complete();
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testFailServerWebSocketHandshakeWithInvalidMessages() {
+    server = vertx.createHttpServer();
+    server.requestHandler(req -> {
+      req.toWebSocket();
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      handshake(vertx.createHttpClient(), req -> {
+        Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+        NetSocketInternal soi = conn.toNetSocket();
+        req.send();
+        Channel ch = soi.channelHandlerContext().channel();
+        ChannelPromise promise = ch.newPromise();
+        // Corrupted frame
+        ByteBuf buffer = Unpooled.buffer();
+        for (int i = 0;i < 256;i++) {
+          buffer.writeByte(0);
+        }
+        ch.unsafe().write(buffer, promise);
+        ch.unsafe().flush();
+        soi.closeHandler(v2 -> {
+          testComplete();
+        });
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testFailServerWebSocketHandshakeWhenResponseWriteFails() {
+    Throwable failure = new RuntimeException();
+    server = vertx.createHttpServer();
+    server.connectionHandler(conn -> {
+      ChannelPipeline pipeline = ((ConnectionBase) conn).channel().pipeline();
+      pipeline.addBefore("handler", "test", new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+          if (msg instanceof io.netty.handler.codec.http.HttpResponse) {
+            ReferenceCountUtil.release(msg);
+            promise.setFailure(failure);
+          } else {
+            super.write(ctx, msg, promise);
+          }
+        }
+      });
+    });
+    server.requestHandler(req -> {
+      req.toWebSocket().onComplete(onSuccess(ws -> {
+        ws.closeHandler(v -> {
+          testComplete();
+        });
+      }));
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      handshake(vertx.createHttpClient(), HttpClientRequest::send);
     }));
     await();
   }
