@@ -12,10 +12,8 @@
 package io.vertx.tests.http;
 
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -48,6 +46,7 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.ProvidedBy;
@@ -59,10 +58,7 @@ import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import static org.junit.Assert.*;
 
@@ -3000,6 +2996,108 @@ public class WebSocketTest extends VertxTestBase2 {
         }));
       });
     }));
+    checkpoint.awaitSuccess();
+  }
+
+  @Test
+  public void testServerWebSocketHandshakeWithEaggerWebSocketMessages(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3) {
+    server = vertx.createHttpServer();
+    List<io.netty.handler.codec.http.websocketx.WebSocketFrame> frames = new ArrayList<>();
+    server.connectionHandler(conn -> {
+      ChannelPipeline pipeline = ((VertxConnection) conn).channel().pipeline();
+      pipeline.addBefore("handler", "test", new ChannelInboundHandlerAdapter() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          if (msg instanceof io.netty.handler.codec.http.websocketx.WebSocketFrame) {
+            frames.add((io.netty.handler.codec.http.websocketx.WebSocketFrame)msg);
+          }
+          super.channelRead(ctx, msg);
+        }
+      });
+    });
+    server.requestHandler(ws -> {
+      Future<ServerWebSocket> fut = ws.toWebSocket();
+      vertx.setTimer(10, id -> {
+        checkpoint3.succeed();
+      });
+    });
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions());
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    handshake(client, req -> {
+      Http1ClientConnection conn = (Http1ClientConnection) req.connection();
+      NetSocketInternal soi = conn.toNetSocket();
+      req.send();
+      ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+      pipeline.addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+      pipeline.remove("codec");
+      Future<Void> pingSent = soi.writeMessage(new PingWebSocketFrame(Unpooled.copiedBuffer("ping", StandardCharsets.UTF_8)));
+      pingSent.onComplete(checkpoint2);
+      soi.closeHandler(v -> {
+        checkpoint1.succeed();
+      });
+    });
+    checkpoint3.awaitSuccess();
+    frames.forEach(holder -> {
+      Assert.assertEquals(0, holder.refCnt());
+    });
+  }
+
+  @Test
+  public void testFailServerWebSocketHandshakeWithInvalidMessages(Checkpoint checkpoint) {
+    server = vertx.createHttpServer();
+    server.requestHandler(ws -> {
+      Future<ServerWebSocket> fut = ws.toWebSocket();
+      fut.onComplete(TestUtils.onFailure2(expected -> {
+        checkpoint.succeed();
+      }));
+    });
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions());
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    handshake(client, req -> {
+      Http1ClientConnection conn = (Http1ClientConnection) req.connection();
+      NetSocketInternal soi = conn.toNetSocket();
+      req.send();
+      Channel ch = soi.channelHandlerContext().channel();
+      ChannelPromise promise = ch.newPromise();
+      // Corrupted frame
+      BufferInternal buffer = BufferInternal.buffer();
+      for (int i = 0;i < 256;i++) {
+        buffer.appendByte((byte)0);
+      }
+      ch.unsafe().write(Unpooled.copiedBuffer(buffer.getByteBuf()), promise);
+      ch.unsafe().flush();
+    });
+    checkpoint.awaitSuccess();
+  }
+
+  @Test
+  public void testFailServerWebSocketHandshakeWhenResponseWriteFails(Checkpoint checkpoint) {
+    Throwable failure = new RuntimeException();
+    server = vertx.createHttpServer();
+    server.connectionHandler(conn -> {
+      ChannelPipeline pipeline = ((VertxConnection) conn).channel().pipeline();
+      pipeline.addBefore("handler", "test", new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+          if (msg instanceof io.netty.handler.codec.http.HttpResponse) {
+            ReferenceCountUtil.release(msg);
+            promise.setFailure(failure);
+            ctx.close();
+          } else {
+            super.write(ctx, msg, promise);
+          }
+        }
+      });
+    });
+    server.requestHandler(req -> {
+      req.toWebSocket().onComplete(TestUtils.onFailure2(err -> {
+        assertSame(failure, err);
+        checkpoint.succeed();
+      }));
+    });
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions());
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    handshake(client, HttpClientRequest::send);
     checkpoint.awaitSuccess();
   }
 

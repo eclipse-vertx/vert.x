@@ -334,18 +334,6 @@ public class VertxConnection extends ConnectionBase {
     }
   }
 
-  private void checkPendingMessages() {
-    Object msg;
-    reentrant = true;
-    try {
-      while (!paused && (msg = pending.poll()) != null) {
-        handleMessage(msg);
-      }
-    } finally {
-      reentrant = false;
-    }
-  }
-
   public final void doPause() {
     assert chctx.executor().inEventLoop();
     if (!paused) {
