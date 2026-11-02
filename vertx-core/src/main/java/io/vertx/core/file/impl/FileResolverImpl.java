@@ -264,7 +264,7 @@ public class FileResolverImpl implements FileResolver {
       String[] listing = resource.list();
       if (listing != null) {
         for (String file : listing) {
-          String subResource = fileName + "/" + file;
+          String subResource = fileName + (fileName.endsWith("/") ? "" : "/") + file;
           URL url2 = getValidClassLoaderResource(cl, subResource);
           unpackFromFileURL(url2, subResource, cl);
         }
@@ -410,12 +410,12 @@ public class FileResolverImpl implements FileResolver {
   /**
    * bundle:// urls are used by OSGi implementations to refer to a file contained in a bundle, or in a fragment. There
    * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
-   * reading it from the url.
-   *
-   * @param url the url
-   * @param  fileName the file name used to cache the content
-   * @return the extracted file
-   */
+  * reading it from the url.
+  *
+  * @param url the url
+  * @param  fileName the file name used to cache the content
+  * @return the extracted file
+  */
   private File unpackFromBundleURL(URL url, String fileName, boolean isDir) {
     try {
       if ((getClassLoader() != null && isBundleUrlDirectory(url)) || isDir) {
