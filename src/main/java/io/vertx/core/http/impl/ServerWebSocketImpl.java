@@ -13,8 +13,12 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.AsyncResult;
@@ -190,19 +194,38 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private void doHandshake() {
     Channel channel = conn.channel();
     Http1xServerResponse response = request.response();
+    ChannelPipeline pipeline = channel.pipeline();
+    class UnsolicitedMessageHandler extends ChannelInboundHandlerAdapter {
+      private boolean unexpectedMessage;
+      @Override
+      public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        unexpectedMessage = true;
+        ReferenceCountUtil.release(msg);
+      }
+    }
+    UnsolicitedMessageHandler unsolicitedMessageHandler = new UnsolicitedMessageHandler();
+    pipeline.addBefore("handler", "unsolicitedMessageHandler", unsolicitedMessageHandler);
+    ChannelPromise p = channel.newPromise();
     try {
-      handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), channel.newPromise());
+      handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), p);
     } catch (Exception e) {
+      pipeline.remove(unsolicitedMessageHandler);
       response.setStatusCode(BAD_REQUEST.code()).end();
       throw e;
     } finally {
       request = null;
     }
+    p.addListener(future -> {
+      if (!future.isSuccess() || unsolicitedMessageHandler.unexpectedMessage) {
+        closeConnection();
+      } else if (pipeline.context(unsolicitedMessageHandler) != null) {
+        pipeline.remove(unsolicitedMessageHandler);
+      }
+    });
     response.completeHandshake();
     STATUS_UPDATER.lazySet(this, SWITCHING_PROTOCOLS.code());
     subProtocol(handshaker.selectedSubprotocol());
     // remove compressor as its not needed anymore once connection was upgraded to websockets
-    ChannelPipeline pipeline = channel.pipeline();
     ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
     if (handler != null) {
       pipeline.remove(handler);

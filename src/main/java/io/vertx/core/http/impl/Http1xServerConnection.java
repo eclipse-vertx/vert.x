@@ -189,6 +189,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       onContent(msg);
     } else if (msg instanceof WebSocketFrame) {
       handleWsFrame((WebSocketFrame) msg);
+    } else {
+      ReferenceCountUtil.release(msg);
     }
   }
 
