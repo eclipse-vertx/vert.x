@@ -21,7 +21,7 @@ public class DnsTest extends VertxTestBase {
 
   @Test
   public void testDoNotLogActivity() throws Exception {
-    MockDnsServer mockDnsServer = new MockDnsServer(vertx);
+    MockDnsServer mockDnsServer = new MockDnsServer();
     mockDnsServer.start();
     try {
       DnsClient client = vertx.createDnsClient(new DnsClientOptions(new DnsClientOptions().setLogActivity(false))
