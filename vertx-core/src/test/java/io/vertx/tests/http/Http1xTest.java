@@ -12,7 +12,7 @@
 package io.vertx.tests.http;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.TooLongFrameException;
@@ -6097,7 +6097,7 @@ public class Http1xTest extends HttpTest {
       .future()
       .await();
     for (ByteBuf toCheck : content) {
-      if (toCheck.refCnt() > 0 && toCheck.alloc() instanceof PooledByteBufAllocator) {
+      if (toCheck.refCnt() > 0 && !(toCheck.alloc() instanceof UnpooledByteBufAllocator)) {
         int refCnt = toCheck.refCnt();
         fail("Was expecting chunk " + toCheck.toString(StandardCharsets.UTF_8) + " to be released " + refCnt + " > 0");
       }
