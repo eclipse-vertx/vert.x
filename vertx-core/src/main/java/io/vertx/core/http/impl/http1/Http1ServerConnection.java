@@ -234,6 +234,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     // concrete type check first
     if (msg instanceof DefaultHttpContent || msg instanceof HttpContent) {
       onContent(msg);
+    } else {
+      ReferenceCountUtil.release(msg);
     }
   }
 
