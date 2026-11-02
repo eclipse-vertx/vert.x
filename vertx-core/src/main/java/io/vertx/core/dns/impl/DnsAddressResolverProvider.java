@@ -23,6 +23,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.impl.UriParser;
 import io.vertx.core.spi.dns.AddressResolverProvider;
 
 import java.io.File;
@@ -62,9 +63,12 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     if (dnsServers != null && !dnsServers.isEmpty()) {
       for (String dnsServer : dnsServers) {
         int sep = dnsServer.lastIndexOf(':');
+        boolean hasPort = sep != -1 &&
+          (!isIPLiteral(dnsServer) ||
+            (isIPLiteral(dnsServer.substring(0, sep)) && UriParser.parseAndEvalPort(dnsServer, sep) != -1));
         String ipAddress;
         int port;
-        if (sep != -1) {
+        if (hasPort) {
           ipAddress = dnsServer.substring(0, sep);
           port = Integer.parseInt(dnsServer.substring(sep + 1));
         } else {
@@ -142,6 +146,11 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
         return addressResolver;
       }
     };
+  }
+
+  private static boolean isIPLiteral(String address) {
+    String literal = "[" + address + "]";
+    return UriParser.parseIPLiteral(literal, 0, literal.length()) == literal.length();
   }
 
   @Override
