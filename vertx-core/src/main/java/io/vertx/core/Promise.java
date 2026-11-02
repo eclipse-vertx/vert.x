@@ -13,7 +13,6 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.future.PromiseImpl;
 
 
@@ -144,7 +143,7 @@ public interface Promise<T> extends Completable<T> {
    * @return false when the future is already completed
    */
   default boolean tryFail(String message) {
-    return tryFail(new NoStackTraceThrowable(message));
+    return tryFail(VertxException.noStackTrace(message));
   }
 
   /**
