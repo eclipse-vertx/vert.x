@@ -15,6 +15,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http3.Http3DataFrame;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpHeaders;
@@ -165,13 +166,13 @@ public class Http3Test extends HttpTest {
     HttpClientRequest request = client.request(requestOptions).await();
     configurator.accept(request);
     request.writeHead().await();
-    request.end("hello");
-    Buffer body = request.response()
+    Future<Buffer> result = request.response()
       .compose(response -> {
         Assert.assertEquals("null", response.getHeader("x-transfer-encoding"));
         return response.body();
-      })
-      .await();
+      });
+    request.end("hello");
+    Buffer body = result.await();
     Assert.assertEquals("hello", body.toString());
   }
 }
