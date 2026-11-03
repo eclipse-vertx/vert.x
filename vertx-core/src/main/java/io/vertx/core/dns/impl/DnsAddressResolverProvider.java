@@ -11,7 +11,9 @@
 
 package io.vertx.core.dns.impl;
 
+import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoop;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
@@ -48,6 +50,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
 
   private final VertxInternal vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
+  private final DatagramChannelFactory datagramChannelFactory;
   private final DnsNameResolverBuilder dnsNameResolverBuilder;
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final List<InetSocketAddress> serverList = new ArrayList<>();
@@ -103,10 +106,11 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     this.hostsPath = options.getHostsPath();
     this.hostsValue = options.getHostsValue();
     this.hostsRefreshPeriodNanos = options.getHostsRefreshPeriodUnit().toNanos(options.getHostsRefreshPeriod());
+    this.datagramChannelFactory = new DatagramChannelFactory(vertx.transport().datagramChannelFactory());
 
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
     builder.hostsFileEntriesResolver(this);
-    builder.datagramChannelFactory(vertx.transport().datagramChannelFactory());
+    builder.datagramChannelFactory(datagramChannelFactory);
     builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
     builder.nameServerProvider(nameServerAddressProvider);
     builder.queryServerAddressStream(new ThreadLocalNameServerAddressStream(nameServerAddressProvider, ""));
@@ -204,7 +208,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
       Runnable task = () -> {
         registration.resolver.close();
         if (count.decrementAndGet() == 0) {
-          promise.complete();
+          datagramChannelFactory.close(promise);
         }
       };
       if (registration.executor.inEventLoop()) {
@@ -250,6 +254,61 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
       entries = HostsFileParser.parseSilently();
     }
     parsedHostsFile = entries;
+  }
+
+  private static class DatagramChannelFactory implements ChannelFactory<DatagramChannel> {
+
+    private final ChannelFactory<? extends DatagramChannel> factory;
+    private final Set<DatagramChannel> channels = new HashSet<>();
+    private boolean closed;
+
+    DatagramChannelFactory(ChannelFactory<? extends DatagramChannel> factory) {
+      this.factory = factory;
+    }
+
+    @Override
+    public DatagramChannel newChannel() {
+      DatagramChannel channel;
+      synchronized (this) {
+        if (closed) {
+          throw new IllegalStateException("Resolver closed");
+        }
+        channel = factory.newChannel();
+        channels.add(channel);
+      }
+      channel
+        .closeFuture()
+        .addListener(fut -> removeChannel(channel));
+      return channel;
+    }
+
+    private synchronized void removeChannel(DatagramChannel channel) {
+      channels.remove(channel);
+    }
+
+    // Resolver close only initiates the channel close, wait for the ports to be actually released
+    void close(Promise<Void> promise) {
+      DatagramChannel[] remaining;
+      synchronized (this) {
+        if (closed) {
+          throw new IllegalStateException("Resolver closed");
+        }
+        closed = true;
+        remaining = channels.toArray(new DatagramChannel[0]);
+      }
+      if (remaining.length == 0) {
+        promise.complete();
+      } else {
+        AtomicInteger count = new AtomicInteger(remaining.length);
+        for (DatagramChannel channel : remaining) {
+          channel.closeFuture().addListener(fut -> {
+            if (count.decrementAndGet() == 0) {
+              promise.complete();
+            }
+          });
+        }
+      }
+    }
   }
 
   private static class ResolverRegistration {
