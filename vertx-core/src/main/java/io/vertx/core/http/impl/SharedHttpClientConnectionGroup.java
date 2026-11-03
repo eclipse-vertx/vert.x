@@ -45,15 +45,12 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
   private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LIFO_SELECTOR = (waiter, connections) -> {
     int size = connections.size();
     PoolConnection<HttpClientConnection> selected = null;
-    long last = 0L;
     for (int i = 0; i < size; i++) {
       PoolConnection<HttpClientConnection> pooled = connections.get(i);
       if (pooled.available() > 0) {
-        HttpClientConnection conn = pooled.get();
-        long timestamp = conn.lastResponseReceivedTimestamp();
-        if (selected == null || timestamp > last) {
+        // The timestamp is only read when two connections are compared, a lone connection may not support it
+        if (selected == null || pooled.get().lastResponseReceivedTimestamp() > selected.get().lastResponseReceivedTimestamp()) {
           selected = pooled;
-          last = timestamp;
         }
       }
     }
