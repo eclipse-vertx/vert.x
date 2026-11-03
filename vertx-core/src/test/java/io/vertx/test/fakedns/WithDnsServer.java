@@ -10,11 +10,6 @@ import java.lang.annotation.Target;
 public @interface WithDnsServer {
 
   /**
-   * @return the server port
-   */
-  int port() default 53530;
-
-  /**
    * @return the array of records the dns server responds.
    */
   DnsRecord[] records();

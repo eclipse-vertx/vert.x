@@ -16,18 +16,13 @@ public class DnsServer implements TestRule {
 
   private static final ThreadLocal<Boolean> STARTED = new ThreadLocal<>();
 
-  private final int port;
+  private volatile MockDnsServer server;
 
-  public DnsServer(int port) {
-    this.port = port;
-  }
-
-  public DnsServer() {
-    this(MockDnsServer.PORT);
-  }
-
+  /**
+   * @return the port the server is bound to, available once the server is started
+   */
   public int port() {
-    return port;
+    return server.localAddress().getPort();
   }
 
   public boolean isStarted() {
@@ -46,7 +41,6 @@ public class DnsServer implements TestRule {
     WithDnsServer config = description.getAnnotation(WithDnsServer.class);
     if( config != null ) {
       MockDnsServer server = new MockDnsServer();
-      server.port(config.port());
       server.store(new MockDnsServer.RecordStore() {
         @Override
         public Collection<io.netty.handler.codec.dns.DnsRecord> getRecords(DnsQuestion question) {
@@ -63,6 +57,7 @@ public class DnsServer implements TestRule {
           return responses;
         }
       });
+      this.server = server;
       return new Lifecycle(server, base);
     }
     return result;

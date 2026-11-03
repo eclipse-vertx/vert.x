@@ -177,7 +177,7 @@ public class HttpClientResolverTest {
 
     Vertx vertx = Vertx.vertx(new VertxOptions()
       .setAddressResolverOptions(new AddressResolverOptions()
-        .setServers(List.of("127.0.0.1:" + MockDnsServer.PORT))));
+        .setServers(List.of("127.0.0.1:" + dnsServer.localAddress().getPort()))));
 
     try {
       HttpServer server = vertx

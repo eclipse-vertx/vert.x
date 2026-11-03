@@ -642,12 +642,12 @@ public class DNSTest extends VertxTestBase {
     Vertx vertx = Vertx.vertx(new VertxOptions()
       .setAddressResolverOptions(new AddressResolverOptions()
         .setCacheNegativeTimeToLive(0)
-        .setServers(List.of(MockDnsServer.IP_ADDRESS + ":" + MockDnsServer.PORT)))
+        .setServers(List.of(MockDnsServer.IP_ADDRESS + ":" + mockDnsServer.localAddress().getPort())))
     );
     try {
       mockDnsServer.store(A_store(store));
       DnsClient dns = vertx.createDnsClient(new DnsClientOptions()
-        .setPort(MockDnsServer.PORT)
+        .setPort(mockDnsServer.localAddress().getPort())
         .setHost("mydns.org")
         .setHostResolutionRetryDelay(retryDelay));
       test.accept(dns);
@@ -661,7 +661,7 @@ public class DNSTest extends VertxTestBase {
     String ip = "10.0.0.1";
     mockDnsServer.testResolveA(ip);
     DnsClient dns = vertx.createDnsClient(new DnsClientOptions()
-      .setPort(MockDnsServer.PORT)
+      .setPort(mockDnsServer.localAddress().getPort())
       .setHost("localhost"));
 
     dns
@@ -680,6 +680,6 @@ public class DNSTest extends VertxTestBase {
   }
 
   private DnsClient prepareDns(DnsClientOptions options) {
-    return vertx.createDnsClient(new DnsClientOptions(options).setPort(MockDnsServer.PORT).setHost(MockDnsServer.IP_ADDRESS));
+    return vertx.createDnsClient(new DnsClientOptions(options).setPort(mockDnsServer.localAddress().getPort()).setHost(MockDnsServer.IP_ADDRESS));
   }
 }

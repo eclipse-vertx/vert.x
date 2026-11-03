@@ -36,11 +36,10 @@ import java.util.stream.IntStream;
 
 public class MockDnsServer {
 
-  public static final int PORT = 53530;
   public static final String IP_ADDRESS = "127.0.0.1";
 
   private String ipAddress = IP_ADDRESS;
-  private int port = PORT;
+  private int port = 0;
 
   private EventLoopGroup eventLoop;
   private ChannelFactory<? extends Channel> channelFactory;

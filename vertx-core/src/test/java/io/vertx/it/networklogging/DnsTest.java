@@ -25,7 +25,7 @@ public class DnsTest extends VertxTestBase {
     mockDnsServer.start();
     try {
       DnsClient client = vertx.createDnsClient(new DnsClientOptions(new DnsClientOptions().setLogActivity(false))
-        .setPort(MockDnsServer.PORT)
+        .setPort(mockDnsServer.localAddress().getPort())
         .setHost(MockDnsServer.IP_ADDRESS));
 
       final String ip = "10.0.0.1";

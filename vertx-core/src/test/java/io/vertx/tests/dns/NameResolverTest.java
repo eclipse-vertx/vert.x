@@ -40,6 +40,7 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -68,6 +69,12 @@ public class NameResolverTest extends VertxTestBase {
   @Override
   protected VertxOptions getOptions() {
     return super.getOptions().setAddressResolverOptions(getAddressResolverOptions());
+  }
+
+  private static int unusedUdpPort() throws Exception {
+    try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
+      return socket.getLocalPort();
+    }
   }
 
   private Future<InetAddress> resolve(String host) {
@@ -901,7 +908,6 @@ public class NameResolverTest extends VertxTestBase {
     try {
       for (int index = 1; index <= num; index++) {
         MockDnsServer server = new MockDnsServer(vertx).store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
-        server.port(MockDnsServer.PORT + index);
         server.start();
         dnsServers.add(server);
       }
@@ -976,7 +982,7 @@ public class NameResolverTest extends VertxTestBase {
 
   @Test
   public void testServerFailover() throws Exception {
-    MockDnsServer server = new MockDnsServer(vertx).store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(MockDnsServer.PORT + 2);
+    MockDnsServer server = new MockDnsServer(vertx).store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1")));
     try {
       AddressResolverOptions options = new AddressResolverOptions();
       options.setOptResourceEnabled(false);
@@ -984,7 +990,7 @@ public class NameResolverTest extends VertxTestBase {
       server.start();
       InetSocketAddress dnsServerAddress = server.localAddress();
       // First server is unreachable
-      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + (MockDnsServer.PORT + 1));
+      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + unusedUdpPort());
       // Second server is the failed over server
       options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
       NameResolver resolver = new NameResolver((VertxImpl) vertx, options);
