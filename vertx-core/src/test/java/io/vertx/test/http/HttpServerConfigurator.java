@@ -23,6 +23,7 @@ public interface HttpServerConfigurator {
   HttpServerConfigurator setLogActivity(boolean logActivity);
   HttpServerConfigurator setHandle100ContinueAutomatically(boolean b);
   HttpServerConfigurator configureSsl(Consumer<ServerSSLOptions> configurator);
+  HttpServerConfigurator setMaxConcurrency(int maxConcurrency);
   HttpServerConfig config();
   ServerSSLOptions sslOptions();
   default HttpServer create(Vertx vertx) {
