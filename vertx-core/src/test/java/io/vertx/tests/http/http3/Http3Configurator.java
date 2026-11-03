@@ -144,6 +144,14 @@ public class Http3Configurator implements HttpConfigurator {
         return this;
       }
       @Override
+      public HttpServerConfigurator setMaxConcurrency(int maxConcurrency) {
+        config
+          .getQuicConfig()
+          .getTransportConfig()
+          .setInitialMaxStreamsBidi(1);
+        return this;
+      }
+      @Override
       public HttpServerBuilder builder(Vertx vertx) {
         return vertx.httpServerBuilder().with(config).with(sslOptions);
       }

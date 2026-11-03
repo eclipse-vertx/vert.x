@@ -333,8 +333,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
         return stream.abort(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(true);
       }
     } else {
-      reset = true;
-      return stream.reset(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(true);
+      return writeReset(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(true);
     }
     return context.succeededFuture(false);
   }
@@ -348,7 +347,18 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     }
     reset = true;
     // Should we call the exception handler ????
-    return stream.reset((int)code);
+    Future<Void> fut = stream.reset((int)code);
+    if (!headWritten && !headReceived) {
+      // Nothing was exchanged on the stream: abort the inbound side and close the stream
+      // since no peer reset will close it
+      if (!aborted) {
+        aborted = true;
+        stream.abort((int)code);
+      }
+      stream.shutdownHandler(null);
+      stream.close();
+    }
+    return fut;
   }
 
   public final Object metric() {
