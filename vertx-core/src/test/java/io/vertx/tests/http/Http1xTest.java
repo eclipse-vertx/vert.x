@@ -6060,6 +6060,7 @@ public class Http1xTest extends HttpTest {
       .compose(response -> {
         Promise<Void> promise = Promise.promise();
         response.handler(chunk -> {
+          response.pause();
           request.reset();
           vertx.setTimer(100, id -> {
             promise.succeed();
