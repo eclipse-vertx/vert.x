@@ -12,6 +12,7 @@ package io.vertx.tests.http;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.net.SocketAddress;
 import org.junit.Test;
 
 import java.util.List;
@@ -49,6 +50,15 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp3Config());
     assertFalse(config.isSsl());
     assertEquals(List.of(HTTP_2, HTTP_1_1, HTTP_1_0), config.getVersions());
+  }
+
+  @Test
+  public void testFromOptionsWithLocalAddress() {
+    HttpClientConfig config = new HttpClientConfig(new HttpClientOptions().setLocalAddress("192.0.2.1"));
+    SocketAddress localAddress = config.getTcpConfig().getLocalAddress();
+    assertNotNull(localAddress);
+    assertEquals("192.0.2.1", localAddress.host());
+    assertEquals(0, localAddress.port());
   }
 
   @Test
