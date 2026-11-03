@@ -76,7 +76,7 @@ public class Http2TestBase extends HttpTestBase {
   protected void tearDown() throws Exception {
     super.tearDown();
     for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
-      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).sync();
     }
   }
 

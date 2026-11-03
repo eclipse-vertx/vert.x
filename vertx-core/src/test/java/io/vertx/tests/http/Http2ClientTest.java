@@ -1216,6 +1216,7 @@ public class Http2ClientTest extends Http2TestBase {
   private ServerBootstrap createH2Server(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
+    bootstrap.option(ChannelOption.SO_REUSEADDR, true);
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     eventLoopGroups.add(eventLoopGroup);
     bootstrap.group(eventLoopGroup);
@@ -1254,7 +1255,10 @@ public class Http2ClientTest extends Http2TestBase {
   private ServerBootstrap createH2CServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler, Handler<HttpServerUpgradeHandler.UpgradeEvent> upgradeHandler, boolean upgrade) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
-    bootstrap.group(new NioEventLoopGroup());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, true);
+    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    eventLoopGroups.add(eventLoopGroup);
+    bootstrap.group(eventLoopGroup);
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
