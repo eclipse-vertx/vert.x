@@ -599,25 +599,26 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
-   * Reset this response:
+   * Reset this response, terminating the stream with the error {@code code}:
    * <p/>
    * <ul>
-   *   <li>for HTTP/2, send an HTTP/2 reset frame with the specified error {@code code}</li>
-   *   <li>for HTTP/1.x, close the connection when the current response has not yet been sent</li>
+   *   <li>for HTTP/1.x, this closes the connection when the current response has not yet been sent</li>
+   *   <li>for HTTP/2, this sends a reset frame with the specified error {@code code}</li>
+   *   <li>for HTTP/3, this cancels the response: the sending part of the underlying QUIC stream is reset with the
+   *   specified error {@code code}, or the request delivery is aborted when the response has already been fully sent</li>
    * </ul>
-   * <p/>
-   * When the response has already been sent nothing happens and {@code false} is returned as indicator.
    * <p>
    * This is a terminal action, like {@link #end()} and {@link #sendFile(String)}, so you can only call one of the three
    * methods as the last step in dealing with your response.
    * </p>
    * <p>
-   * Stream reset should be avoided because the implementation works partially for HTTP/3 and reset error codes depends on
-   * the version of the protocol, {@link #cancel()} should be used instead.
+   * Stream reset should be avoided, unless a protocol specific error code must be sent (e.g. an HTTP/2 error code),
+   * because the error {@code code} depends on the protocol in use and is not even carried by HTTP/1.x,
+   * {@link #cancel()} should be used instead as it performs a reset with the standard cancel code of the protocol.
    * </p>
    *
    * @param code the error code
-   * @return {@code true} when reset has been performed
+   * @return a future completed when the reset has been performed, failed when the stream was already reset or ended
    */
   Future<Void> reset(long code);
 

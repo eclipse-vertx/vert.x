@@ -54,7 +54,6 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private boolean trailersReceived;
   private boolean trailersSent;
   private boolean reset;
-  private boolean aborted;
   private boolean inputShutdown;
   private int bytesRead;
   private int bytesWritten;
@@ -136,7 +135,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       observer.observeReset();
     }
     if (trailersSent) {
-      if (aborted) {
+      if (reset) {
         handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
       } else if (trailersReceived) {
         //
@@ -335,37 +334,30 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public Future<Boolean> cancel() {
-    if (trailersSent) {
-      // Check inbound
-      if (!aborted) {
-        aborted = true;
-        return stream.abort(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(true);
-      }
-    } else {
-      return writeReset(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(true);
-    }
-    return context.succeededFuture(false);
+    return writeReset(Http3ErrorCode.H3_REQUEST_CANCELLED.code()).map(true);
   }
 
   public Future<Void> writeReset(long code) {
-    if (trailersSent) {
+    if (trailersSent && trailersReceived) {
       return context.failedFuture("Stream already ended");
     }
     if (reset) {
       return context.failedFuture("Stream already reset");
     }
     reset = true;
-    // Should we call the exception handler ????
-    Future<Void> fut = stream.reset((int)code);
-    if (!headersSent && !headersReceived) {
-      // Nothing was exchanged on the stream: abort the inbound side and close the stream
-      // since no peer reset will close it
-      if (!aborted) {
-        aborted = true;
+    Future<Void> fut;
+    if (trailersSent) {
+      // Nothing left to reset: abort the response delivery
+      fut = stream.abort((int)code);
+    } else {
+      fut = stream.reset((int)code);
+      if (!headersSent && !headersReceived) {
+        // Nothing was exchanged on the stream: abort the inbound side and close the stream
+        // since no peer reset will close it
         stream.abort((int)code);
+        stream.shutdownHandler(null);
+        stream.close();
       }
-      stream.shutdownHandler(null);
-      stream.close();
     }
     return fut;
   }
