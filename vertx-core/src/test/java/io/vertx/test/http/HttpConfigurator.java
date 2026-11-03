@@ -174,6 +174,11 @@ public interface HttpConfigurator {
           return this;
         }
         @Override
+        public HttpServerConfigurator setMaxConcurrency(int maxConcurrency) {
+          options.getInitialSettings().setMaxConcurrentStreams(maxConcurrency);
+          return this;
+        }
+        @Override
         public HttpServerConfigurator setMaxFormFields(int maxFormFields) {
           options.setMaxFormFields(maxFormFields);
           return this;

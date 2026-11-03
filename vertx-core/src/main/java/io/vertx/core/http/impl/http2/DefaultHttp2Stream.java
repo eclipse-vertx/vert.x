@@ -190,6 +190,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       onException(goAway != null ? new HttpClosedException(goAway) : HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     connection.flushBytesWritten();
+    close();
+  }
+
+  private void close() {
     context.execute(v -> handleClose());
     outboundQueue.close();
     inboundQueue.close();
@@ -501,6 +505,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         } else {
           // Reset happening before stream allocation
           handleReset(code);
+          close();
           promise.complete();
         }
       }
