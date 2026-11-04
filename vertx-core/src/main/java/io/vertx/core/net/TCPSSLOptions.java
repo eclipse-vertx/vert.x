@@ -797,7 +797,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * The time in seconds the connection needs to remain idle before TCP starts sending keepalive probes,
    * if the socket option keepalive has been set.
    * <p>
-   * Only works with linux native support (EPoll, IoUring).
+   * Supported by the Linux native transports (Epoll, IoUring) and by the NIO transport. Not every
+   * platform supports every keep-alive probe option, an option the platform does not support is ignored.
    *
    * @param tcpKeepAliveIdleSeconds idle time in seconds
    * @return a reference to this, so the API can be used fluently
@@ -817,7 +818,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * The maximum number of keepalive probes TCP should send before dropping the connection.
    * <p>
-   * Only works with linux native support (EPoll, IoUring).
+   * Supported by the Linux native transports (Epoll, IoUring) and by the NIO transport. Not every
+   * platform supports every keep-alive probe option, an option the platform does not support is ignored.
    * @param tcpKeepAliveCount number of probes
    * @return a reference to this, so the API can be used fluently
    */
@@ -836,7 +838,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * The time in seconds between individual keepalive probes (while the channel is idle).
    * <p>
-   * Only works with linux native support (EPoll, IoUring).
+   * Supported by the Linux native transports (Epoll, IoUring) and by the NIO transport. Not every
+   * platform supports every keep-alive probe option, an option the platform does not support is ignored.
    * @param tcpKeepAliveIntervalSeconds interval in seconds
    * @return a reference to this, so the API can be used fluently
    */

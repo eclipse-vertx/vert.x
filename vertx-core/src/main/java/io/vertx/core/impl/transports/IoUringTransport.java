@@ -137,13 +137,13 @@ public class IoUringTransport implements Transport {
       configChildOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
       configChildOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
       configChildOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
-      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPCNT)) {
+      if (!NioTransport.isNullOrZero(config, TcpOption.KEEPCNT)) {
         configChildOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
       }
-      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPINTVL)) {
+      if (!NioTransport.isNullOrZero(config, TcpOption.KEEPINTVL)) {
         configChildOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
       }
-      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPIDLE)) {
+      if (!NioTransport.isNullOrZero(config, TcpOption.KEEPIDLE)) {
         configChildOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
       }
     }
@@ -157,13 +157,13 @@ public class IoUringTransport implements Transport {
       configOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
       configOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
       configOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
-      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPCNT)) {
+      if (!NioTransport.isNullOrZero(config, TcpOption.KEEPCNT)) {
         configOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
       }
-      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPINTVL)) {
+      if (!NioTransport.isNullOrZero(config, TcpOption.KEEPINTVL)) {
         configOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
       }
-      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPIDLE)) {
+      if (!NioTransport.isNullOrZero(config, TcpOption.KEEPIDLE)) {
         configOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
       }
     }

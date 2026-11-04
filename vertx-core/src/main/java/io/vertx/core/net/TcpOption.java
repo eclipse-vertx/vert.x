@@ -53,7 +53,9 @@ public class TcpOption<T> {
   public static final TcpOption<Integer> FASTOPEN = new TcpOption<>(Integer.class, 0);
 
   /**
-   * The {@code TCP_KEEPCNT} option - only with Linux native transport.
+   * The {@code TCP_KEEPCNT} option - with the Linux native transports (Epoll, IoUring) or with the NIO
+   * transport. Not every platform supports every keep-alive probe option, an option the platform
+   * does not support is ignored.
    * <p>
    * The maximum number of keepalive probes TCP should send before dropping the connection.
    * <p>
@@ -69,7 +71,9 @@ public class TcpOption<T> {
   };
 
   /**
-   * The {@code TCP_KEEPIDLE} option - only with Linux native transport.
+   * The {@code TCP_KEEPIDLE} option - with the Linux native transports (Epoll, IoUring) or with the NIO
+   * transport. Not every platform supports every keep-alive probe option, an option the platform
+   * does not support is ignored.
    * <p>
    * The time (in seconds) the connection needs to remain idle before TCP starts sending keepalive probes, if enabled.
    * <p>
@@ -85,7 +89,9 @@ public class TcpOption<T> {
   };
 
   /**
-   * The {@code TCP_KEEPINTVL} option - only with Linux native transport.
+   * The {@code TCP_KEEPINTVL} option - with the Linux native transports (Epoll, IoUring) or with the NIO
+   * transport. Not every platform supports every keep-alive probe option, an option the platform
+   * does not support is ignored.
    * <p>
    * The time (in seconds) between individual keepalive probes.
    * <p>

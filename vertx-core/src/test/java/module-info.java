@@ -12,6 +12,7 @@ open module io.vertx.core.tests {
   requires junit;
   requires java.management;
   requires java.logging;
+  requires jdk.net;
 
   requires static org.slf4j;
   requires static org.apache.logging.log4j.core;

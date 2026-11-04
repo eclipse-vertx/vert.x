@@ -17,6 +17,7 @@ module io.vertx.core {
   requires java.compiler;
   requires java.logging;
   requires java.naming;
+  requires jdk.net;
 
   // Optional
 
