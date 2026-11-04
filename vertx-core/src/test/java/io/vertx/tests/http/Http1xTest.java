@@ -4012,6 +4012,42 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPoolLIFOPolicyReverseResponseOrder() throws Exception {
+    List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(requests::add);
+    startServer(testAddress);
+    client = vertx.createHttpClient(new HttpClientOptions(), new PoolOptions().setHttp1MaxSize(2));
+    List<Future<HttpConnection>> connections = Collections.synchronizedList(new ArrayList<>());
+    for (int i = 0; i < 2; i++) {
+      Future<HttpConnection> future = client.request(requestOptions)
+        .compose(request -> request
+          .send()
+          .compose(response -> response
+            .end()
+            .map(b -> response.request().connection())));
+      connections.add(future);
+      int val = i;
+      assertWaitUntil(() -> requests.size() == val + 1);
+    }
+    // The second connection answers first: the first connection is the one that received a response last
+    for (int i = 1; i >= 0; i--) {
+      requests.get(i).response().end();
+      connections.get(i).await();
+      Thread.sleep(5);
+    }
+    Future<HttpConnection> future = client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .compose(response -> response
+          .end()
+          .map(b -> response.request().connection())));
+    assertWaitUntil(() -> requests.size() == 3);
+    requests.get(2).response().end();
+    HttpConnection connection = future.await();
+    assertSame(connection, connections.get(0).result());
+  }
+
+  @Test
   public void testHttpClientResponseThrowsExceptionInResponseHandler(Checkpoint checkpoint) throws Exception {
     testHttpClientResponseThrowsExceptionInHandler(checkpoint, null, (resp, failure) -> {
       throw failure;
