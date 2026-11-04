@@ -4012,6 +4012,25 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPoolWaitTimerCancelledOnceConnected() throws Exception {
+    server.requestHandler(req -> req.response().end());
+    startServer(testAddress);
+    client = vertx.createHttpClient(new HttpClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    // Timer ids are allocated in sequence: the probes bracket the timers the request creates
+    long before = vertx.setTimer(60_000, id -> {});
+    vertx.cancelTimer(before);
+    client.request(new RequestOptions(requestOptions).setConnectTimeout(60_000))
+      .compose(HttpClientRequest::send)
+      .compose(HttpClientResponse::end)
+      .await();
+    long after = vertx.setTimer(60_000, id -> {});
+    vertx.cancelTimer(after);
+    // The request armed one timer, the wait for a pooled connection; it must be cancelled once the connection is obtained, not left until it fires
+    assertEquals(before + 2, after);
+    assertFalse(vertx.cancelTimer(before + 1));
+  }
+
+  @Test
   public void testHttpClientResponseThrowsExceptionInResponseHandler(Checkpoint checkpoint) throws Exception {
     testHttpClientResponseThrowsExceptionInHandler(checkpoint, null, (resp, failure) -> {
       throw failure;
