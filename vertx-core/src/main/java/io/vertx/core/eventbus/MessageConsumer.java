@@ -37,6 +37,15 @@ import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
 @VertxGen
 public interface MessageConsumer<T> extends ReadStream<Message<T>> {
 
+  /**
+   * Set an exception handler on the consumer.
+   * <p>
+   * The handler is called with an exception thrown by the message handler or processor; when no handler
+   * is set, the exception is reported to the context.
+   *
+   * @param handler  the exception handler
+   * @return a reference to this, so the API can be used fluently
+   */
   @Override
   MessageConsumer<T> exceptionHandler(Handler<Throwable> handler);
 
