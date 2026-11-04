@@ -11,13 +11,51 @@
 package io.vertx.core.internal.http;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.internal.streams.WriteResult;
+import io.vertx.core.internal.streams.WriteStreamInternal;
 
-public interface WebSocketInternal extends WebSocket {
+public interface WebSocketInternal extends WebSocket, WriteStreamInternal<Buffer> {
 
   /**
    * @return the Netty channel handler context
    */
   ChannelHandlerContext channelHandlerContext();
+
+  @Override
+  WriteResult write(Buffer data);
+
+  @Override
+  WriteResult writeFrame(WebSocketFrame frame);
+
+  @Override
+  WriteResult writeFinalTextFrame(String text);
+
+  @Override
+  WriteResult writeFinalBinaryFrame(Buffer data);
+
+  @Override
+  WriteResult writeBinaryMessage(Buffer data);
+
+  @Override
+  WriteResult writeTextMessage(String text);
+
+  @Override
+  WriteResult writePing(Buffer data);
+
+  @Override
+  WriteResult writePong(Buffer data);
+
+  @Override
+  WebSocketInternal setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  WebSocketInternal drainHandler(Handler<Void> handler);
+
+  @Override
+  WebSocketInternal exceptionHandler(Handler<Throwable> handler);
 
 }
