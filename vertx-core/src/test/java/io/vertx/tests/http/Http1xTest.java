@@ -2287,6 +2287,45 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6471
+  public void testInvalidRequestUriDoesNotBreakPooledConnection() throws Exception {
+    testInvalidRequestUriDoesNotBreakPooledConnection(false);
+  }
+
+  @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6471
+  public void testInvalidRequestUriResetDoesNotBreakPooledConnection() throws Exception {
+    testInvalidRequestUriDoesNotBreakPooledConnection(true);
+  }
+
+  private void testInvalidRequestUriDoesNotBreakPooledConnection(boolean resetOnFailure) throws Exception {
+    AtomicInteger receivedRequests = new AtomicInteger();
+    server.requestHandler(req -> {
+      receivedRequests.incrementAndGet();
+      req.response().end();
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
+    client.request(requestOptions)
+      .compose(req -> req.send().expecting(HttpResponseExpectation.SC_OK).compose(HttpClientResponse::end))
+      .await();
+    Future<HttpClientResponse> invalid = client.request(new RequestOptions(requestOptions).setURI("/invalid uri"))
+      .compose(req -> req.send()
+        .onFailure(err -> {
+          if (resetOnFailure) {
+            req.reset(0, err);
+          }
+        }));
+    assertThatThrownBy(() -> invalid.timeout(5, TimeUnit.SECONDS).await())
+      .isInstanceOf(IllegalArgumentException.class);
+    client.request(requestOptions)
+      .compose(req -> req.send().expecting(HttpResponseExpectation.SC_OK).compose(HttpClientResponse::end))
+      .timeout(5, TimeUnit.SECONDS)
+      .await();
+    assertEquals(2, receivedRequests.get());
+  }
+
+  @Test
   public void testMultipleRecursiveCallsAndPipelining(Checkpoint checkpoint) throws Exception {
     int sendRequests = 100;
     AtomicInteger receivedRequests = new AtomicInteger();

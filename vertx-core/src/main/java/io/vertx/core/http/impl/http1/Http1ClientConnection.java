@@ -284,7 +284,19 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> promise) {
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     boolean chunked = request.headers != null && request.headers.contains(TRANSFER_ENCODING, CHUNKED, true);
-    HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
+    HttpRequest nettyRequest;
+    try {
+      nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
+    } catch (IllegalArgumentException e) {
+      if (buf != null) {
+        buf.release();
+      }
+      if (Boolean.TRUE.equals(reset(stream))) {
+        stream.onClose();
+      }
+      promise.fail(e);
+      return;
+    }
     synchronized (this) {
       assert current == null;
       Stream removed = pending.removeFirst();
