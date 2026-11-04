@@ -21,6 +21,8 @@ import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.FailedWrite;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 
@@ -95,9 +97,9 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
+  public WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
     if (headersSent) {
-      return context.failedFuture("Headers already sent");
+      return new FailedWrite(context, "Headers already sent");
     }
     if (responseEnded) {
       throw new IllegalStateException("Response already ended");
@@ -127,29 +129,20 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public Future<Void> write(Buffer buf, boolean end) {
+  public WriteResult write(Buffer buf, boolean end) {
     if (!headersSent) {
-      return context.failedFuture("Headers must be sent prior sending a message");
+      return new FailedWrite(context, "Headers must be sent prior sending a message");
     }
     if (responseEnded) {
       throw new IllegalStateException("Response already ended");
     }
     try {
       Http1ServerResponse response = response();
-      if (buf.length() == 0) {
-        if (end) {
-          responseEnded = true;
-          return response.end();
-        } else {
-          return context.succeededFuture();
-        }
+      if (end) {
+        responseEnded = true;
+        return buf.length() > 0 ? response.end(buf) : response.end();
       } else {
-        if (end) {
-          responseEnded = true;
-          return response.end(buf);
-        } else {
-          return response.write(buf);
-        }
+        return response.write(buf);
       }
     } finally {
       checkCloseHandler();
@@ -157,9 +150,9 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public Future<Void> end(MultiMap headers) {
+  public WriteResult end(MultiMap headers) {
     if (!headersSent) {
-      return context.failedFuture("Headers must be sent prior sending a message");
+      return new FailedWrite(context, "Headers must be sent prior sending a message");
     }
     if (responseEnded) {
       throw new IllegalStateException("Response already ended");

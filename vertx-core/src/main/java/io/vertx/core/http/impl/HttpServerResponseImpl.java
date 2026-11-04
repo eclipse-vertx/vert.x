@@ -25,6 +25,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.HttpServerResponseInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.UncloseableChunkedNioFile;
@@ -42,7 +44,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerResponseImpl implements HttpServerResponse {
+public class HttpServerResponseImpl implements HttpServerResponseInternal {
 
   private final HttpServerStream stream;
   private final HttpServerConnection conn;
@@ -121,7 +123,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
+  public HttpServerResponseInternal exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
       if (handler != null) {
         checkValid();
@@ -331,7 +333,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public Future<Void> write(Buffer chunk) {
+  public WriteResult write(Buffer chunk) {
     return write(chunk, false);
   }
 
@@ -356,12 +358,12 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public Future<Void> end(Buffer chunk) {
+  public WriteResult end(Buffer chunk) {
     return write(chunk, true);
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     return write(null, true);
   }
 
@@ -390,8 +392,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return netSocket;
   }
 
-  private Future<Void> write(Buffer chunk, boolean end) {
-    Future<Void> future = write_(chunk, end && trailedMap == null);
+  private WriteResult write(Buffer chunk, boolean end) {
+    WriteResult future = write_(chunk, end && trailedMap == null);
     if (end) {
       if (trailedMap != null) {
         future = stream.end(trailedMap);
@@ -408,7 +410,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return future;
   }
 
-  private Future<Void> write_(Buffer chunk, boolean end) {
+  private WriteResult write_(Buffer chunk, boolean end) {
     Handler<Void> headersEndHandler;
     synchronized (conn) {
       if (ended) {
@@ -522,7 +524,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
+  public HttpServerResponseInternal setWriteQueueMaxSize(int maxSize) {
     synchronized (conn) {
       checkValid();
       // It does not seem to be possible to configure this at the moment
@@ -531,7 +533,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse drainHandler(Handler<Void> handler) {
+  public HttpServerResponseInternal drainHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
         checkValid();

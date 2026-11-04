@@ -25,6 +25,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.http.HttpServerResponseInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -52,7 +54,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
+public class Http1ServerResponse implements HttpServerResponseInternal, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
@@ -222,7 +224,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse setWriteQueueMaxSize(int size) {
+  public HttpServerResponseInternal setWriteQueueMaxSize(int size) {
     checkValid();
     conn.doSetWriteQueueMaxSize(size);
     return this;
@@ -235,7 +237,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse drainHandler(Handler<Void> handler) {
+  public HttpServerResponseInternal drainHandler(Handler<Void> handler) {
     if (handler != null) {
       checkValid();
     }
@@ -244,7 +246,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
+  public HttpServerResponseInternal exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
       checkValid();
     }
@@ -271,7 +273,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> writeHead() {
+  public WriteResult writeHead() {
     checkHeadWritten();
     if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
@@ -283,7 +285,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> write(Buffer chunk) {
+  public WriteResult write(Buffer chunk) {
     return write(((BufferInternal)chunk).getByteBuf());
   }
 
@@ -326,7 +328,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> end(Buffer chunk) {
+  public WriteResult end(Buffer chunk) {
     ByteBuf data = ((BufferInternal)chunk).getByteBuf();
     if (trailersSent) {
       throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -343,7 +345,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     } else {
       msg = new VertxLastHttpContent(data, trailingHeaders);
     }
-    Future<Void> result = conn.write(msg);
+    WriteResult result = conn.write(msg);
     Handler<Void> handler = bodyEndHandler;
     if (handler != null) {
       context.dispatch(handler);
@@ -377,7 +379,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     return end(EMPTY_BUFFER);
   }
 
@@ -624,7 +626,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  private Future<Void> write(ByteBuf chunk) {
+  private WriteResult write(ByteBuf chunk) {
     checkValid();
     if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       if (version != HttpVersion.HTTP_1_0) {

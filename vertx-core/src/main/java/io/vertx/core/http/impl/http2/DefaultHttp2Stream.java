@@ -28,6 +28,7 @@ import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
@@ -36,6 +37,7 @@ import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.concurrent.WriteOp;
 import io.vertx.core.internal.streams.OutboundWriteStream;
+import io.vertx.core.internal.streams.WritableWrite;
 import io.vertx.core.internal.streams.WritePromise;
 
 import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
@@ -319,7 +321,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return outboundQueue.isWritable();
   }
 
-  public final Future<Void> write(WritePromise write) {
+  public final WriteResult write(WritePromise write) {
     outboundQueue.add(write);
     return write;
   }
@@ -346,29 +348,31 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return promise.future();
   }
 
-  public final Future<Void> end(MultiMap headers) {
+  public final WriteResult end(MultiMap headers) {
     return writeHeaders((HttpHeaders) headers, true, true);
   }
 
-  Future<Void> writeHeaders(HttpHeaders headers, boolean end, boolean checkFlush) {
-    WritePromise write = new WritePromise(context) {
-      @Override
-      public void write() {
-        writeHeaders0(headers, end, checkFlush, this);
-      }
-    };
+  WriteResult writeHeaders(HttpHeaders headers, boolean end, boolean checkFlush) {
     if (first_) {
       first_ = false;
+      // The first write of the stream: it cannot reach the high-water mark
+      WritableWrite write = new WritableWrite(context);
       EventLoop eventLoop = connection.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        write.write();
+        writeHeaders0(headers, end, checkFlush, write);
       } else {
-        eventLoop.execute(write::write);
+        eventLoop.execute(() -> writeHeaders0(headers, end, checkFlush, write));
       }
+      return write;
     } else {
-      write(write);
+      WritePromise write = new WritePromise(context) {
+        @Override
+        public void write() {
+          writeHeaders0(headers, end, checkFlush, this);
+        }
+      };
+      return write(write);
     }
-    return write;
   }
 
   void writeHeaders0(HttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
@@ -420,11 +424,11 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final Future<Void> write(Buffer chunk, boolean end) {
+  public final WriteResult write(Buffer chunk, boolean end) {
     return writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end);
   }
 
-  public final Future<Void> writeData(ByteBuf chunk, boolean end) {
+  public final WriteResult writeData(ByteBuf chunk, boolean end) {
     return write(new WritePromise(context) {
       @Override
       public void write() {

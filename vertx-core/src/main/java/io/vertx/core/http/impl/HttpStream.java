@@ -17,6 +17,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.ContentDecoder;
 
 /**
@@ -41,7 +42,7 @@ public interface HttpStream {
   ContextInternal context();
   ByteBufAllocator allocator();
 
-  Future<Void> write(Buffer buf, boolean end);
+  WriteResult write(Buffer buf, boolean end);
 
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);

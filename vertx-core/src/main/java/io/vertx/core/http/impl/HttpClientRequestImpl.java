@@ -20,6 +20,9 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.internal.http.HttpClientRequestInternal;
+import io.vertx.core.internal.streams.FailedWrite;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
@@ -218,7 +221,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest setWriteQueueMaxSize(int maxSize) {
+  public synchronized HttpClientRequestInternal setWriteQueueMaxSize(int maxSize) {
     checkEnded();
     stream.setWriteQueueMaxSize(maxSize);
     return this;
@@ -241,7 +244,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return exceptionHandler;
   }
 
-  public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+  public synchronized HttpClientRequestInternal exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
       checkEnded();
       this.exceptionHandler = handler;
@@ -252,7 +255,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest drainHandler(Handler<Void> handler) {
+  public synchronized HttpClientRequestInternal drainHandler(Handler<Void> handler) {
     if (handler != null) {
       checkEnded();
     }
@@ -495,7 +498,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public Future<Void> end(Buffer chunk) {
+  public WriteResult end(Buffer chunk) {
     if (chunk == null) {
       throw new NullPointerException("no null chunk accepted");
     }
@@ -503,12 +506,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     return write(null, true);
   }
 
   @Override
-  public Future<Void> write(Buffer chunk) {
+  public WriteResult write(Buffer chunk) {
     if (chunk == null) {
       throw new NullPointerException("no null chunk accepted");
     }
@@ -526,19 +529,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return write(BufferInternal.buffer(chunk, enc), false);
   }
 
-  private Future<Void> write(Buffer buff, boolean end) {
+  private WriteResult write(Buffer buff, boolean end) {
     return doWrite(buff, end, false);
   }
 
-  private Future<Void> doWrite(Buffer buff, boolean end, boolean connect) {
+  private WriteResult doWrite(Buffer buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
     synchronized (this) {
       if (reset != null) {
-        return context.failedFuture(reset);
+        return new FailedWrite(context, reset);
       }
       if (trailersSent) {
-        return context.failedFuture(new IllegalStateException("Request already complete"));
+        return new FailedWrite(context, new IllegalStateException("Request already complete"));
       }
       if (followRedirects && getMethod() == HttpMethod.QUERY) {
         if (buff != null) {
@@ -583,7 +586,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       trailersSent = end;
     }
 
-    Future<Void> future;
+    WriteResult future;
     if (writeHead) {
       HttpMethod method = getMethod();
       String uri = getURI();

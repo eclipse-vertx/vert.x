@@ -48,6 +48,7 @@ import io.vertx.core.http.impl.websocket.WebSocketHandshakeInboundHandler;
 import io.vertx.core.http.impl.websocket.WebSocketImpl;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
@@ -385,7 +386,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return removed;
   }
 
-  private Future<Void> writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end) {
+  private WriteResult writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, ByteBuf buf, boolean end) {
     WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
@@ -401,7 +402,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return write;
   }
 
-  private Future<Void> writeBuffer(Stream stream, ByteBuf buff, boolean end) {
+  private WriteResult writeBuffer(Stream stream, ByteBuf buff, boolean end) {
     WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
@@ -743,12 +744,12 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
+    public WriteResult writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
       return conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end);
     }
 
     @Override
-    public Future<Void> write(Buffer buff, boolean end) {
+    public WriteResult write(Buffer buff, boolean end) {
       if (buff != null || end) {
         return conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end);
       } else {

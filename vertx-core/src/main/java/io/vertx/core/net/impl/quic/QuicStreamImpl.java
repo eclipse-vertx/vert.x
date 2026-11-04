@@ -21,7 +21,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
+import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.impl.StreamChannelBase;
 import io.vertx.core.net.QuicConnection;
 import io.vertx.core.net.QuicStream;
@@ -91,11 +93,11 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
   }
 
   @Override
-  public Future<Void> writeMessage(Object message) {
+  public WriteResult writeMessage(Object message) {
     if (bidirectional || localCreated) {
       return super.writeMessage(message);
     } else {
-      return context.failedFuture("Unidirectional stream created by the remote endpoint cannot be written to");
+      return new FailedWrite(context, "Unidirectional stream created by the remote endpoint cannot be written to");
     }
   }
 

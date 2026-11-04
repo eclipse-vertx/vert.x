@@ -30,6 +30,7 @@ import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
@@ -162,7 +163,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     }
   }
 
-  public final Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
+  public final WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
     HttpResponseHeaders headers = (HttpResponseHeaders)head.headers();
     headers.status(head.statusCode);
     if (chunk != null) {

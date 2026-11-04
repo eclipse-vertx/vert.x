@@ -18,6 +18,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.http.HttpClientRequestInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
 
 import java.util.function.Function;
@@ -53,7 +55,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
+  public HttpClientRequestInternal exceptionHandler(Handler<Throwable> handler) {
     return this;
   }
 
@@ -68,17 +70,17 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public Future<Void> write(Buffer data) {
+  public WriteResult write(Buffer data) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
+  public HttpClientRequestInternal setWriteQueueMaxSize(int maxSize) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest drainHandler(Handler<Void> handler) {
+  public HttpClientRequestInternal drainHandler(Handler<Void> handler) {
     throw new IllegalStateException();
   }
 
@@ -203,12 +205,12 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public Future<Void> end(Buffer chunk) {
+  public WriteResult end(Buffer chunk) {
     throw new IllegalStateException();
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     throw new IllegalStateException();
   }
 

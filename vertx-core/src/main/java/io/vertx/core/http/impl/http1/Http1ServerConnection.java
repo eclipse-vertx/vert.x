@@ -39,6 +39,7 @@ import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
@@ -280,7 +281,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     }
   }
 
-  Future<Void> write(VertxHttpObject msg) {
+  WriteResult write(VertxHttpObject msg) {
     WritePromise write = new WritePromise(context) {
       @Override
       public void write() {

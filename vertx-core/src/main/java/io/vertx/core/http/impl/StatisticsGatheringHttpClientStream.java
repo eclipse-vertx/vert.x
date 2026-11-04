@@ -21,6 +21,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
@@ -75,7 +76,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end) {
+  public WriteResult writeHead(HttpRequestHead request, Buffer buf, boolean end) {
     endpointRequest.reportRequestBegin();
     if (end) {
       endpointRequest.reportRequestEnd();
@@ -84,7 +85,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> write(Buffer buf, boolean end) {
+  public WriteResult write(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }

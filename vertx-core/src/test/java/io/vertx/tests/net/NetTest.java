@@ -4883,9 +4883,10 @@ public class NetTest {
   @Test
   public void testWriteResult(Checkpoint checkpoint) throws Exception {
     server.connectHandler(so -> {
-      so.handler(chunk -> {
+      NetSocketInternal sock = (NetSocketInternal) so;
+      sock.handler(chunk -> {
         while (true) {
-          WriteResult writeResult = (WriteResult) so.write(chunk);
+          WriteResult writeResult = sock.write(chunk);
           if (!writeResult.isWritable()) {
             writeResult.drainHandler(v -> {
               checkpoint.succeed();
@@ -4903,9 +4904,10 @@ public class NetTest {
   @Test
   public void testWriteResultClose(Checkpoint checkpoint) throws Exception {
     server.connectHandler(so -> {
-      so.handler(chunk -> {
+      NetSocketInternal sock = (NetSocketInternal) so;
+      sock.handler(chunk -> {
         while (true) {
-          WriteResult writeResult = (WriteResult) so.write(chunk);
+          WriteResult writeResult = sock.write(chunk);
           if (!writeResult.isWritable()) {
             writeResult.disposeHandler(v -> {
               checkpoint.succeed();
@@ -4913,7 +4915,7 @@ public class NetTest {
             break;
           }
         }
-        so.close();
+        sock.close();
       });
     });
     startServer();

@@ -33,6 +33,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.net.StreamChannelInternal;
 import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
@@ -114,8 +115,7 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
     };
   }
 
-  @Override
-  public Future<Void> writeMessage(Object message) {
+  protected final WriteResult writePromise(Object message) {
     WritePromise messageWrite = new WritePromise(context) {
       @Override
       public void write() {
@@ -127,7 +127,12 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
   }
 
   @Override
-  public Future<Void> write(Buffer data) {
+  public WriteResult writeMessage(Object message) {
+    return writePromise(message);
+  }
+
+  @Override
+  public WriteResult write(Buffer data) {
     return writeMessage(((BufferInternal)data).getByteBuf());
   }
 
