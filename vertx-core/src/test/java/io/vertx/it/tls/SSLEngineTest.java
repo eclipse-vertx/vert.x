@@ -150,11 +150,11 @@ public class SSLEngineTest extends HttpTestBase2 {
       .setVerifyHost(false));
     WebSocket ws = wsClient.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/").await();
     test.assertSslSessionContextType(ws.sslSession().getSessionContext());
-    ws.writeTextMessage("test");
     ws.textMessageHandler(msg -> {
       assertEquals("test", msg);
       checkpoint.succeed();
     });
+    ws.writeTextMessage("test");
     checkpoint.awaitSuccess();
   }
 
