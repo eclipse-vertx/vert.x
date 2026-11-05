@@ -142,8 +142,7 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
 
   @Test
   public void testServerCompressionWithoutContent() throws Exception {
-    waitFor(8);
-    server.close();
+    server.close().await();
     server = config.forServer().setCompression(serverCompressionConfig().get()).create(vertx);
     server.requestHandler(req -> {
       HttpServerResponse response = req.response().setStatusCode(Integer.parseInt(req.getParam("status")));
@@ -156,22 +155,17 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
     startServer();
     for (int statusCode : new int[] { 204, 205, 304, 200 }) {
       for (boolean buffer : new boolean[] { false, true }) {
-        client.request(new RequestOptions()
+        HttpClientResponse resp = client.request(new RequestOptions()
           .setMethod(statusCode == 200 ? HttpMethod.HEAD : HttpMethod.GET)
           .setURI("/?status=" + statusCode + "&buffer=" + buffer)
           .putHeader(ACCEPT_ENCODING, encoding()))
           .compose(HttpClientRequest::send)
-          .onComplete(onSuccess(resp -> {
-            assertEquals(statusCode, resp.statusCode());
-            assertNull("status=" + statusCode + ", buffer=" + buffer, resp.getHeader(HttpHeaders.CONTENT_ENCODING));
-            resp.body().onComplete(onSuccess(body -> {
-              assertEquals(0, body.length());
-              complete();
-            }));
-          }));
+          .await();
+        assertEquals(statusCode, resp.statusCode());
+        assertNull("status=" + statusCode + ", buffer=" + buffer, resp.getHeader(HttpHeaders.CONTENT_ENCODING));
+        assertEquals(0, resp.body().await().length());
       }
     }
-    await();
   }
 
   @Test
