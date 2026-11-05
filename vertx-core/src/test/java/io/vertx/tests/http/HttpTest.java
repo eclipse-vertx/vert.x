@@ -846,7 +846,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testConfigureQueryParamsSemicolonDelimiterDecoding() throws Exception {
+  public void testConfigureQueryParamsSemicolonDelimiterDecodingWithSemicolonDelimiterDecoding() throws Exception {
     testConfigureQueryParamsDecoding(
       new QueryParamDecoderConfig().setUseSemicolonAsDelimiter(false),
       "/some?a=b&c=d;e=f",
@@ -875,6 +875,10 @@ public abstract class HttpTest extends SimpleHttpTest2 {
           assertEquals(entry.getValue(), expected1.get(entry.getKey()));
         }
       });
+  }
+
+  @Test
+  public void testConfigureQueryParamsSemicolonDelimiterDecodingWithoutSemicolonDelimiterDecoding() throws Exception {
     testConfigureQueryParamsDecoding(
       new QueryParamDecoderConfig().setUseSemicolonAsDelimiter(true),
       "/some?a=b&c=d;e=f",
