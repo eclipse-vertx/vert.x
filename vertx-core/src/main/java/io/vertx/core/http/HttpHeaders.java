@@ -330,10 +330,22 @@ public interface HttpHeaders {
   CharSequence RETRY_AFTER = HttpHeaderNames.RETRY_AFTER;
 
   /**
+   * Proxy-Connection header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PROXY_CONNECTION = HttpHeaderNames.PROXY_CONNECTION;
+
+  /**
    * Server header name
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   CharSequence SERVER = HttpHeaderNames.SERVER;
+
+  /**
+   * TE header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence TE = HttpHeaderNames.TE;
 
   /**
    * Transfer-Encoding header name

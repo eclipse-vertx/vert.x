@@ -473,14 +473,17 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
       if (cookies != null) {
         setCookies();
       }
+      // Connection-specific headers are forbidden on HTTP/2 (RFC 9113 8.2.2) and HTTP/3 (RFC 9114 4.2)
+      headersMap.remove(io.vertx.core.http.HttpHeaders.CONNECTION);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.KEEP_ALIVE);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.PROXY_CONNECTION);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.UPGRADE);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.TE);
       // Sanitize
-      if (requestMethod == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
-        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
-      } else if (status == HttpResponseStatus.RESET_CONTENT) {
-        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
+      if (status == HttpResponseStatus.RESET_CONTENT) {
         headersMap.set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, "0");
       } else if (status.codeClass() == HttpStatusClass.INFORMATIONAL || status == HttpResponseStatus.NO_CONTENT) {
-        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
         headersMap.remove(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
       }
       headWritten = true;
