@@ -12,6 +12,7 @@ package io.vertx.tests.http;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -26,13 +27,16 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static io.vertx.core.http.HttpMethod.HEAD;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.onSuccess;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests of the HTTP semantics the server must implement regardless of the protocol version.
@@ -359,6 +363,32 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
     assertNull(respHeaders.get(HttpHeaders.KEEP_ALIVE));
     assertNull(respHeaders.get(HttpHeaders.UPGRADE));
     assertNull(respHeaders.get("proxy-connection"));
+  }
+
+  // https://www.rfc-editor.org/rfc/rfc9110#section-9.3.6
+  @Test
+  public void testConnectRequestRejectsContentLength() throws Exception {
+    testConnectRequestRejectsBodyFraming(req -> req.putHeader(HttpHeaders.CONTENT_LENGTH, "11"));
+  }
+
+  // https://www.rfc-editor.org/rfc/rfc9110#section-9.3.6
+  @Test
+  public void testConnectRequestRejectsTransferEncoding() throws Exception {
+    testConnectRequestRejectsBodyFraming(req -> req.putHeader(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED));
+  }
+
+  // https://www.rfc-editor.org/rfc/rfc9110#section-9.3.6
+  @Test
+  public void testConnectRequestRejectsChunked() throws Exception {
+    testConnectRequestRejectsBodyFraming(req -> req.setChunked(true));
+  }
+
+  private void testConnectRequestRejectsBodyFraming(Consumer<HttpClientRequest> configurator) throws Exception {
+    server.requestHandler(req -> fail());
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).await();
+    configurator.accept(req);
+    assertThatThrownBy(() -> req.connect().await()).isInstanceOf(IllegalStateException.class);
   }
 
   // https://www.rfc-editor.org/rfc/rfc9110#section-7.2
