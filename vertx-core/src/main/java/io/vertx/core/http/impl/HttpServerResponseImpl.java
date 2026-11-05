@@ -660,7 +660,15 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     checkSendHeaders();
     Promise<Void> promise = context.promise();
     ended = true;
-    stream.sendFile(file, promise);
+    if (isContentAlwaysEmpty()) {
+      try {
+        file.close();
+      } catch (Exception ignore) {
+      }
+      stream.writeChunk(null, true).onComplete(promise);
+    } else {
+      stream.sendFile(file, promise);
+    }
     Future<Void> future = promise.future();
     Handler<Void> bodyEndHandler = this.bodyEndHandler;
     if (bodyEndHandler != null) {
