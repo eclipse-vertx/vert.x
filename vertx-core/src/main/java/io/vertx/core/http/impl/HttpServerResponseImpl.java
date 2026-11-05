@@ -448,7 +448,11 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
   }
 
   private boolean isContentAlwaysEmpty() {
-    return requestMethod == HttpMethod.HEAD;
+    return requestMethod == HttpMethod.HEAD
+      || status == HttpResponseStatus.NO_CONTENT
+      || status == HttpResponseStatus.RESET_CONTENT
+      || status == HttpResponseStatus.NOT_MODIFIED
+      || status.codeClass() == HttpStatusClass.INFORMATIONAL;
   }
 
   private boolean requiresContentLengthHeader() {
