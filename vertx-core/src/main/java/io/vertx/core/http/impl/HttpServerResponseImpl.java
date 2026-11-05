@@ -397,10 +397,11 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
   }
 
   private WriteResult write(Buffer chunk, boolean end) {
-    WriteResult future = write_(chunk, end && trailedMap == null);
+    MultiMap trailers = isContentAlwaysEmpty() ? null : trailedMap;
+    WriteResult future = write_(chunk, end && trailers == null);
     if (end) {
-      if (trailedMap != null) {
-        future = stream.end(trailedMap);
+      if (trailers != null) {
+        future = stream.end(trailers);
       }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
