@@ -711,7 +711,15 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
       ended = true;
       bytesWritten += file.length();
     }
-    stream.sendFile(file, promise);
+    if (isContentAlwaysEmpty()) {
+      try {
+        file.close();
+      } catch (Exception ignore) {
+      }
+      stream.write(null, true).onComplete(promise);
+    } else {
+      stream.sendFile(file, promise);
+    }
     Future<Void> future = promise.future();
     Handler<Void> bodyEndHandler = this.bodyEndHandler;
     if (bodyEndHandler != null) {
