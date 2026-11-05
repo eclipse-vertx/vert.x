@@ -3705,57 +3705,6 @@ public class Http1xTest extends HttpTest {
     checkpoint2.awaitSuccess();
   }
 
-  // Use a raw socket to check the body response is effectively empty (it could be an empty chunk)
-  protected MultiMap checkEmptyHttpResponse(HttpMethod method, int sc, MultiMap reqHeaders) throws Exception {
-    server.requestHandler(req -> {
-      HttpServerResponse resp = req.response();
-      resp.setStatusCode(sc);
-      resp.headers().addAll(reqHeaders);
-      resp.end();
-    });
-    startServer(testAddress);
-    NetClient client = vertx.createNetClient();
-    try {
-      CompletableFuture<MultiMap> result = new CompletableFuture<>();
-      client.connect(testAddress).onComplete(ar -> {
-        if (ar.succeeded()) {
-          NetSocket so = ar.result();
-          so.write(
-            method.name() + " / HTTP/1.1\r\n" +
-              "Connection: close\r\n" +
-              "\r\n");
-          Buffer body = Buffer.buffer();
-          so.exceptionHandler(result::completeExceptionally);
-          so.handler(body::appendBuffer);
-          so.endHandler(v -> {
-            String content = body.toString();
-            int idx = content.indexOf("\r\n\r\n");
-            if (idx == content.length() - 4) {
-              LinkedList<String> records = new LinkedList<>(Arrays.asList(content.substring(0, idx).split("\\r\\n")));
-              String statusLine = records.removeFirst();
-              assertEquals("HTTP/1.1 " + sc, statusLine.substring(0, statusLine.indexOf(' ', 9)));
-              assertEquals("", content.substring(idx + 4));
-              MultiMap respHeaders = HttpHeaders.headers();
-              records.forEach(record -> {
-                int index = record.indexOf(":");
-                String value = record.substring(0, index);
-                respHeaders.add(value.trim(), record.substring(index + 1).trim());
-              });
-              result.complete(respHeaders);
-            } else {
-              result.completeExceptionally(new Exception());
-            }
-          });
-        } else {
-          result.completeExceptionally(ar.cause());
-        }
-      });
-      return result.get(20, TimeUnit.SECONDS);
-    } finally {
-      client.close();
-    }
-  }
-
   @Test
   public void testUnknownContentLengthIsSetToZeroWithHTTP_1_0() throws Exception {
     server.requestHandler(req -> {
@@ -5383,23 +5332,6 @@ public class Http1xTest extends HttpTest {
       so.write("GET / HTTP/1.1\r\n\r\n");
     }));
     checkpoint.awaitSuccess();
-  }
-
-  @Test
-  public void testClientMissingHostHeader() throws Exception {
-    server.requestHandler(req -> {
-      assertNull(req.authority());
-      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
-      req.response().end();
-    });
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(request -> request
-        .authority(null)
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::end))
-      .await();
   }
 
   @Test

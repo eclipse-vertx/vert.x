@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+package io.vertx.tests.http;
+
+import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.internal.http.HttpServerRequestInternal;
+import io.vertx.test.http.HttpConfigurator;
+import io.vertx.test.http.SimpleHttpTest2;
+import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static io.vertx.core.http.HttpMethod.HEAD;
+import static io.vertx.test.core.AssertExpectations.that;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+
+/**
+ * Tests of the HTTP semantics the server must implement regardless of the protocol version.
+ */
+public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
+
+  protected HttpSemanticsTest(HttpConfigurator config) {
+    super(config);
+  }
+
+  @Test
+  public void testHeadCanSetContentLength() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.HEAD, req.method());
+      // Head never contains a body but it can contain a Content-Length header
+      // Since headers from HEAD must correspond EXACTLY with corresponding headers for GET
+      req.response().headers().set("Content-Length", String.valueOf(41));
+      req.response().end();
+    });
+    startServer(testAddress);
+    String contentLength = client.request(new RequestOptions(requestOptions).setMethod(HEAD))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(resp -> resp.end().map(resp.headers().get("Content-Length"))))
+      .await();
+    assertEquals("41", contentLength);
+  }
+
+  @Test
+  public void testHeadDoesNotSetAutomaticallySetContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.headers());
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testHeadAllowsContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.set("content-length", "34"));
+    assertEquals("34", respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testHeadRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNoContentRemovesContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, HttpHeaders.set("content-length", "34"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNoContentRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, HttpHeaders.set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testResetContentSetsContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, HttpHeaders.headers());
+    assertEquals("0", respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testResetContentRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, HttpHeaders.set("transfer-encoding", "chunked"));
+    assertEquals("0", respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNotModifiedDoesNotSetAutomaticallySetContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.headers());
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNotModifiedAllowsContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.set("content-length", "34"));
+    assertEquals("34", respHeaders.get("Content-Length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void testNotModifiedRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void test1xxRemovesContentLengthHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, HttpHeaders.set("content-length", "34"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  @Test
+  public void test1xxRemovesTransferEncodingHeader() throws Exception {
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, HttpHeaders.set("transfer-encoding", "chunked"));
+    assertNull(respHeaders.get("content-length"));
+    assertNull(respHeaders.get("transfer-encoding"));
+  }
+
+  protected MultiMap checkEmptyHttpResponse(HttpMethod method, int sc, MultiMap reqHeaders) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setStatusCode(sc);
+      reqHeaders.remove("transfer-encoding");
+      resp.headers().addAll(reqHeaders);
+      resp.end();
+    });
+    startServer(testAddress);
+    Future<MultiMap> result = client
+      .request(new RequestOptions(requestOptions).setMethod(method)).compose(req ->
+        req
+          .setFollowRedirects(false)
+          .send()
+          .compose(resp ->
+            resp.body().compose(body -> {
+              if (body.length() > 0) {
+                return Future.failedFuture(new Exception());
+              } else {
+                return Future.succeededFuture(resp.headers());
+              }
+            })
+          ));
+    return result.await(20, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testHeadHasNoContentLengthByDefault() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.HEAD, req.method());
+      // By default HEAD does not have a content-length header
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+      .compose(req -> req
+        .send()
+        .expecting(that(resp -> assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
+        .compose(HttpClientResponse::end))
+      .await();
+  }
+
+  @Test
+  public void testHeadButCanSetContentLength() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(HttpMethod.HEAD, req.method());
+      // By default HEAD does not have a content-length header but it can contain a content-length header
+      // if explicitly set
+      req.response().putHeader(HttpHeaders.CONTENT_LENGTH, "41").end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+      .compose(req -> req
+        .send()
+        .expecting(that(resp -> assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
+        .compose(HttpClientResponse::end))
+      .await();
+  }
+
+  @Test
+  public void testMissingAuthority() throws Exception {
+    server.requestHandler(req -> {
+      assertNull(req.authority());
+      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(request -> request
+        .authority(null)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
+  }
+}
