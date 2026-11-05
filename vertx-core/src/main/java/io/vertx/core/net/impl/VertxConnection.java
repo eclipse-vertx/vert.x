@@ -25,9 +25,11 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.concurrent.WriteOp;
+import io.vertx.core.internal.streams.OutboundWriteStream;
+import io.vertx.core.internal.streams.WritePromise;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -35,7 +37,6 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -59,7 +60,7 @@ public class VertxConnection extends ConnectionBase {
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   public final VoidChannelPromise voidPromise;
-  private final OutboundMessageQueue<MessageWrite> outboundMessageQueue;
+  private final OutboundWriteStream outboundWriteQueue;
 
   // State accessed exclusively from the event loop thread
   private Deque<Object> pending;
@@ -87,7 +88,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     this.channelWritable = chctx.channel().isWritable();
-    this.outboundMessageQueue = new InternalMessageChannel(executor);
+    this.outboundWriteQueue = new ChannelOutboundWriteStream(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
   }
 
@@ -251,7 +252,7 @@ public class VertxConnection extends ConnectionBase {
     assert !draining;
     ChannelPromise channelPromise = chctx.newPromise();
     // Give a chance of pending message to be written
-    outboundMessageQueue.close();
+    outboundWriteQueue.close();
     // Make sure everything is flushed out on close
     unsafeWrite(Unpooled.EMPTY_BUFFER, true, channelPromise);
     //
@@ -267,7 +268,7 @@ public class VertxConnection extends ConnectionBase {
     if (timeout != null) {
       timeout.cancel(false);
     }
-    outboundMessageQueue.close();
+    outboundWriteQueue.close();
     super.handleClosed();
   }
 
@@ -286,7 +287,7 @@ public class VertxConnection extends ConnectionBase {
   void channelWritabilityChanged() {
     channelWritable = chctx.channel().isWritable();
     if (channelWritable) {
-      outboundMessageQueue.tryDrain();
+      outboundWriteQueue.tryDrain();
     }
   }
 
@@ -416,7 +417,7 @@ public class VertxConnection extends ConnectionBase {
   }
 
   public final boolean writeToChannel(Object msg, boolean forceFlush, ChannelPromise promise) {
-    return writeToChannel(new MessageWrite() {
+    return writeToChannel(new WriteOp() {
       @Override
       public void write() {
         unsafeWrite(msg, forceFlush, promise);
@@ -429,9 +430,12 @@ public class VertxConnection extends ConnectionBase {
     });
   }
 
-  // Write to channel boolean return for now is not used so avoids reading a volatile
-  public final boolean writeToChannel(MessageWrite msg) {
-    return outboundMessageQueue.add(msg);
+  public final void writeToChannel(WritePromise msg) {
+    outboundWriteQueue.add(msg);
+  }
+
+  public final boolean writeToChannel(WriteOp msg) {
+    return outboundWriteQueue.add(msg);
   }
 
   /**
@@ -463,7 +467,7 @@ public class VertxConnection extends ConnectionBase {
    * @return the write queue writability status
    */
   public boolean writeQueueFull() {
-    return !outboundMessageQueue.isWritable();
+    return !outboundWriteQueue.isWritable();
   }
 
   /**
@@ -514,20 +518,20 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
-   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
+   * Version of {@link OutboundWriteStream} accessing internal connection base state.
    */
-  private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite> {
+  private class ChannelOutboundWriteStream extends OutboundWriteStream {
 
     private boolean notClosing;
 
-    public InternalMessageChannel(io.vertx.core.internal.EventExecutor eventLoop) {
+    public ChannelOutboundWriteStream(io.vertx.core.internal.EventExecutor eventLoop) {
       super(eventLoop);
     }
 
     @Override
-    public boolean test(MessageWrite msg) {
+    protected boolean write(WriteOp op) {
       if (channelWritable) {
-        msg.write();
+        op.write();
         return true;
       } else {
         return false;
@@ -535,22 +539,22 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void handleDispose(MessageWrite write) {
+    protected void release(WriteOp op) {
       if (channel.isActive()) {
-        write.write();
+        op.write();
       } else {
-        write.cancel(CLOSED_EXCEPTION);
+        op.cancel(CLOSED_EXCEPTION);
       }
     }
 
     @Override
-    protected void startDraining() {
+    protected void beforeDrain() {
       notClosing = closeSent == null;
       draining = true;
     }
 
     @Override
-    protected void stopDraining() {
+    protected void afterDrain() {
       draining = false;
       ChannelPromise closePromise = closeSent;
       boolean close = closePromise != null && notClosing;

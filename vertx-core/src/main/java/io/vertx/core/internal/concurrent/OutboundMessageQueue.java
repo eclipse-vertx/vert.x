@@ -12,7 +12,7 @@ import static io.vertx.core.streams.impl.MessagePassingQueue.numberOfUnwritableS
 /**
  * Outbound message queue for event-loop and write stream like structures.
  */
-public class OutboundMessageQueue<M> implements Predicate<M> {
+public class OutboundMessageQueue<M> implements Predicate<M>, MessagePassingQueue.Behavior<M> {
 
   private final EventExecutor consumer;
   private final AtomicInteger numberOfUnwritableSignals = new AtomicInteger();
@@ -31,7 +31,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    */
   public OutboundMessageQueue(EventExecutor consumer) {
     this.consumer = consumer;
-    this.mqp = new MessagePassingQueue.MpSc<>(this);
+    this.mqp = new MessagePassingQueue.MpSc<>(this, this);
   }
 
   /**
@@ -43,12 +43,16 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    */
   public OutboundMessageQueue(EventExecutor consumer, int lowWaterMark, int highWaterMark) {
     this.consumer = consumer;
-    this.mqp = new MessagePassingQueue.MpSc<>(this, lowWaterMark, highWaterMark);
+    this.mqp = new MessagePassingQueue.MpSc<>(this, this, lowWaterMark, highWaterMark);
   }
 
   @Override
   public boolean test(M msg) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void stamp(M element, int depth, int seq) {
   }
 
   /**
@@ -70,16 +74,16 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
     int flags;
     if (inEventLoop) {
       if (closed) {
-        handleDispose(message);
+        handleRelease(message);
         return true;
       }
       flags = mqp.add(message);
       if (draining == 0 && (flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0) {
-        flags = drainMessageQueue();
+        drainMessageQueue();
       }
     } else {
       if (eventuallyClosed) {
-        handleDispose(message);
+        handleRelease(message);
         return true;
       }
       flags = mqp.add(message);
@@ -114,6 +118,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
         draining--;
         if (draining == 0 && closed) {
           releaseMessages();
+          handleClose();
         }
       }
     } finally {
@@ -157,6 +162,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       return;
     }
     releaseMessages();
+    handleClose();
   }
 
   private void handleDrained(int numberOfSignals) {
@@ -169,7 +175,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   private void releaseMessages() {
     List<M> messages = mqp.clear();
     for (M elt : messages) {
-      handleDispose(elt);
+      handleRelease(elt);
     }
   }
 
@@ -186,10 +192,16 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   }
 
   /**
+   * Called after the queue is closed and the last drain has ended, remaining messages have been released.
+   */
+  protected void handleClose() {
+  }
+
+  /**
    * Release a message, this is called when the queue has been closed and message resource cleanup.
    *
    * @param msg the message
    */
-  protected void handleDispose(M msg) {
+  protected void handleRelease(M msg) {
   }
 }

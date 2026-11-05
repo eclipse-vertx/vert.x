@@ -12,6 +12,7 @@ package io.vertx.core.internal.http;
 
 import io.vertx.core.Context;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.ClientWebSocket;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
@@ -19,5 +20,14 @@ import io.vertx.core.http.WebSocketConnectOptions;
 public interface ClientWebSocketInternal extends ClientWebSocket, WebSocketInternal {
 
   Future<WebSocket> connect(Context context, WebSocketConnectOptions options);
+
+  @Override
+  ClientWebSocketInternal setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  ClientWebSocketInternal drainHandler(Handler<Void> handler);
+
+  @Override
+  ClientWebSocketInternal exceptionHandler(Handler<Throwable> handler);
 
 }

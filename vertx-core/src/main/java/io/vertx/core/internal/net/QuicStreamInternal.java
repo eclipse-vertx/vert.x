@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.QuicStream;
 
 /**
@@ -23,6 +24,9 @@ import io.vertx.core.net.QuicStream;
 public interface QuicStreamInternal extends QuicStream, StreamChannelInternal {
 
   ContextInternal context();
+
+  @Override
+  WriteResult write(Buffer data);
 
   /**
    * Set a {@code handler} notified when the stream becomes idle.

@@ -13,8 +13,10 @@ package io.vertx.core.internal.net;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.streams.WriteResult;
+import io.vertx.core.internal.streams.WriteStreamInternal;
 import io.vertx.core.net.StreamChannel;
 
 /**
@@ -22,7 +24,19 @@ import io.vertx.core.net.StreamChannel;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface StreamChannelInternal extends StreamChannel {
+public interface StreamChannelInternal extends StreamChannel, WriteStreamInternal<Buffer> {
+
+  @Override
+  WriteResult write(Buffer data);
+
+  @Override
+  StreamChannelInternal setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  StreamChannelInternal drainHandler(Handler<Void> handler);
+
+  @Override
+  StreamChannelInternal exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Returns the {@link ChannelHandlerContext} of the last handler (named {@code handler}) of the pipeline that
@@ -48,7 +62,7 @@ public interface StreamChannelInternal extends StreamChannel {
    * @param message the message to write, it should be handled by one of the channel pipeline handlers
    * @return a future completed with the result
    */
-  Future<Void> writeMessage(Object message);
+  WriteResult writeMessage(Object message);
 
   /**
    * Set a {@code handler} on this socket to process the messages produced by this socket. The message can be

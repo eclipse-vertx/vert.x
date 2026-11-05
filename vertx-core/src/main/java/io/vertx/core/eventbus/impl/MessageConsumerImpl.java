@@ -67,7 +67,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       }
 
       @Override
-      protected void handleDispose(Message<T> msg) {
+      protected void handleRelease(Message<T> msg) {
         handleDiscard(msg, false);
       }
     };

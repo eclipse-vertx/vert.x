@@ -1050,4 +1050,10 @@ public class Http2Test extends HttpTest {
         .compose(HttpClientResponse::body))
       .await();
   }
+
+  @Test
+  @Override
+  public void testWriteResult() throws Exception {
+    super.testWriteResult();
+  }
 }

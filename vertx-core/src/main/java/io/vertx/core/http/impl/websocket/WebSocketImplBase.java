@@ -23,7 +23,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -33,6 +32,9 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
+import io.vertx.core.internal.streams.FailedWrite;
+import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 
@@ -47,7 +49,7 @@ import static io.vertx.core.net.impl.VertxHandler.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @param <S> self return type
  */
-public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocketInternal {
+public abstract class WebSocketImplBase<S extends WebSocketInternal> implements WebSocketInternal {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
@@ -174,12 +176,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> writeFinalTextFrame(String text) {
+  public WriteResult writeFinalTextFrame(String text) {
     return writeFrame(WebSocketFrame.textFrame(text, true));
   }
 
   @Override
-  public Future<Void> writeFinalBinaryFrame(Buffer data) {
+  public WriteResult writeFinalBinaryFrame(Buffer data) {
     return writeFrame(WebSocketFrame.binaryFrame(data, true));
   }
 
@@ -231,12 +233,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> writeBinaryMessage(Buffer data) {
+  public WriteResult writeBinaryMessage(Buffer data) {
     return writePartialMessage(WebSocketFrameType.BINARY, data, 0);
   }
 
   @Override
-  public Future<Void> writeTextMessage(String text) {
+  public WriteResult writeTextMessage(String text) {
     byte[] utf8Bytes = text.getBytes(StandardCharsets.UTF_8);
     boolean isFinal = utf8Bytes.length <= maxWebSocketFrameSize;
     if (isFinal) {
@@ -247,22 +249,22 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> write(Buffer data) {
+  public WriteResult write(Buffer data) {
     return writeFrame(WebSocketFrame.binaryFrame(data, true));
   }
 
   @Override
-  public Future<Void> writePing(Buffer data) {
+  public WriteResult writePing(Buffer data) {
     if (data.length() > maxWebSocketFrameSize || data.length() > 125) {
-      return context.failedFuture("Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
+      return new FailedWrite(context, "Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
     }
     return writeFrame(WebSocketFrame.pingFrame(data));
   }
 
   @Override
-  public Future<Void> writePong(Buffer data) {
+  public WriteResult writePong(Buffer data) {
     if (data.length() > maxWebSocketFrameSize || data.length() > 125) {
-      return context.failedFuture("Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
+      return new FailedWrite(context, "Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
     }
     return writeFrame(WebSocketFrame.pongFrame(data));
   }
@@ -271,7 +273,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
    * Splits the provided buffer into multiple frames (which do not exceed the maximum web socket frame size)
    * and writes them in order to the socket.
    */
-  private Future<Void> writePartialMessage(WebSocketFrameType frameType, Buffer data, int offset) {
+  private WriteResult writePartialMessage(WebSocketFrameType frameType, Buffer data, int offset) {
     int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
@@ -297,14 +299,20 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> writeFrame(WebSocketFrame frame) {
+  public WriteResult writeFrame(WebSocketFrame frame) {
     synchronized (this) {
       if (isClosed()) {
-        return context.failedFuture(new HttpClosedException("WebSocket is closed"));
+        return new FailedWrite(context, new HttpClosedException("WebSocket is closed"));
       }
-      Promise<Void> promise = context.promise();
-      conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
-      return promise.future();
+      io.netty.handler.codec.http.websocketx.WebSocketFrame msg = encodeFrame((WebSocketFrameImpl) frame);
+      WritePromise write = new WritePromise(context) {
+        @Override
+        public void write() {
+          conn.unsafeWrite(msg, false, this);
+        }
+      };
+      conn.writeToChannel(write);
+      return write;
     }
   }
 

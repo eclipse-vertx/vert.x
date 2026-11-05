@@ -12,7 +12,10 @@
 package io.vertx.core.internal.net;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -38,8 +41,20 @@ public interface NetSocketInternal extends NetSocket, StreamChannelInternal {
   VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
 
   @Override
+  WriteResult write(Buffer data);
+
+  @Override
   Future<Void> write(String str);
 
   @Override
   Future<Void> write(String str, String enc);
+
+  @Override
+  NetSocketInternal setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  NetSocketInternal drainHandler(Handler<Void> handler);
+
+  @Override
+  NetSocketInternal exceptionHandler(Handler<Throwable> handler);
 }

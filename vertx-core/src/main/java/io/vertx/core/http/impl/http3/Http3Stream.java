@@ -24,6 +24,8 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.streams.WriteResult;
+import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpUtils;
@@ -285,7 +287,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return (S)this;
   }
 
-  Future<Void> writeHeaders(HttpHeaders headers, Buffer chunk, boolean end) {
+  WriteResult writeHeaders(HttpHeaders headers, Buffer chunk, boolean end) {
     if (trailersSent) {
       throw new UnsupportedOperationException("handle me");
     }
@@ -294,7 +296,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     }
     headersSent = true;
     Http3HeadersFrame frame = new DefaultHttp3HeadersFrame((Http3Headers) headers.unwrap());
-    Future<Void> fut = stream.writeMessage(frame);
+    WriteResult fut = stream.writeMessage(frame);
     if (chunk != null) {
       bytesWritten += chunk.length();
       fut = stream.writeMessage(new DefaultHttp3DataFrame(((BufferInternal)chunk).getByteBuf()));
@@ -304,14 +306,16 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
         observer.observeOutboundTrailers(bytesWritten);
       }
       trailersSent = true;
-      fut = stream.end();
+      // TODO: clarify and handle this case to ensure a clean contract, the stream end future is not the
+      // data write result, probably WriteStream#end will be modified as well
+      fut = (WriteResult) stream.end();
     }
     return fut;
   }
 
-  public Future<Void> write(Buffer chunk, boolean end) {
+  public WriteResult write(Buffer chunk, boolean end) {
     if (!headersSent) {
-      return context.failedFuture("Headers must be sent before sending a message");
+      return new FailedWrite(context, "Headers must be sent before sending a message");
     }
     if (trailersSent) {
       throw new UnsupportedOperationException("handle me");
@@ -330,7 +334,9 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
         observer.observeOutboundTrailers(bytesWritten);
       }
     }
-    return fut;
+    // TODO: clarify and handle this case to ensure a clean contract, the stream end future is not the
+    // data write result, probably WriteStream#end will be modified as well
+    return (WriteResult) fut;
   }
 
   public Future<Boolean> cancel() {

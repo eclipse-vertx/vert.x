@@ -28,7 +28,7 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class FailedFuture<T> extends FutureBase<T> {
+public class FailedFuture<T> extends FutureBase<T> {
 
   private final Throwable cause;
 

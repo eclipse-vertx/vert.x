@@ -15,10 +15,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.util.AsciiString;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -31,10 +29,10 @@ import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -111,12 +109,10 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end) {
-    PromiseInternal<Void> promise = context.promise();
+  public WriteResult writeHead(HttpRequestHead request, Buffer buf, boolean end) {
     scheme = request.scheme;
     authority = request.authority;
-    write(new HeadersWrite(request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
-    return promise.future();
+    return write(new HeadersWrite(context, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end));
   }
 
   @Override
@@ -124,18 +120,17 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     return this;
   }
 
-  private class HeadersWrite implements MessageWrite {
+  private class HeadersWrite extends WritePromise {
 
     private final HttpRequestHead request;
     private final ByteBuf buf;
     private final boolean end;
-    private final Promise<Void> promise;
 
-    public HeadersWrite(HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> promise) {
+    public HeadersWrite(ContextInternal context,  HttpRequestHead request, ByteBuf buf, boolean end) {
+      super(context);
       this.request = request;
       this.buf = buf;
       this.end = end;
-      this.promise = promise;
     }
 
     @Override
@@ -173,21 +168,16 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
       try {
         connection.createStream(DefaultHttp2ClientStream.this);
       } catch (Exception ex) {
-        promise.fail(ex);
+        fail(ex);
         onException(ex);
         return;
       }
       if (buf != null) {
         writeHeaders0(headers, false, false, null);
-        writeData0(buf, e, promise);
+        writeData0(buf, e, this);
       } else {
-        writeHeaders0(headers, e, true, promise);
+        writeHeaders0(headers, e, true, this);
       }
-    }
-
-    @Override
-    public void cancel(Throwable cause) {
-      promise.fail(cause);
     }
   }
 

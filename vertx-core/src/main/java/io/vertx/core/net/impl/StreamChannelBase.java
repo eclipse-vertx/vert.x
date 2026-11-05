@@ -23,7 +23,6 @@ import io.netty.util.ReferenceCounted;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.EventLoopExecutor;
@@ -33,6 +32,8 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.net.StreamChannelInternal;
+import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
@@ -114,15 +115,24 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
     };
   }
 
-  @Override
-  public Future<Void> writeMessage(Object message) {
-    Promise<Void> promise = context.promise();
-    writeToChannel(message, promise);
-    return promise.future();
+  protected final WriteResult writePromise(Object message) {
+    WritePromise messageWrite = new WritePromise(context) {
+      @Override
+      public void write() {
+        unsafeWrite(message, false, this);
+      }
+    };
+    writeToChannel(messageWrite);
+    return messageWrite;
   }
 
   @Override
-  public Future<Void> write(Buffer data) {
+  public WriteResult writeMessage(Object message) {
+    return writePromise(message);
+  }
+
+  @Override
+  public WriteResult write(Buffer data) {
     return writeMessage(((BufferInternal)data).getByteBuf());
   }
 

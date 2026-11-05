@@ -11,11 +11,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.streams.WriteResult;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -26,7 +26,7 @@ public interface HttpClientStream extends HttpStream {
 
   HttpClientConnection connection();
 
-  Future<Void> writeHead(HttpRequestHead request, Buffer buf, boolean end);
+  WriteResult writeHead(HttpRequestHead request, Buffer buf, boolean end);
 
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream resetHandler(Handler<Long> handler);

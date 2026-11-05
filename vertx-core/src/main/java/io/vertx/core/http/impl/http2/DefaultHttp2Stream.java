@@ -28,14 +28,17 @@ import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.internal.concurrent.WriteOp;
+import io.vertx.core.internal.streams.OutboundWriteStream;
+import io.vertx.core.internal.streams.WritableWrite;
+import io.vertx.core.internal.streams.WritePromise;
 
 import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 
@@ -46,7 +49,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
-  private final OutboundMessageQueue<MessageWrite> outboundQueue;
+  private final OutboundWriteStream outboundQueue;
   private final InboundMessageQueue<ByteBuf> inboundQueue;
   private final Http2Connection connection;
   protected final VertxInternal vertx;
@@ -101,24 +104,23 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = writable;
     this.readable = -1;
-    this.outboundQueue = new OutboundMessageQueue<>(connection.context().executor()) {
-      // TODO implement stop drain to optimize flushes ?
+    this.outboundQueue = new OutboundWriteStream(connection.context().executor()) {
       @Override
-      public boolean test(MessageWrite msg) {
+      protected boolean write(WriteOp op) {
         if (DefaultHttp2Stream.this.writable) {
-          msg.write();
+          op.write();
           return true;
         } else {
           return false;
         }
       }
       @Override
-      protected void handleDispose(MessageWrite messageWrite) {
+      protected void release(WriteOp op) {
         Throwable cause = failure;
         if (cause == null) {
           cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
         }
-        messageWrite.cancel(cause);
+        op.cancel(cause);
       }
       @Override
       protected void handleDrained() {
@@ -319,8 +321,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return outboundQueue.isWritable();
   }
 
-  public final void write(MessageWrite write) {
+  public final WriteResult write(WritePromise write) {
     outboundQueue.add(write);
+    return write;
   }
 
   public final S pause() {
@@ -345,32 +348,30 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return promise.future();
   }
 
-  public final Future<Void> end(MultiMap headers) {
-    Promise<Void> promise = context.promise();
-    writeHeaders((HttpHeaders) headers, true, true, promise);
-    return promise.future();
+  public final WriteResult end(MultiMap headers) {
+    return writeHeaders((HttpHeaders) headers, true, true);
   }
 
-  void writeHeaders(HttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  WriteResult writeHeaders(HttpHeaders headers, boolean end, boolean checkFlush) {
     if (first_) {
       first_ = false;
+      // The first write of the stream: it cannot reach the high-water mark
+      WritableWrite write = new WritableWrite(context);
       EventLoop eventLoop = connection.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        writeHeaders0(headers, end, checkFlush, promise);
+        writeHeaders0(headers, end, checkFlush, write);
       } else {
-        eventLoop.execute(() -> writeHeaders0(headers, end, checkFlush, promise));
+        eventLoop.execute(() -> writeHeaders0(headers, end, checkFlush, write));
       }
+      return write;
     } else {
-      outboundQueue.add(new MessageWrite() {
+      WritePromise write = new WritePromise(context) {
         @Override
         public void write() {
-          writeHeaders0(headers, end, checkFlush, promise);
+          writeHeaders0(headers, end, checkFlush, this);
         }
-        @Override
-        public void cancel(Throwable cause) {
-          promise.fail(cause);
-        }
-      });
+      };
+      return write(write);
     }
   }
 
@@ -407,7 +408,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   public final void sendFile(ChunkedInput<ByteBuf> file, Promise<Void> promise) {
     bytesWritten += file.length();
-    outboundQueue.add(new MessageWrite() {
+    write(new WritePromise(context) {
       @Override
       public void write() {
         sendFile0(file, promise);
@@ -423,21 +424,15 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final Future<Void> write(Buffer chunk, boolean end) {
-    Promise<Void> promise = context.promise();
-    writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end, promise);
-    return promise.future();
+  public final WriteResult write(Buffer chunk, boolean end) {
+    return writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end);
   }
 
-  public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
-    write(new MessageWrite() {
+  public final WriteResult writeData(ByteBuf chunk, boolean end) {
+    return write(new WritePromise(context) {
       @Override
       public void write() {
-        writeData0(chunk == null ? Unpooled.EMPTY_BUFFER : chunk, end, promise);
-      }
-      @Override
-      public void cancel(Throwable cause) {
-        promise.fail(cause);
+        writeData0(chunk == null ? Unpooled.EMPTY_BUFFER : chunk, end, this);
       }
     });
   }
@@ -687,7 +682,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
 
     @Override
-    protected void handleDispose(ByteBuf msg) {
+    protected void handleRelease(ByteBuf msg) {
       if (msg != END_OF_STREAM_2) {
         msg.release();
       }

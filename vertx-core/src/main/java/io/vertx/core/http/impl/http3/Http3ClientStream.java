@@ -26,6 +26,7 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
+import io.vertx.core.internal.streams.WriteResult;
 
 import java.util.Map;
 
@@ -123,7 +124,7 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, Buffer chunk, boolean end) {
+  public WriteResult writeHead(HttpRequestHead request, Buffer chunk, boolean end) {
     HttpRequestHeaders headers = ((HttpRequestHeaders)request.headers());
     headers.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
     headers.authority(request.authority);

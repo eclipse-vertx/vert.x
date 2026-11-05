@@ -19,6 +19,7 @@ import io.vertx.core.http.impl.WebSocketClientImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.ClientWebSocketInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -89,7 +90,7 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   }
 
   @Override
-  public ClientWebSocket exceptionHandler(Handler<Throwable> handler) {
+  public ClientWebSocketInternal exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     WebSocket w = ws;
     if (w != null) {
@@ -136,13 +137,13 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   }
 
   @Override
-  public ClientWebSocket setWriteQueueMaxSize(int maxSize) {
+  public ClientWebSocketInternal setWriteQueueMaxSize(int maxSize) {
     delegate().setWriteQueueMaxSize(maxSize);
     return this;
   }
 
   @Override
-  public ClientWebSocket drainHandler(Handler<Void> handler) {
+  public ClientWebSocketInternal drainHandler(Handler<Void> handler) {
     drainHandler = handler;
     WebSocket w = ws;
     if (w != null) {
@@ -212,37 +213,37 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   }
 
   @Override
-  public Future<Void> writeFrame(WebSocketFrame frame) {
+  public WriteResult writeFrame(WebSocketFrame frame) {
     return delegate().writeFrame(frame);
   }
 
   @Override
-  public Future<Void> writeFinalTextFrame(String text) {
+  public WriteResult writeFinalTextFrame(String text) {
     return delegate().writeFinalTextFrame(text);
   }
 
   @Override
-  public Future<Void> writeFinalBinaryFrame(Buffer data) {
+  public WriteResult writeFinalBinaryFrame(Buffer data) {
     return delegate().writeFinalBinaryFrame(data);
   }
 
   @Override
-  public Future<Void> writeBinaryMessage(Buffer data) {
+  public WriteResult writeBinaryMessage(Buffer data) {
     return delegate().writeBinaryMessage(data);
   }
 
   @Override
-  public Future<Void> writeTextMessage(String text) {
+  public WriteResult writeTextMessage(String text) {
     return delegate().writeTextMessage(text);
   }
 
   @Override
-  public Future<Void> writePing(Buffer data) {
+  public WriteResult writePing(Buffer data) {
     return delegate().writePing(data);
   }
 
   @Override
-  public Future<Void> writePong(Buffer data) {
+  public WriteResult writePong(Buffer data) {
     return delegate().writePong(data);
   }
 
@@ -317,7 +318,7 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   }
 
   @Override
-  public Future<Void> write(Buffer data) {
+  public WriteResult write(Buffer data) {
     return delegate().write(data);
   }
 

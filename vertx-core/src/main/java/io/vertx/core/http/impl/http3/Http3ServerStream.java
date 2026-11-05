@@ -30,6 +30,7 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
 
 /**
@@ -101,7 +102,7 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
   }
 
   @Override
-  public Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
+  public WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
     HttpResponseHeaders headers = (HttpResponseHeaders) head.headers;
     headers.status(head.statusCode);
     headers.prepare();
@@ -109,7 +110,7 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
   }
 
   @Override
-  public Future<Void> end(MultiMap headers) {
+  public WriteResult end(MultiMap headers) {
     return writeHeaders((HttpHeaders) headers, null, true);
   }
 

@@ -10,7 +10,11 @@
  */
 package io.vertx.core.internal.http;
 
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.internal.streams.WriteResult;
+import io.vertx.core.internal.streams.WriteStreamInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
 /**
@@ -18,11 +22,29 @@ import io.vertx.core.spi.metrics.ClientMetrics;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientRequestInternal extends HttpClientRequest {
+public interface HttpClientRequestInternal extends HttpClientRequest, WriteStreamInternal<Buffer> {
 
   /**
    * @return the request metric obtained from {@link ClientMetrics} for this request
    */
   Object metric();
+
+  @Override
+  WriteResult write(Buffer data);
+
+  @Override
+  WriteResult end(Buffer data);
+
+  @Override
+  WriteResult end();
+
+  @Override
+  HttpClientRequestInternal setWriteQueueMaxSize(int maxSize);
+
+  @Override
+  HttpClientRequestInternal drainHandler(Handler<Void> handler);
+
+  @Override
+  HttpClientRequestInternal exceptionHandler(Handler<Throwable> handler);
 
 }
