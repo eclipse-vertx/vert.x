@@ -26,6 +26,9 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.file.AsyncFileInternal;
+import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -49,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncFileImpl implements AsyncFile {
+public class AsyncFileImpl implements AsyncFileInternal {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 
@@ -59,14 +62,9 @@ public class AsyncFileImpl implements AsyncFile {
   private final AsynchronousFileChannel ch;
   private final ContextInternal context;
   private boolean closed;
-  private Runnable closedDeferred;
-  private long writesOutstanding;
-  private boolean overflow;
+  private final WriteQueue writeQueue;
   private Handler<Throwable> exceptionHandler;
-  private Handler<Void> drainHandler;
   private long writePos;
-  private int maxWrites = 128 * 1024;    // TODO - we should tune this for best performance
-  private int lwm = maxWrites / 2;
   private int readBufferSize = DEFAULT_READ_BUFFER_SIZE;
   private InboundBuffer<Buffer> queue;
   private Handler<Buffer> handler;
@@ -102,6 +100,7 @@ public class AsyncFileImpl implements AsyncFile {
       throw new FileSystemException(FileSystemImpl.getFileAccessErrorMessage("open", path), e);
     }
     this.context = context;
+    this.writeQueue = new WriteQueue(context);
     this.queue = new InboundBuffer<>(context, 0);
     queue.handler(buff -> {
       if (buff.length() > 0) {
@@ -147,78 +146,65 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public Future<Void> write(Buffer buffer, long position) {
-    Promise<Void> promise = context.promise();
-    doWrite(buffer, position, promise::handle);
-    return promise.future();
-  }
-
-  private synchronized void doWrite(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
+  public synchronized WriteResult write(Buffer buffer, long position) {
     Objects.requireNonNull(buffer, "buffer");
     Arguments.require(position >= 0, "position must be >= 0");
     check();
-    Handler<AsyncResult<Void>> wrapped = ar -> {
-      checkContext();
-      Runnable action;
-      synchronized (AsyncFileImpl.this) {
-        if (writesOutstanding == 0 && closedDeferred != null) {
-          action = closedDeferred;
-        } else {
-          if (overflow && writesOutstanding <= lwm) {
-            overflow = false;
-            Handler<Void> h = drainHandler;
-            if (h != null) {
-              action = () -> {
-                h.handle(null);
-              };
-            } else {
-              action = null;
-            }
-          } else {
-            action = null;
-          }
-        }
-      }
-      if (action != null) {
-        action.run();
-      }
+    // The result is bound to the caller context: signals and completions are delivered where the writer lives
+    FileWrite write = new FileWrite(vertx.getOrCreateContext(), buffer, position);
+    writeQueue.add(write);
+    return write;
+  }
 
-      if (ar.succeeded()) {
-        if (handler != null) {
-          handler.handle(ar);
-        }
+  /**
+   * A queued write: the element and the user result are the same object, carrying the buffer and its
+   * absolute file position, claimed at submission.
+   */
+  private class FileWrite extends WritePromise {
+
+    private final Buffer buffer;
+    private final long position;
+
+    FileWrite(ContextInternal context, Buffer buffer, long position) {
+      super(context);
+      this.buffer = buffer;
+      this.position = position;
+    }
+
+    @Override
+    public void write() {
+      ByteBuf buf = ((BufferInternal) buffer).getByteBuf();
+      if (buf.nioBufferCount() > 1) {
+        doWrite(buf.nioBuffers(), position, this::complete);
       } else {
-        if (handler != null) {
-          handler.handle(ar);
-        } else {
-          handleException(ar.cause());
-        }
+        ByteBuffer bb = buf.nioBuffer();
+        doWrite(bb, position, bb.limit(), this::complete);
       }
-    };
-    ByteBuf buf = ((BufferInternal)buffer).getByteBuf();
-    if (buf.nioBufferCount() > 1) {
-      doWrite(buf.nioBuffers(), position, wrapped);
-    } else {
-      ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, position, bb.limit(),  wrapped);
+    }
+
+    private void complete(AsyncResult<Void> ar) {
+      checkContext();
+      handle(ar);
     }
   }
 
   @Override
-  public synchronized Future<Void> write(Buffer buffer) {
-    Promise<Void> promise = context.promise();
+  public synchronized WriteResult write(Buffer buffer) {
+    Objects.requireNonNull(buffer, "buffer");
+    check();
     int length = buffer.length();
-    doWrite(buffer, writePos, promise::handle);
+    // The result is bound to the caller context: signals and completions are delivered where the writer lives
+    FileWrite write = new FileWrite(vertx.getOrCreateContext(), buffer, writePos);
     writePos += length;
-    return promise.future();
+    writeQueue.add(write);
+    return write;
   }
 
   @Override
-  public synchronized AsyncFile setWriteQueueMaxSize(int maxSize) {
+  public synchronized AsyncFileInternal setWriteQueueMaxSize(int maxSize) {
     Arguments.require(maxSize >= 2, "maxSize must be >= 2");
     check();
-    this.maxWrites = maxSize;
-    this.lwm = maxWrites / 2;
+    writeQueue.maxWrites = maxSize;
     return this;
   }
 
@@ -231,20 +217,20 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized boolean writeQueueFull() {
     check();
-    return overflow;
+    return !writeQueue.isWritable();
   }
 
   @Override
-  public synchronized AsyncFile drainHandler(Handler<Void> handler) {
+  public synchronized AsyncFileInternal drainHandler(Handler<Void> handler) {
     if (handler != null) {
       check();
     }
-    this.drainHandler = handler;
+    writeQueue.drainHandler = handler;
     return this;
   }
 
   @Override
-  public synchronized AsyncFile exceptionHandler(Handler<Throwable> handler) {
+  public synchronized AsyncFileInternal exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
       check();
     }
@@ -421,10 +407,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
     if (toWrite > 0) {
-      synchronized (this) {
-        writesOutstanding += toWrite;
-        overflow |= writesOutstanding >= maxWrites;
-      }
+      writeQueue.charge(toWrite);
       writeInternal(buff, position, handler);
     } else {
       handler.handle(Future.succeededFuture());
@@ -447,9 +430,7 @@ public class AsyncFileImpl implements AsyncFile {
         } else {
           // It's been fully written
           context.runOnContext((v) -> {
-            synchronized (AsyncFileImpl.this) {
-              writesOutstanding -= buff.limit();
-            }
+            writeQueue.refund(buff.limit());
             handler.handle(Future.succeededFuture());
           });
         }
@@ -458,9 +439,7 @@ public class AsyncFileImpl implements AsyncFile {
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
           context.runOnContext((v) -> {
-            synchronized (AsyncFileImpl.this) {
-              writesOutstanding -= buff.limit();
-            }
+            writeQueue.refund(buff.limit());
             handler.handle(Future.failedFuture(exc));
           });
         } else {
@@ -533,11 +512,7 @@ public class AsyncFileImpl implements AsyncFile {
 
     closed = true;
 
-    if (writesOutstanding == 0) {
-      doClose(handler);
-    } else {
-      closedDeferred = () -> doClose(handler);
-    }
+    context.runOnContext(v -> writeQueue.shutdown(() -> doClose(handler)));
   }
 
   @Override
