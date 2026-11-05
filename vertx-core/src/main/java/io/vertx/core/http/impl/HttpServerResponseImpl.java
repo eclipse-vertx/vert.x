@@ -378,10 +378,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private Future<Void> write(Buffer chunk, boolean end) {
-    Future<Void> future = write_(chunk, end && trailedMap == null);
+    MultiMap trailers = isContentAlwaysEmpty() ? null : trailedMap;
+    Future<Void> future = write_(chunk, end && trailers == null);
     if (end) {
-      if (trailedMap != null) {
-        future = stream.writeHeaders(trailedMap, true);
+      if (trailers != null) {
+        future = stream.writeHeaders(trailers, true);
       }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
