@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
@@ -25,6 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.HttpServerResponseInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
@@ -45,6 +47,8 @@ import static io.vertx.core.http.HttpHeaders.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class HttpServerResponseImpl implements HttpServerResponseInternal {
+
+  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
   private final HttpServerStream stream;
   private final HttpServerConnection conn;
@@ -429,6 +433,10 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       if (chunk != null) {
         bytesWritten += chunk.length();
+        if (isContentAlwaysEmpty()) {
+          // Suppressed chunk: write an empty buffer so the result remains sequenced with the other stream writes
+          chunk = EMPTY_BUFFER;
+        }
       }
       sendHeaders = prepareHeaders();
     }
@@ -437,6 +445,10 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     } else {
       return stream.write(chunk, end);
     }
+  }
+
+  private boolean isContentAlwaysEmpty() {
+    return requestMethod == HttpMethod.HEAD;
   }
 
   private boolean requiresContentLengthHeader() {
