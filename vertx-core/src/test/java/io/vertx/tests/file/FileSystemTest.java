@@ -19,6 +19,9 @@ import io.vertx.core.file.*;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.file.AsyncFileInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
@@ -38,6 +41,7 @@ import java.io.IOException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -1196,6 +1200,127 @@ public class FileSystemTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testWritePosAdvancesAtSubmission() {
+    String fileName = "some-file.dat";
+    Buffer chunk = Buffer.buffer(TestUtils.randomByteArray(100));
+    AsyncFile file = vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    Assert.assertEquals(0, file.getWritePos());
+    // The write position advances when the write is submitted, before it completes
+    file.write(chunk);
+    Assert.assertEquals(100, file.getWritePos());
+    file.write(chunk);
+    Assert.assertEquals(200, file.getWritePos());
+    file.close().await();
+  }
+
+  @Test
+  public void testSetWritePosRepositionsSubsequentWrites() throws Exception {
+    String fileName = "some-file.dat";
+    AsyncFile file = vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    // Sequence the overlapping writes: concurrent I/O on overlapping regions has no defined order
+    file.write(Buffer.buffer("aaaa")).await();
+    file.setWritePos(1);
+    file.write(Buffer.buffer("bb")).await();
+    Assert.assertEquals(3, file.getWritePos());
+    file.close().await();
+    byte[] readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
+    Assert.assertEquals("abba", Buffer.buffer(readBytes).toString());
+  }
+
+  @Test
+  public void testPositionalWriteDoesNotAdvanceWritePos() throws Exception {
+    String fileName = "some-file.dat";
+    AsyncFile file = vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    file.write(Buffer.buffer("aa")).await();
+    Assert.assertEquals(2, file.getWritePos());
+    // The explicit-position overload does not touch the stream write position
+    file.write(Buffer.buffer("cc"), 4).await();
+    Assert.assertEquals(2, file.getWritePos());
+    file.write(Buffer.buffer("aa")).await();
+    Assert.assertEquals(4, file.getWritePos());
+    file.close().await();
+    byte[] readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
+    Assert.assertEquals("aaaacc", Buffer.buffer(readBytes).toString());
+  }
+
+  @Test
+  public void testWritePosInitializedAtSizeOnAppend() throws Exception {
+    String fileName = "some-file.dat";
+    createFile(fileName, TestUtils.randomByteArray(123));
+    AsyncFile file = vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions().setAppend(true)).await();
+    Assert.assertEquals(123, file.getWritePos());
+    file.close().await();
+  }
+
+  @Test
+  public void testWriteAfterCloseFails() {
+    String fileName = "some-file.dat";
+    AsyncFile file = vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    file.write(Buffer.buffer("aa"));
+    file.close().await();
+    try {
+      file.write(Buffer.buffer("bb"));
+      Assert.fail();
+    } catch (IllegalStateException expected) {
+    }
+  }
+
+  @Test
+  public void testWriteResult() {
+    String fileName = "some-file.dat";
+    Buffer chunk = Buffer.buffer(TestUtils.randomByteArray(1024));
+    AsyncFileInternal file = (AsyncFileInternal) vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    while (true) {
+      WriteResult result = file.write(chunk);
+      if (!result.isWritable()) {
+        result.drainHandler(v -> {
+          testComplete();
+        });
+        break;
+      }
+    }
+    await();
+  }
+
+  @Test
+  public void testWriteResultCallerContext() {
+    String fileName = "some-file.dat";
+    Buffer chunk = Buffer.buffer(TestUtils.randomByteArray(1024));
+    AsyncFileInternal file = (AsyncFileInternal) vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    // The result is bound to the caller context, not the file context
+    Context writerContext = ((VertxInternal) vertx).createEventLoopContext();
+    writerContext.runOnContext(v -> {
+      while (true) {
+        WriteResult result = file.write(chunk);
+        result.onComplete(ar -> Assert.assertSame(writerContext, Vertx.currentContext()));
+        if (!result.isWritable()) {
+          result.drainHandler(v2 -> {
+            Assert.assertSame(writerContext, Vertx.currentContext());
+            testComplete();
+          });
+          break;
+        }
+      }
+    });
+    await();
+  }
+
+  @Test
+  public void testWriteResultFlushedOnClose() throws Exception {
+    String fileName = "some-file.dat";
+    Buffer chunk = Buffer.buffer(TestUtils.randomByteArray(1024));
+    AsyncFileInternal file = (AsyncFileInternal) vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).await();
+    List<Future<Void>> results = new ArrayList<>();
+    for (int i = 0;i < 32;i++) {
+      results.add(file.write(chunk));
+    }
+    // Close flushes the queued writes: every result succeeds
+    file.close().await();
+    Future.all(results).await();
+    Assert.assertEquals(32 * 1024, Files.readAllBytes(Paths.get(testDir + pathSep + fileName)).length);
   }
 
   @Test
