@@ -250,6 +250,8 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+            <!-- Netty resolver-dns assertion bug (DnsQueryContextManager), remove when fixed -->
+            <argLine>-da:io.netty.resolver.dns...</argLine>
             <additionalClasspathElements>
               <!-- Can we remove this one ??? -->
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
