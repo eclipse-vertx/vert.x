@@ -161,6 +161,16 @@ public abstract class ConnectionBase {
   }
 
   protected boolean handleException(Throwable t) {
+    reportException(t);
+    return true;
+  }
+
+  /**
+   * Report an exception to the exception handler, without any other effect such as closing the connection.
+   *
+   * @param t the exception to report
+   */
+  public final void reportException(Throwable t) {
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
@@ -180,7 +190,6 @@ public abstract class ConnectionBase {
         }
       }
     });
-    return true;
   }
 
   protected void handleClosed() {
