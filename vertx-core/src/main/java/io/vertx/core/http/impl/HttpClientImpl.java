@@ -66,6 +66,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final EndpointResolverInternal originResolver;
   private final boolean followAlternativeServices;
   private final boolean verifyHost;
+  private final boolean validateUri;
   private final boolean defaultSsl;
   private final String defaultHost;
   private final int defaultPort;
@@ -88,6 +89,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  Duration resolverKeepAliveTimeout,
                  Duration resolverMaxKeepAlive,
                  boolean verifyHost,
+                 boolean validateUri,
                  boolean defaultSsl,
                  String defaultHost,
                  int defaultPort,
@@ -117,6 +119,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.redirectHandler = Objects.requireNonNull(redirectHandler);
     this.followAlternativeServices = followAlternativeServices;
     this.verifyHost = verifyHost;
+    this.validateUri = validateUri;
     this.defaultSsl = defaultSsl;
     this.defaultHost = defaultHost;
     this.defaultPort = defaultPort;
@@ -397,7 +400,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     checkClosed();
     HttpConnectParams params = new HttpConnectParams(protocols, sslOptions, proxyOptions, useSSL);
     return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
-      .map(conn -> new UnpooledHttpClientConnection(conn).init());
+      .map(conn -> new UnpooledHttpClientConnection(conn, validateUri).init());
   }
 
   private RequestOptions prepare(RequestOptions request) {
@@ -435,6 +438,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
+    if (validateUri && request.getURI() != null) {
+      try {
+        HttpUtils.validateRequestURI(request.getURI());
+      } catch (IllegalArgumentException e) {
+        return vertx.getOrCreateContext().failedFuture(e);
+      }
+    }
     request = prepare(request);
     Future<ConnectionObtainedResult> fut = doRequest(request);
     return toRequest(request.getMethod(), request.getURI(), request.getHeaders(), request.getTraceOperation(), request.getIdleTimeout(), request.getFollowRedirects(), fut);
@@ -831,7 +841,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   HttpClientRequestImpl createRequest(HostAndPort authority, HttpConnection connection, HttpClientStream stream, RequestOptions options) {
-    HttpClientRequestImpl request = new HttpClientRequestImpl(authority, connection, stream);
+    HttpClientRequestImpl request = new HttpClientRequestImpl(authority, connection, stream, validateUri);
     request.init(options);
     request.maxRedirectBufferSize(maxRedirectBufferedSize);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;

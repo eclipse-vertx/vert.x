@@ -62,6 +62,11 @@ public class HttpClientOptionsConverter {
             obj.setVerifyHost((Boolean)member.getValue());
           }
           break;
+        case "validateUri":
+          if (member.getValue() instanceof Boolean) {
+            obj.setValidateUri((Boolean)member.getValue());
+          }
+          break;
         case "decompressionSupported":
           if (member.getValue() instanceof Boolean) {
             obj.setDecompressionSupported((Boolean)member.getValue());
@@ -196,6 +201,7 @@ public class HttpClientOptionsConverter {
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
     json.put("verifyHost", obj.isVerifyHost());
+    json.put("validateUri", obj.isValidateUri());
     json.put("decompressionSupported", obj.isDecompressionSupported());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());

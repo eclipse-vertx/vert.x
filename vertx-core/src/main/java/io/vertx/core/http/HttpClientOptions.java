@@ -201,6 +201,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private Http2ClientConfig http2Config;
   private boolean verifyHost;
   private boolean decompressionSupported;
+  private boolean validateUri;
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
@@ -244,6 +245,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2Config = new Http2ClientConfig(other.http2Config);
     this.verifyHost = other.isVerifyHost();
     this.decompressionSupported = other.decompressionSupported;
+    this.validateUri = other.validateUri;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
@@ -284,6 +286,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2Config = new Http2ClientConfig();
     verifyHost = DEFAULT_VERIFY_HOST;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
+    validateUri = HttpClientConfig.DEFAULT_VALIDATE_URI;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
@@ -686,6 +689,26 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setVerifyHost(boolean verifyHost) {
     this.verifyHost = verifyHost;
+    return this;
+  }
+
+  /**
+   * Is request URI validation enabled?
+   *
+   * @return {@code true} if enabled
+   */
+  public boolean isValidateUri() {
+    return validateUri;
+  }
+
+  /**
+   * Set whether the client validates request URIs, rejecting URIs that cannot be safely encoded in an HTTP message.
+   *
+   * @param validateUri {@code true} if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setValidateUri(boolean validateUri) {
+    this.validateUri = validateUri;
     return this;
   }
 

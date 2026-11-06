@@ -20,6 +20,8 @@ public interface HttpClientConfigurator {
   HttpClientConfigurator setIdleTimeout(Duration timeout);
   HttpClientConfigurator setKeepAliveTimeout(Duration timeout);
   HttpClientConfigurator setDecompressionSupported(boolean decompressionSupported);
+  HttpClientConfigurator setValidateUri(boolean validateUri);
+  HttpClientConfigurator setMultiplexingLimit(int limit);
   HttpClientConfigurator setLocalAddress(String localAddress);
   HttpClientConfigurator setLogActivity(boolean logActivity);
   HttpClientConfigurator setMetricsName(String name);

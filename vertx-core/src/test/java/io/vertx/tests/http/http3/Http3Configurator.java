@@ -201,6 +201,16 @@ public class Http3Configurator implements HttpConfigurator {
         throw new UnsupportedOperationException();
       }
       @Override
+      public HttpClientConfigurator setValidateUri(boolean validateUri) {
+        config.setValidateUri(validateUri);
+        return this;
+      }
+      @Override
+      public HttpClientConfigurator setMultiplexingLimit(int limit) {
+        http3Config.setMultiplexingLimit(limit);
+        return this;
+      }
+      @Override
       public HttpClientConfigurator setLocalAddress(String localAddress) {
         throw new UnsupportedOperationException();
       }
