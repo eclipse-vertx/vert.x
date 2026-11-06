@@ -2172,6 +2172,26 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testSetChunked() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertFalse(resp.isChunked());
+      resp.setChunked(true);
+      assertTrue(resp.isChunked());
+      resp.setChunked(false);
+      assertFalse(resp.isChunked());
+      resp.end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await(20, TimeUnit.SECONDS);
+  }
+
+  @Test
   public void testRemoteAddress() throws Exception {
     server.requestHandler(req -> {
       if (testAddress.isInetSocket()) {

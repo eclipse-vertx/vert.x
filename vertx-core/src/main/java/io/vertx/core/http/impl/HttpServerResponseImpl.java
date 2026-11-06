@@ -179,7 +179,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
   public HttpServerResponse setChunked(boolean chunked) {
     synchronized (conn) {
       checkHeadWritten();
-      this.chunked = true;
+      this.chunked = chunked;
       return this;
     }
   }
