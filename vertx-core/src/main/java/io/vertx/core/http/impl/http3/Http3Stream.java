@@ -113,6 +113,10 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     }
   }
 
+  protected final boolean isHeadersReceived() {
+    return headersReceived;
+  }
+
   protected void handleEnd() {
     trailersReceived = true;
     if (observer != null) {
@@ -215,6 +219,9 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       stream.shutdownHandler(null);
       cancel();
       stream.close();
+    });
+    stream.exceptionHandler(err -> {
+      handleException(err);
     });
     stream.resetHandler(code -> {
       handleReset(code);

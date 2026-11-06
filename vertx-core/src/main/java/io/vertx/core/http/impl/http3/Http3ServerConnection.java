@@ -75,7 +75,12 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
       new ChannelInitializer<QuicStreamChannel>() {
         @Override
         protected void initChannel(QuicStreamChannel ch) {
-          // Nothing to do
+          ChannelPipeline streamPipeline = ch.pipeline();
+          if (streamPipeline.get("handler") != null) {
+            streamPipeline.addBefore("handler", null, Http3StreamExceptionHandler.INSTANCE);
+          } else {
+            streamPipeline.addLast(Http3StreamExceptionHandler.INSTANCE);
+          }
         }
       },
       new ChannelInitializer<QuicStreamChannel>() {

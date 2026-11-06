@@ -101,6 +101,24 @@ public class Http3ServerTest extends VertxTestBase {
   }
 
   @Test
+  public void testMalformedRequestStreamError() throws Exception {
+    server.requestHandler(req -> Assert.fail());
+    server.listen(8443, "localhost").await();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
+    CompletableFuture<Long> resetCode = new CompletableFuture<>();
+    stream.resetHandler(resetCode::complete);
+    // A request without authority is malformed: the codec rejects it and the stream must terminate
+    // with an H3_MESSAGE_ERROR stream error, not a clean FIN
+    DefaultHttp3Headers headers = new DefaultHttp3Headers();
+    headers.method("GET");
+    headers.scheme("https");
+    headers.path("/");
+    stream.write(headers, true, true);
+    Assert.assertEquals(Http3ErrorCode.H3_MESSAGE_ERROR.code(), (long) resetCode.get(20, TimeUnit.SECONDS));
+  }
+
+  @Test
   public void testPost() throws Exception{
 
     server.requestHandler(req -> {
