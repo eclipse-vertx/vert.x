@@ -47,8 +47,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
   private long currentTimeoutMs;
   private long lastDataReceived;
   protected Throwable reset;
+  private final boolean validateUri;
 
-  HttpClientRequestBase(HostAndPort authority, HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
+  HttpClientRequestBase(HostAndPort authority, HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri, boolean validateUri) {
+    this.validateUri = validateUri;
     this.connection = connection;
     this.stream = stream;
     this.responsePromise = responsePromise;
@@ -133,6 +135,9 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
   @Override
   public synchronized HttpClientRequest setURI(String uri) {
     Objects.requireNonNull(uri);
+    if (validateUri) {
+      HttpUtils.validateRequestURI(uri);
+    }
     this.uri = uri;
     // invalidate cached values
     this.path = null;

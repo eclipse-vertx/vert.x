@@ -2490,20 +2490,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testClientInvalidHttpMessageFromNonEventLoopThread() throws Exception {
-    server.requestHandler(req -> Assert.fail());
-    startServer(testAddress);
-    HttpClientRequest request = client
-      .request(new RequestOptions(requestOptions).setURI("/a\rb"))
-      .await();
-    try {
-      request.send().await(20, TimeUnit.SECONDS);
-      Assert.fail();
-    } catch (IllegalArgumentException expected) {
-    }
-  }
-
-  @Test
   public void testClientMaxInitialLineLengthOption(Checkpoint checkpoint) {
 
     int maxInitialLineLength = 3000;

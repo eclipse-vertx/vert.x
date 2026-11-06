@@ -701,6 +701,101 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testIllegalRequestURIDoesNotDepleteConnectionPool() throws Exception {
+    List<String> received = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      received.add(req.uri());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.close().await();
+    client = config.forClient()
+      .setMultiplexingLimit(1)
+      .create(vertx, new PoolOptions().setHttp1MaxSize(1).setHttp2MaxSize(1).setHttp3MaxSize(1));
+    // Warm-up request establishing the pooled connection
+    client.request(requestOptions)
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .await(10, TimeUnit.SECONDS);
+    try {
+      client.request(new RequestOptions(requestOptions).setURI("/example/ path"))
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .await(10, TimeUnit.SECONDS);
+      fail("Request with an illegal URI should fail");
+    } catch (IllegalArgumentException expected) {
+    }
+    // The pooled connection must remain usable
+    client.request(requestOptions)
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .await(10, TimeUnit.SECONDS);
+    assertEquals(2, received.size());
+  }
+
+  @Test
+  public void testIllegalRequestURIValidationDisabled() throws Exception {
+    List<String> received = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(req -> {
+      received.add(req.uri());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.close().await();
+    client = config.forClient()
+      .setValidateUri(false)
+      .create(vertx, new PoolOptions().setHttp1MaxSize(1).setHttp2MaxSize(1).setHttp3MaxSize(1));
+    int sc = client.request(new RequestOptions(requestOptions).setURI("/example/ path"))
+      .compose(req -> req.send().map(HttpClientResponse::statusCode))
+      .await(10, TimeUnit.SECONDS);
+    if (sc == 200) {
+      // The server accepted the raw URI (HTTP/2, HTTP/3)
+      assertEquals(List.of("/example/ path"), received);
+    } else {
+      // The server rejected the raw request line (HTTP/1.1)
+      assertEquals(400, sc);
+      assertEquals(List.of(), received);
+    }
+    // The pooled connection must remain usable
+    client.request(requestOptions)
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .await(10, TimeUnit.SECONDS);
+    assertEquals(DEFAULT_TEST_URI, received.get(received.size() - 1));
+  }
+
+  @Test
+  public void testIllegalRequestURISetter() throws Exception {
+    server.requestHandler(req -> req.response().end(req.uri()));
+    startServer(testAddress);
+    Buffer body = client.request(requestOptions)
+      .compose(req -> {
+        try {
+          req.setURI("/example/ path");
+          fail("Setting an illegal URI should fail");
+        } catch (IllegalArgumentException expected) {
+        }
+        return req.send().compose(HttpClientResponse::body);
+      })
+      .await(10, TimeUnit.SECONDS);
+    assertEquals(DEFAULT_TEST_URI, body.toString());
+  }
+
+  @Test
+  public void testIllegalRequestURIConnectionRequest() throws Exception {
+    server.requestHandler(req -> req.response().end());
+    startServer(testAddress);
+    HttpClientConnection conn = client.connect(new HttpConnectOptions().setServer(testAddress)).await();
+    try {
+      conn.request(new RequestOptions(requestOptions).setURI("/example/ path"))
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .await(10, TimeUnit.SECONDS);
+      fail("Request with an illegal URI should fail");
+    } catch (IllegalArgumentException expected) {
+    }
+    // The connection must remain usable
+    conn.request(requestOptions)
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .await(10, TimeUnit.SECONDS);
+  }
+
+  @Test
   public void testParams() throws Exception {
     server.requestHandler(req -> {
       MultiMap params1 = req.params(true);

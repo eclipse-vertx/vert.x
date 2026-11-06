@@ -35,6 +35,11 @@ public class HttpClientConfig {
    */
   public static final boolean DEFAULT_FOLLOW_ALTERNATIVE_SERVICES = false;
 
+  /**
+   * URI validation of client requests = {@code true}
+   */
+  public static final boolean DEFAULT_VALIDATE_URI = true;
+
   private static List<HttpVersion> toSupportedVersion(HttpVersion version) {
     switch (version) {
       case HTTP_1_0:
@@ -77,6 +82,7 @@ public class HttpClientConfig {
   private Http3ClientConfig http3Config;
   private boolean verifyHost;
   private boolean decompressionEnabled;
+  private boolean validateUri;
   private String defaultHost;
   private int defaultPort;
   private ClientRedirectConfig redirectConfig;
@@ -96,6 +102,7 @@ public class HttpClientConfig {
     this.http3Config = null;
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
     this.decompressionEnabled = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
+    this.validateUri = DEFAULT_VALIDATE_URI;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.redirectConfig = null;
@@ -116,6 +123,7 @@ public class HttpClientConfig {
     this.http3Config = other.http3Config != null ? new Http3ClientConfig(other.http3Config) : null;
     this.verifyHost = other.isVerifyHost();
     this.decompressionEnabled = other.decompressionEnabled;
+    this.validateUri = other.validateUri;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.redirectConfig = other.redirectConfig != null ? new ClientRedirectConfig(other.redirectConfig) : null;
@@ -169,6 +177,7 @@ public class HttpClientConfig {
     this.http3Config = new Http3ClientConfig();
     this.verifyHost = options.isVerifyHost();
     this.decompressionEnabled = options.isDecompressionSupported();
+    this.validateUri = options.isValidateUri();
     this.defaultHost = options.getDefaultHost();
     this.defaultPort = options.getDefaultPort();
     this.redirectConfig = redirectConfig;
@@ -421,6 +430,26 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setDecompressionEnabled(boolean decompressionEnabled) {
     this.decompressionEnabled = decompressionEnabled;
+    return this;
+  }
+
+  /**
+   * Is request URI validation enabled?
+   *
+   * @return {@code true} if enabled
+   */
+  public boolean isValidateUri() {
+    return validateUri;
+  }
+
+  /**
+   * Set whether the client validates request URIs, rejecting URIs that cannot be safely encoded in an HTTP message.
+   *
+   * @param validateUri {@code true} if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setValidateUri(boolean validateUri) {
+    this.validateUri = validateUri;
     return this;
   }
 
