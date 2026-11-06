@@ -2468,6 +2468,8 @@ public class Http1xTest extends HttpTest {
   public void testClientInvalidHttpMessage() throws Exception {
     server.requestHandler(req -> Assert.fail());
     startServer(testAddress);
+    client.close().await();
+    client = config.forClient().setValidateUri(true).create(vertx);
     try {
       client
         .request(new RequestOptions(requestOptions).setURI("/a\rb"))

@@ -39,12 +39,14 @@ import java.util.Map;
 public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClientConnection {
 
   private final HttpClientConnection actual;
+  private final boolean validateUri;
   private final Deque<PromiseInternal<HttpClientStream>> pending;
   private long concurrency;
   private long inflight;
 
-  public UnpooledHttpClientConnection(HttpClientConnection actual) {
+  public UnpooledHttpClientConnection(HttpClientConnection actual, boolean validateUri) {
     this.actual = actual;
+    this.validateUri = validateUri;
     this.concurrency = actual.concurrency();
     this.pending = new ArrayDeque<>();
   }
@@ -221,6 +223,13 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
    * @return a future notified with the created request
    */
   public Future<HttpClientRequest> request(ContextInternal context, RequestOptions options) {
+    if (validateUri && options != null && options.getURI() != null) {
+      try {
+        HttpUtils.validateRequestURI(options.getURI());
+      } catch (IllegalArgumentException e) {
+        return context.failedFuture(e);
+      }
+    }
     Future<HttpClientStream> future;
     synchronized (this) {
       if (inflight >= concurrency) {
@@ -241,7 +250,7 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
       authority = actual.authority();
     }
     return future.map(stream -> {
-      HttpClientRequestImpl request = new HttpClientRequestImpl(authority, this, stream);
+      HttpClientRequestImpl request = new HttpClientRequestImpl(authority, this, stream, validateUri);
       stream.closeHandler(this::checkPending);
       if (options != null) {
         request.init(options);

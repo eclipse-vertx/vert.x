@@ -63,9 +63,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private String traceOperation;
   private int maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
   private List<Buffer> bodyBuffer;
-
-  public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream) {
-    super(authority, connection, stream, stream.context().promise(), HttpMethod.GET, "/");
+  public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream, boolean validateUri) {
+    super(authority, connection, stream, stream.context().promise(), HttpMethod.GET, "/", validateUri);
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();

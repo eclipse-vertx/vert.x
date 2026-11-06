@@ -77,6 +77,16 @@ public interface HttpConfigurator {
           return this;
         }
         @Override
+        public HttpClientConfigurator setValidateUri(boolean validateUri) {
+          options.setValidateUri(validateUri);
+          return this;
+        }
+        @Override
+        public HttpClientConfigurator setMultiplexingLimit(int limit) {
+          options.getHttp2Config().setMultiplexingLimit(limit);
+          return this;
+        }
+        @Override
         public HttpClientConfigurator setLocalAddress(String localAddress) {
           options.setLocalAddress(localAddress);
           return this;
