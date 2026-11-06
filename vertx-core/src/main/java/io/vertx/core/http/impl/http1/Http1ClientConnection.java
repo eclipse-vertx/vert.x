@@ -213,7 +213,15 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     boolean chunked,
     ByteBuf buf,
     boolean end) {
-    HttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), method.toNetty(), uri, false);
+    HttpRequest request = new DefaultHttpRequest(
+      HttpUtils.toNettyHttpVersion(version),
+      method.toNetty(),
+      uri,
+      DefaultHttpHeadersFactory
+        .headersFactory()
+        .withValidation(false)
+        .newHeaders(),
+      false);
     HttpHeaders headers = request.headers();
     if (headerMap != null) {
       for (Map.Entry<String, String> header : headerMap) {

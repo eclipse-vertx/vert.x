@@ -211,6 +211,18 @@ public final class HttpUtils {
   }
 
   /**
+   * Validate that the request {@code uri} can be safely encoded in an HTTP message.
+   *
+   * @param uri the URI to validate
+   * @throws IllegalArgumentException when the URI contains illegal characters
+   */
+  public static void validateRequestURI(String uri) {
+    if (!HttpUtil.isEncodingSafeStartLineToken(uri)) {
+      throw new IllegalArgumentException("The request URI contains illegal characters: " + uri);
+    }
+  }
+
+  /**
    * Resolve an URI reference as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>
    */
   public static URI resolveURIReference(String base, String ref) throws URISyntaxException {

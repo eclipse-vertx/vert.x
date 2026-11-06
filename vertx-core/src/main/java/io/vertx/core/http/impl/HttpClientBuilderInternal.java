@@ -182,6 +182,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       resolverConfig.getKeepAliveTimeout(),
       resolverConfig.getMaxKeepAlive(),
       config.isVerifyHost(),
+      config.isValidateUri(),
       config.isSsl(),
       config.getDefaultHost(),
       config.getDefaultPort(),
@@ -211,6 +212,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       Duration resolverKeepAlive,
       Duration resolverMaxTtl,
       boolean verifyHost,
+      boolean validateUri,
       boolean defaultSsl,
       String defaultHost,
       int defaultPort,
@@ -224,7 +226,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       HttpClientConfig config,
       HttpClientOptions options) {
       super(vertx, resolver, redirectHandler, httpMetrics, poolOptions, defaultProxyOptions, nonProxyHosts, loadBalancer,
-        followAlternativeServices, resolverKeepAlive, resolverMaxTtl, verifyHost, defaultSsl, defaultHost, defaultPort,
+        followAlternativeServices, resolverKeepAlive, resolverMaxTtl, verifyHost, validateUri, defaultSsl, defaultHost, defaultPort,
         maxRedirects, maxRedirectBufferSize, versions, sslOptions, connectHandler, tcpTransport, quicTransport);
       this.config = config;
       this.options = options;
