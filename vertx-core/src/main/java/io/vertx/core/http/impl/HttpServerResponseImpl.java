@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
@@ -27,6 +28,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.UncloseableChunkedNioFile;
@@ -45,6 +47,8 @@ import static io.vertx.core.http.HttpHeaders.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class HttpServerResponseImpl implements HttpServerResponse {
+
+  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
   private final HttpServerStream stream;
   private final HttpServerConnection conn;
@@ -174,7 +178,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse setChunked(boolean chunked) {
     synchronized (conn) {
       checkHeadWritten();
-      this.chunked = true;
+      this.chunked = chunked;
       return this;
     }
   }
@@ -374,10 +378,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private Future<Void> write(Buffer chunk, boolean end) {
-    Future<Void> future = write_(chunk, end && trailedMap == null);
+    MultiMap trailers = isContentAlwaysEmpty() ? null : trailedMap;
+    Future<Void> future = write_(chunk, end && trailers == null);
     if (end) {
-      if (trailedMap != null) {
-        future = stream.writeHeaders(trailedMap, true);
+      if (trailers != null) {
+        future = stream.writeHeaders(trailers, true);
       }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
@@ -401,6 +406,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (end && !headWritten && requiresContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
       }
+      if (chunk != null && isContentAlwaysEmpty()) {
+        // Suppressed chunk: write an empty buffer so the result remains sequenced with the other stream writes
+        chunk = EMPTY_BUFFER;
+      }
       sendHeaders = prepareHeaders();
     }
     if (sendHeaders) {
@@ -408,6 +417,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } else {
       return stream.writeChunk(chunk, end);
     }
+  }
+
+  private boolean isContentAlwaysEmpty() {
+    return requestMethod == HttpMethod.HEAD
+      || status == HttpResponseStatus.NO_CONTENT
+      || status == HttpResponseStatus.RESET_CONTENT
+      || status == HttpResponseStatus.NOT_MODIFIED
+      || status.codeClass() == HttpStatusClass.INFORMATIONAL;
   }
 
   private boolean requiresContentLengthHeader() {
@@ -430,14 +447,17 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (cookies != null) {
         setCookies();
       }
+      // Connection-specific headers are forbidden on HTTP/2 (RFC 9113 8.2.2) and HTTP/3 (RFC 9114 4.2)
+      headersMap.remove(io.vertx.core.http.HttpHeaders.CONNECTION);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.KEEP_ALIVE);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.PROXY_CONNECTION);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.UPGRADE);
+      headersMap.remove(io.vertx.core.http.HttpHeaders.TE);
       // Sanitize
-      if (requestMethod == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
-        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
-      } else if (status == HttpResponseStatus.RESET_CONTENT) {
-        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
+      if (status == HttpResponseStatus.RESET_CONTENT) {
         headersMap.set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, "0");
       } else if (status.codeClass() == HttpStatusClass.INFORMATIONAL || status == HttpResponseStatus.NO_CONTENT) {
-        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
         headersMap.remove(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
       }
       headWritten = true;
@@ -644,7 +664,15 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     checkSendHeaders();
     Promise<Void> promise = context.promise();
     ended = true;
-    stream.sendFile(file, promise);
+    if (isContentAlwaysEmpty()) {
+      try {
+        file.close();
+      } catch (Exception ignore) {
+      }
+      stream.writeChunk(null, true).onComplete(promise);
+    } else {
+      stream.sendFile(file, promise);
+    }
     Future<Void> future = promise.future();
     Handler<Void> bodyEndHandler = this.bodyEndHandler;
     if (bodyEndHandler != null) {

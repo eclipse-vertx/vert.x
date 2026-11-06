@@ -1,13 +1,28 @@
 package io.vertx.tests.http.http3;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http3.Http3;
+import io.netty.handler.codec.http3.Http3DataFrame;
 import io.netty.handler.codec.http3.Http3ErrorCode;
+import io.netty.handler.codec.http3.Http3HeadersFrame;
+import io.netty.handler.codec.http3.Http3RequestStreamInboundHandler;
+import io.netty.handler.codec.http3.Http3ServerConnectionHandler;
+import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.internal.net.QuicConnectionInternal;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.QuicServer;
+import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.quic.QuicConnectionHandler;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -15,10 +30,13 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class Http3ClientTest extends VertxTestBase {
 
@@ -119,6 +137,52 @@ public class Http3ClientTest extends VertxTestBase {
 
     Assert.assertEquals(1, trailers.size());
     Assert.assertEquals("trailer_value", trailers.get("trailer_key"));
+  }
+
+  @Test
+  public void testResponseStreamEndedWithoutResponseHead() {
+    ServerSSLOptions rawServerSslOptions = new ServerSSLOptions()
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+      .setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
+    // Same QUIC configuration as the vert.x HTTP/3 server default
+    QuicServerConfig rawServerConfig = new HttpServerConfig().getQuicConfig();
+    QuicServer rawServer = vertx.createQuicServer(rawServerConfig, rawServerSslOptions);
+    rawServer.connectHandler(conn -> {
+      ChannelPipeline pipeline = ((QuicConnectionInternal) conn).channelHandlerContext().pipeline();
+      pipeline.remove(QuicConnectionHandler.class);
+      pipeline.addLast(new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
+        @Override
+        protected void initChannel(QuicStreamChannel ch) {
+          ch.pipeline().addLast(new Http3RequestStreamInboundHandler() {
+            @Override
+            protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
+              ReferenceCountUtil.release(frame);
+            }
+            @Override
+            protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
+              ReferenceCountUtil.release(frame);
+            }
+            @Override
+            protected void channelInputClosed(ChannelHandlerContext ctx) {
+              // End the stream without sending a response
+              ((QuicStreamChannel) ctx.channel()).shutdownOutput();
+            }
+          });
+        }
+      }));
+    });
+    rawServer.bind(SocketAddress.inetSocketAddress(8443, "localhost")).await();
+    try {
+      HttpClientConnection connection = client.connect(new HttpConnectOptions()
+        .setHost("localhost")
+        .setPort(8443)).await();
+      assertThatThrownBy(() -> connection.request(HttpMethod.GET, 8443, "localhost", "/")
+        .compose(HttpClientRequest::send)
+        .await(20, TimeUnit.SECONDS))
+        .isInstanceOf(HttpClosedException.class);
+    } finally {
+      rawServer.close().await();
+    }
   }
 
   @Test
