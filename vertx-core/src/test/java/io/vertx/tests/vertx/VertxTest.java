@@ -39,6 +39,7 @@ import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -473,6 +474,19 @@ public class VertxTest extends VertxTestBase {
       vertx
         .close()
         .await(20, TimeUnit.SECONDS);
+    }
+  }
+
+  @Test
+  public void testExecuteBlockingOnCollectedSharedWorkerExecutor() throws Exception {
+    VertxInternal vertx = (VertxInternal) vertx();
+    WorkerExecutor executor = vertx.createSharedWorkerExecutor("CollectedTest");
+    vertx.close().await(20, TimeUnit.SECONDS);
+    runGC();
+    try {
+      executor.executeBlocking(() -> null);
+      Assert.fail();
+    } catch (RejectedExecutionException expected) {
     }
   }
 
