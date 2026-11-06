@@ -109,6 +109,10 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     }
   }
 
+  protected final boolean isHeadersReceived() {
+    return headReceived;
+  }
+
   protected void handleEnd() {
     inboundReceived = true;
     if (observer != null) {
