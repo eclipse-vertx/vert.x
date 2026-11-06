@@ -376,6 +376,6 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
-      .await();
+      .await(20, TimeUnit.SECONDS);
   }
 }
