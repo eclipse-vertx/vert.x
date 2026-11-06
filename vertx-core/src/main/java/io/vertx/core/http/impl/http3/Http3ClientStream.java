@@ -96,7 +96,12 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
   @Override
   protected void handleEnd() {
     endReceived = true;
-    super.handleEnd();
+    if (isHeadersReceived()) {
+      super.handleEnd();
+    } else {
+      // The stream ended before the response head was received
+      handleException(HttpUtils.STREAM_CLOSED_EXCEPTION);
+    }
   }
 
   @Override
