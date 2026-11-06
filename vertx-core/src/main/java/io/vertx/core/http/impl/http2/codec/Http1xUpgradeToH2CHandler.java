@@ -27,6 +27,8 @@ import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
 
+import java.util.Locale;
+
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -110,7 +112,9 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
               request.headers().remove("host");
               request.headers().forEach(header -> {
                 if (!HttpHeaderValidationUtil.isConnectionHeader(header.getKey(), true)) {
-                  headers.add(header.getKey().toLowerCase(), header.getValue());
+                  // Locale.ROOT: header names are ASCII tokens and must not follow the JVM default locale
+          // (under tr-TR "If-None-Match".toLowerCase() would be "ıf-none-match")
+          headers.add(header.getKey().toLowerCase(Locale.ROOT), header.getValue());
                 }
               });
               ctx.fireChannelRead(new DefaultHttp2HeadersFrame(headers, false));
