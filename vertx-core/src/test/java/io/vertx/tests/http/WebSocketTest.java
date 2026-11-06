@@ -1765,6 +1765,45 @@ public class WebSocketTest extends VertxTestBase2 {
   }
 
   @Test
+  public void testHandshakeIdleTimeout(Checkpoint checkpoint) {
+    testHandshakeIdleTimeout(new WebSocketClientOptions().setIdleTimeout(100), checkpoint);
+  }
+
+  @Test
+  public void testHandshakeReadIdleTimeout(Checkpoint checkpoint) {
+    testHandshakeIdleTimeout(new WebSocketClientOptions().setReadIdleTimeout(100), checkpoint);
+  }
+
+  @Test
+  public void testHandshakeWriteIdleTimeout(Checkpoint checkpoint) {
+    testHandshakeIdleTimeout(new WebSocketClientOptions().setWriteIdleTimeout(100), checkpoint);
+  }
+
+  private void testHandshakeIdleTimeout(WebSocketClientOptions clientOptions, Checkpoint checkpoint) {
+    NetServer server = vertx.createNetServer()
+      .connectHandler(so -> {
+        // Accept the connection without responding to the WebSocket handshake.
+      })
+      .listen(0, DEFAULT_HTTP_HOST)
+      .await();
+    try {
+      client = vertx.createWebSocketClient(clientOptions.setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+      client.connect(new WebSocketConnectOptions()
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(server.actualPort())
+        .setURI("/")
+        .setTimeout(0))
+        .onComplete(TestUtils.onFailure(err -> {
+          assertEquals(WebSocketHandshakeException.class, err.getClass());
+          checkpoint.succeed();
+        }));
+      checkpoint.awaitSuccess();
+    } finally {
+      server.close().await();
+    }
+  }
+
+  @Test
   public void testHandshakeTimeoutFires(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     NetServer server = vertx.createNetServer()
       .connectHandler(so -> checkpoint2.succeed())
