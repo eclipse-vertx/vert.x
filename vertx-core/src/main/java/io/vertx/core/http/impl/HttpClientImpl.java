@@ -227,10 +227,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           } else {
             initialPoolKind = protocol == HttpVersion.HTTP_1_1 || protocol == HttpVersion.HTTP_1_0 ? 0 : 1;
           }
-          return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http1MaxSize, http2MaxSize, maxLifetime, initialPoolKind, params, contextProvider);
+          return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http1MaxSize, http2MaxSize, maxLifetime, initialPoolKind, poolOptions.getConnectionSelection(), params, contextProvider);
         } else {
           int http3MaxSize = poolOptions.getHttp3MaxSize();
-          return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http3MaxSize, maxLifetime, params, contextProvider);
+          return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http3MaxSize, maxLifetime, poolOptions.getConnectionSelection(), params, contextProvider);
         }
       };
       return new SharedHttpClientConnectionGroup(

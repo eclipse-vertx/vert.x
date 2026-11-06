@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.http.ConnectionSelection;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
@@ -57,6 +58,21 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
             selected = pooled;
           }
         }
+      }
+    }
+    return selected;
+  };
+
+  /**
+   * Least requests pool selector.
+   */
+  private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LEAST_REQUESTS_SELECTOR = (waiter, connections) -> {
+    int size = connections.size();
+    PoolConnection<HttpClientConnection> selected = null;
+    for (int i = 0; i < size; i++) {
+      PoolConnection<HttpClientConnection> pooled = connections.get(i);
+      if (pooled.available() > 0 && (selected == null || pooled.usage() < selected.usage())) {
+        selected = pooled;
       }
     }
     return selected;
@@ -193,6 +209,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     private final HttpConnectParams connectParams;
     private final ConnectionPool<HttpClientConnection> pool;
     private final int poolKind;
+    private int roundRobinIndex;
 
     Pool(SharedHttpClientConnectionGroup owner,
                 HttpClientTransport connector,
@@ -201,6 +218,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
                 int http2MaxSize,
                 long maxLifetimeMillis,
                 int initialPoolKind,
+                ConnectionSelection connectionSelection,
                 HttpConnectParams connectParams,
                 Function<ContextInternal,
                 ContextInternal> contextProvider) {
@@ -211,7 +229,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
       this.poolKind = initialPoolKind;
       this.pool = ConnectionPool
         .pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
-        .connectionSelector(LIFO_SELECTOR)
+        .connectionSelector(selector(connectionSelection))
         .contextProvider(contextProvider);
     }
 
@@ -220,6 +238,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
          int queueMaxSize,
          int http3MaxSize,
          long maxLifetimeMillis,
+         ConnectionSelection connectionSelection,
          HttpConnectParams connectParams,
          Function<ContextInternal,
            ContextInternal> contextProvider) {
@@ -230,8 +249,32 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
       this.poolKind = 0;
       this.pool = ConnectionPool
         .pool(this, new int[]{http3MaxSize}, queueMaxSize)
-        .connectionSelector(LIFO_SELECTOR)
+        .connectionSelector(selector(connectionSelection))
         .contextProvider(contextProvider);
+    }
+
+    private BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> selector(ConnectionSelection connectionSelection) {
+      switch (connectionSelection) {
+        case ROUND_ROBIN:
+          return this::selectRoundRobin;
+        case LEAST_REQUESTS:
+          return LEAST_REQUESTS_SELECTOR;
+        default:
+          return LIFO_SELECTOR;
+      }
+    }
+
+    private PoolConnection<HttpClientConnection> selectRoundRobin(PoolWaiter<HttpClientConnection> waiter, List<PoolConnection<HttpClientConnection>> connections) {
+      int size = connections.size();
+      for (int i = 0; i < size; i++) {
+        int idx = (roundRobinIndex + i) % size;
+        PoolConnection<HttpClientConnection> pooled = connections.get(idx);
+        if (pooled.available() > 0) {
+          roundRobinIndex = idx + 1;
+          return pooled;
+        }
+      }
+      return null;
     }
 
     @Override

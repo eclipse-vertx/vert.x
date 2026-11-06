@@ -66,6 +66,11 @@ public class PoolOptions {
    */
   public static final int DEFAULT_POOL_EVENT_LOOP_SIZE = 0;
 
+  /**
+   * Default connection selection = {@link ConnectionSelection#LIFO}
+   */
+  public static final ConnectionSelection DEFAULT_CONNECTION_SELECTION = ConnectionSelection.LIFO;
+
   private int http1MaxSize;
   private int http2MaxSize;
   private int http3MaxSize;
@@ -74,6 +79,7 @@ public class PoolOptions {
   private int cleanerPeriod;
   private int eventLoopSize;
   private int maxWaitQueueSize;
+  private ConnectionSelection connectionSelection;
 
   /**
    * Default constructor
@@ -87,6 +93,7 @@ public class PoolOptions {
     cleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
     eventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
+    connectionSelection = DEFAULT_CONNECTION_SELECTION;
   }
 
   /**
@@ -103,6 +110,7 @@ public class PoolOptions {
     this.cleanerPeriod = other.cleanerPeriod;
     this.eventLoopSize = other.eventLoopSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
+    this.connectionSelection = other.connectionSelection;
   }
 
   /**
@@ -111,6 +119,7 @@ public class PoolOptions {
    * @param json  the JSON
    */
   public PoolOptions(JsonObject json) {
+    this();
     PoolOptionsConverter.fromJson(json, this);
   }
 
@@ -285,6 +294,26 @@ public class PoolOptions {
    */
   public int getMaxWaitQueueSize() {
     return maxWaitQueueSize;
+  }
+
+  /**
+   * @return the connection selection strategy
+   */
+  public ConnectionSelection getConnectionSelection() {
+    return connectionSelection;
+  }
+
+  /**
+   * Set how the pool selects a connection when several pooled connections have available capacity.
+   *
+   * The default is {@link ConnectionSelection#LIFO}.
+   *
+   * @param connectionSelection the connection selection strategy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public PoolOptions setConnectionSelection(ConnectionSelection connectionSelection) {
+    this.connectionSelection = connectionSelection;
+    return this;
   }
 
   public JsonObject toJson() {
