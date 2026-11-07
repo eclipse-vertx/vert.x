@@ -127,19 +127,35 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     }
   }
 
+  /**
+   * Ends the stream outbound content, as {@link HttpStream#end()}. This deliberately overrides the unrelated
+   * {@link Http1ServerRequest#end()} (the end of the inbound request): this object is exposed either as a stream or
+   * as a request, never as both. To be fixed eventually, by not inheriting the request.
+   */
   @Override
-  public WriteResult write(Buffer buf, boolean end) {
+  public WriteResult end() {
+    return write(null, true);
+  }
+
+  @Override
+  public WriteResult write(ByteBuf buf, boolean end) {
     if (!headersSent) {
+      if (buf != null) {
+        buf.release();
+      }
       return new FailedWrite(context, "Headers must be sent prior sending a message");
     }
     if (responseEnded) {
-      throw new IllegalStateException("Response already ended");
+      if (buf != null) {
+        buf.release();
+      }
+      return new FailedWrite(context, "Response already ended");
     }
     try {
       Http1ServerResponse response = response();
       if (end) {
         responseEnded = true;
-        return buf.length() > 0 ? response.end(buf) : response.end();
+        return buf != null ? response.end(buf) : response.end();
       } else {
         return response.write(buf);
       }

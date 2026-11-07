@@ -390,7 +390,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     testHandleCloseEndingResponse(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
       stream.writeHead(head, EMPTY_BUFFER, false);
-      stream.write(EMPTY_BUFFER, true);
+      stream.end(EMPTY_BUFFER);
     });
   }
 
@@ -439,7 +439,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     testHandleCloseEndingRequest(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
       stream.writeHead(head, EMPTY_BUFFER, false);
-      stream.write(EMPTY_BUFFER, true);
+      stream.end(EMPTY_BUFFER);
     });
   }
 
@@ -524,7 +524,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         stream.connection().newHeaders());
       stream.writeHead(head, EMPTY_BUFFER, false)
         .onComplete(checkpoint1);
-      stream.write(Buffer.buffer("Hello"), true)
+      stream.end(Buffer.buffer("Hello"))
         .onComplete(checkpoint2);
     });
   }
@@ -616,11 +616,11 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       stream.writeHead(head, EMPTY_BUFFER, false);
       int count = 0;
       while (stream.isWritable()) {
-        stream.write(chunk, false);
+        stream.write(chunk);
         count++;
       }
       stream.drainHandler(v -> {
-        stream.write(EMPTY_BUFFER, true);
+        stream.end(EMPTY_BUFFER);
       });
       resume.succeed();
     };
@@ -642,7 +642,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   @Test
   public void testWriteInvalidChunk(Checkpoint checkpoint) throws Exception {
     testInvalidMessage(stream -> {
-      stream.write(Buffer.buffer("Hello World"), false).onComplete(ar -> {
+      stream.write(Buffer.buffer("Hello World")).onComplete(ar -> {
         Assert.assertTrue(ar.failed());
         checkpoint.succeed();
       });
@@ -652,7 +652,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   @Test
   public void testWriteInvalidTrailers(Checkpoint checkpoint) throws Exception {
     testInvalidMessage(stream -> {
-      stream.write(EMPTY_BUFFER, true).onComplete(ar -> {
+      stream.end(EMPTY_BUFFER).onComplete(ar -> {
         Assert.assertTrue(ar.failed());
         checkpoint.succeed();
       });

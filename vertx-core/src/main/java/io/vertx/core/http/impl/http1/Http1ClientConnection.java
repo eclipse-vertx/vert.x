@@ -401,11 +401,21 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       @Override
       public void write() {
         if (stream.reset) {
+          if (buf != null) {
+            buf.release();
+          }
           tryFail("Stream reset");
         } else {
           stream.request = request;
           beginRequest(stream, request, buf, end, this);
         }
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        if (buf != null) {
+          buf.release();
+        }
+        super.cancel(cause);
       }
     };
     writeToChannel(write);
@@ -417,10 +427,30 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       @Override
       public void write() {
         if (stream.reset) {
+          if (buff != null) {
+            buff.release();
+          }
           tryFail("Stream reset");
+        } else if (stream.request == null) {
+          if (buff != null) {
+            buff.release();
+          }
+          tryFail("Headers must be sent prior sending a message");
+        } else if (stream.requestEnded) {
+          if (buff != null) {
+            buff.release();
+          }
+          tryFail("Request already ended");
         } else {
           writeBufferToChannel(stream, buff, end, trailers, this);
         }
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        if (buff != null) {
+          buff.release();
+        }
+        super.cancel(cause);
       }
     };
     writeToChannel(write);
@@ -759,9 +789,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public WriteResult write(Buffer buff, boolean end) {
+    public WriteResult write(ByteBuf buff, boolean end) {
       if (buff != null || end) {
-        return conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, null);
+        return conn.writeBuffer(this, buff, end, null);
       } else {
         throw new IllegalStateException("???");
       }

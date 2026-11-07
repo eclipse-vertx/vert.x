@@ -425,30 +425,49 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final WriteResult write(Buffer chunk, boolean end) {
-    return writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end);
-  }
-
-  public final WriteResult writeData(ByteBuf chunk, boolean end) {
+  public final WriteResult write(ByteBuf chunk, boolean end) {
     return write(new WritePromise(context) {
       @Override
       public void write() {
         writeData0(chunk == null ? Unpooled.EMPTY_BUFFER : chunk, end, this);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        if (chunk != null) {
+          chunk.release();
+        }
+        super.cancel(cause);
       }
     });
   }
 
   void writeData0(ByteBuf buf, boolean end, Promise<Void> promise) {
     if (reset != -1L) {
+      if (buf != null) {
+        buf.release();
+      }
       promise.fail("Stream reset");
       return;
     }
     if (failure != null) {
+      if (buf != null) {
+        buf.release();
+      }
       promise.fail(failure);
       return;
     }
     if (!headersSent) {
+      if (buf != null) {
+        buf.release();
+      }
       promise.fail("Headers must be sent before sending a message");
+      return;
+    }
+    if (trailersSent) {
+      if (buf != null) {
+        buf.release();
+      }
+      promise.fail("Stream already ended");
       return;
     }
     ByteBuf chunk;

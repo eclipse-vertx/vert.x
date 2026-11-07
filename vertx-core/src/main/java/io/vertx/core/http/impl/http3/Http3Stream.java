@@ -322,17 +322,26 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return fut;
   }
 
-  public WriteResult write(Buffer chunk, boolean end) {
+  public WriteResult write(ByteBuf chunk, boolean end) {
+    if (chunk == null && !end) {
+      return new FailedWrite(context, "A null chunk must end the stream");
+    }
     if (!headersSent) {
+      if (chunk != null) {
+        chunk.release();
+      }
       return new FailedWrite(context, "Headers must be sent before sending a message");
     }
     if (trailersSent) {
+      if (chunk != null) {
+        chunk.release();
+      }
       throw new UnsupportedOperationException("handle me");
     }
     WriteResult fut;
     if (chunk != null) {
-      bytesWritten += chunk.length();
-      fut = stream.writeMessage(new DefaultHttp3DataFrame(((BufferInternal)chunk).getByteBuf()));
+      bytesWritten += chunk.readableBytes();
+      fut = stream.writeMessage(new DefaultHttp3DataFrame(chunk));
     } else {
       fut = null;
     }

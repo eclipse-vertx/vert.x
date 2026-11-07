@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.tcp;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -173,7 +174,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public WriteResult write(Buffer buf, boolean end) {
+    public WriteResult write(ByteBuf buf, boolean end) {
       return delegate.write(buf, end);
     }
 
@@ -624,7 +625,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public WriteResult write(Buffer buf, boolean end) {
+    public WriteResult write(ByteBuf buf, boolean end) {
       return write(stream -> stream.write(buf, end), end);
     }
 

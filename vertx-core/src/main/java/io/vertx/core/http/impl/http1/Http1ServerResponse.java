@@ -329,7 +329,10 @@ public class Http1ServerResponse implements HttpServerResponseInternal, HttpResp
 
   @Override
   public WriteResult end(Buffer chunk) {
-    ByteBuf data = ((BufferInternal)chunk).getByteBuf();
+    return end(((BufferInternal)chunk).getByteBuf());
+  }
+
+  WriteResult end(ByteBuf data) {
     if (trailersSent) {
       throw new IllegalStateException(RESPONSE_WRITTEN);
     }
@@ -626,7 +629,7 @@ public class Http1ServerResponse implements HttpServerResponseInternal, HttpResp
     }
   }
 
-  private WriteResult write(ByteBuf chunk) {
+  WriteResult write(ByteBuf chunk) {
     checkValid();
     if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       if (version != HttpVersion.HTTP_1_0) {

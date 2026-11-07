@@ -10,11 +10,13 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
@@ -42,8 +44,20 @@ public interface HttpStream {
   ContextInternal context();
   ByteBufAllocator allocator();
 
-  WriteResult write(Buffer buf, boolean end);
+  WriteResult write(ByteBuf buf, boolean end);
   WriteResult end(MultiMap trailers);
+
+  default WriteResult write(Buffer buf) {
+    return write(((BufferInternal)buf).getByteBuf(), false);
+  }
+
+  default WriteResult end(Buffer buf) {
+    return write(((BufferInternal)buf).getByteBuf(), true);
+  }
+
+  default WriteResult end() {
+    return write(null, true);
+  }
 
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);

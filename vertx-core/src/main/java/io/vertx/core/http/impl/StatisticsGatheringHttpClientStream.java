@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
@@ -85,7 +86,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public WriteResult write(Buffer buf, boolean end) {
+  public WriteResult write(ByteBuf buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }

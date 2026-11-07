@@ -644,15 +644,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (writeHead) {
         stream.writeHead(head(), buff, false);
       } else if (buff != null) {
-        stream.write(buff, false);
+        stream.write(buff);
       }
       future = stream.end(trailers);
     } else if (writeHead) {
       future = stream.writeHead(head(), buff, writeEnd);
     } else if (buff == null && !end) {
       future = new FailedWrite(context, "Head already sent");
+    } else if (writeEnd) {
+      future = buff != null ? stream.end(buff) : stream.end();
+    } else if (buff != null) {
+      future = stream.write(buff);
     } else {
-      future = stream.write(buff, writeEnd);
+      future = new FailedWrite(context, "A CONNECT request cannot be ended");
     }
     if (end) {
       tryComplete();

@@ -168,7 +168,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     headers.status(head.statusCode);
     if (chunk != null) {
       writeHeaders(headers, false, false);
-      return writeData(((BufferInternal)chunk).getByteBuf(), end);
+      return write(((BufferInternal)chunk).getByteBuf(), end);
     } else {
       return writeHeaders(headers, end, true);
     }

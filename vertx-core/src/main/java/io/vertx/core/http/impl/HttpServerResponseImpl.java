@@ -443,8 +443,10 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     }
     if (sendHeaders) {
       return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, end);
+    } else if (end) {
+      return chunk != null ? stream.end(chunk) : stream.end();
     } else {
-      return stream.write(chunk, end);
+      return chunk != null ? stream.write(chunk) : stream.write(null, false);
     }
   }
 
@@ -720,7 +722,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
         file.close();
       } catch (Exception ignore) {
       }
-      stream.write(null, true).onComplete(promise);
+      stream.end().onComplete(promise);
     } else {
       stream.sendFile(file, promise);
     }
