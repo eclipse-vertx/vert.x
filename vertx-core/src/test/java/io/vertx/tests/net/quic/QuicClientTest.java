@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -179,9 +180,14 @@ public class QuicClientTest extends VertxTestBase {
     stream.resetHandler(code -> {
       Assert.assertEquals(4L, (long)code);
       complete();
+      long now = System.nanoTime();
+      stream.closeHandler(v -> {
+        // Ending the reset stream closes it, not the connection idle timeout
+        Assert.assertTrue(System.nanoTime() - now < TimeUnit.SECONDS.toNanos(1));
+        complete();
+      });
       stream.end();
     });
-    stream.closeHandler(v -> complete());
 
     stream.write("ping");
 
