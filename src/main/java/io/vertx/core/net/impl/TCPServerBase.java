@@ -64,7 +64,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   // Main
   private SSLHelper sslHelper;
-  private volatile Future<SslContextUpdate> sslChannelProvider;
+  // Only set once an update has completed, so accepting a connection never sees an update in progress
+  private volatile SslContextUpdate sslContextUpdate;
   private volatile GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
@@ -78,7 +79,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   }
 
   public SslContextProvider sslContextProvider() {
-    SslContextUpdate update = sslChannelProvider.result();
+    SslContextUpdate update = sslContextUpdate;
     if (update != null) {
       return update.sslChannelProvider().sslContextProvider();
     } else {
@@ -130,8 +131,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       return server.updateSSLOptions(options, force);
     } else {
       ContextInternal ctx = vertx.getOrCreateContext();
+      // Updates complete in call order, and a failed one completes with the previous provider
       Future<SslContextUpdate> update = sslHelper.updateSslContext(new SSLOptions(options), force, ctx);
-      sslChannelProvider = update;
+      update.onSuccess(result -> sslContextUpdate = result);
       return update.transform(ar -> {
         if (ar.failed()) {
           return ctx.failedFuture(ar.cause());
@@ -228,7 +230,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         sslHelper = createSSLHelper();
         trafficShapingHandler = createTrafficShapingHandler();
         childHandler =  childHandler(listenContext, localAddress, trafficShapingHandler);
-        worker = ch -> childHandler.accept(ch, sslChannelProvider.result().sslChannelProvider());
+        worker = ch -> childHandler.accept(ch, sslContextUpdate.sslChannelProvider());
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
 
         // Register the server in the shared server list
@@ -239,8 +241,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
-        sslChannelProvider = sslHelper.updateSslContext(options.getSslOptions(), true, listenContext).onComplete(ar -> {
+        sslHelper.updateSslContext(options.getSslOptions(), true, listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
+            sslContextUpdate = ar.result();
             // Socket bind
             channelBalancer.addWorker(eventLoop, worker);
             ServerBootstrap bootstrap = new ServerBootstrap();
@@ -296,7 +299,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // Ensure the workers inherit the actual server's traffic-shaping handler
         trafficShapingHandler = actualServer.trafficShapingHandler;
         childHandler =  childHandler(listenContext, localAddress, actualServer.trafficShapingHandler);
-        worker = ch -> childHandler.accept(ch, actualServer.sslChannelProvider.result().sslChannelProvider());
+        worker = ch -> childHandler.accept(ch, actualServer.sslContextUpdate.sslChannelProvider());
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
         main.bindFuture.onComplete(promise);
