@@ -27,6 +27,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1857,6 +1858,69 @@ public abstract class HttpTLSTest extends HttpTestBase {
       Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
       assertEquals("Hello World " + i, body.toString());
     }
+  }
+
+  @Test
+  public void testUpdateSSLOptionsWhileAcceptingConnections() throws Exception {
+    server = vertx.createHttpServer(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    // A second server sharing the same address exercises the shared-server accept path
+    HttpServer sharedServer = vertx.createHttpServer(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    sharedServer.listen(testAddress).toCompletionStage().toCompletableFuture().get();
+    HttpClient client = vertx.createHttpClient(createBaseClientOptions().setTrustAll(true).setVerifyHost(false).setKeepAlive(false));
+    List<KeyCertOptions> keyCerts = Arrays.asList(Cert.SERVER_JKS.get(), Cert.SERVER_PKCS12.get());
+    AtomicBoolean running = new AtomicBoolean(true);
+    AtomicInteger updates = new AtomicInteger();
+    AtomicReference<Throwable> updaterFailure = new AtomicReference<>();
+    Thread updater = new Thread(() -> {
+      int idx = 0;
+      try {
+        while (running.get()) {
+          server.updateSSLOptions(createBaseServerOptions().setKeyCertOptions(keyCerts.get(idx++ % keyCerts.size())).getSslOptions(), true).toCompletionStage().toCompletableFuture().get();
+          updates.incrementAndGet();
+        }
+      } catch (Exception e) {
+        updaterFailure.set(e);
+      }
+    });
+    updater.start();
+    int threads = 4;
+    int requestsPerThread = 50;
+    AtomicInteger failures = new AtomicInteger();
+    AtomicReference<Throwable> firstFailure = new AtomicReference<>();
+    CountDownLatch latch = new CountDownLatch(threads);
+    for (int i = 0; i < threads; i++) {
+      new Thread(() -> {
+        try {
+          for (int j = 0; j < requestsPerThread; j++) {
+            try {
+              Buffer body = client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
+              if (!"Hello World".equals(body.toString())) {
+                failures.incrementAndGet();
+                firstFailure.compareAndSet(null, new AssertionError("Unexpected body: " + body));
+              }
+            } catch (Exception e) {
+              failures.incrementAndGet();
+              firstFailure.compareAndSet(null, e);
+            }
+          }
+        } finally {
+          latch.countDown();
+        }
+      }).start();
+    }
+    assertTrue(latch.await(60, TimeUnit.SECONDS));
+    running.set(false);
+    updater.join(60_000);
+    assertNull("SSL updater thread failed", updaterFailure.get());
+    assertTrue("Expected at least one SSL update to happen while requests were in flight", updates.get() > 0);
+    assertEquals("Requests failed while updateSSLOptions was in progress, first failure: " + firstFailure.get(), 0, failures.get());
   }
 
   @Test
