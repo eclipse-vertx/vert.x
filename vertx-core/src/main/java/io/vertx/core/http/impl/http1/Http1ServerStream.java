@@ -22,13 +22,14 @@ import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.streams.WriteResult;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http1ServerStream extends Http1ServerRequest implements HttpServerStream, FlowController {
+public class Http1ServerStream extends Http1ServerRequest implements HttpServerStream, ContentEncoder, FlowController {
 
   private boolean headersSent;
   private Handler<HttpRequestHead> headHandler;
@@ -127,8 +128,23 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     }
   }
 
+  @Override
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult write(ByteBuf buf) {
+    return write(buf, false);
+  }
+
+  @Override
+  public WriteResult end(ByteBuf buf) {
+    return write(buf, true);
+  }
+
   /**
-   * Ends the stream outbound content, as {@link HttpStream#end()}. This deliberately overrides the unrelated
+   * Ends the stream outbound content, as {@link ContentEncoder#end()}. This deliberately overrides the unrelated
    * {@link Http1ServerRequest#end()} (the end of the inbound request): this object is exposed either as a stream or
    * as a request, never as both. To be fixed eventually, by not inheriting the request.
    */
@@ -137,8 +153,7 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     return write(null, true);
   }
 
-  @Override
-  public WriteResult write(ByteBuf buf, boolean end) {
+  private WriteResult write(ByteBuf buf, boolean end) {
     if (!headersSent) {
       if (buf != null) {
         buf.release();

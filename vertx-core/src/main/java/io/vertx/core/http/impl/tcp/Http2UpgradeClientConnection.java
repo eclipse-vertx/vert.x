@@ -32,6 +32,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.streams.WritableWrite;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
@@ -123,7 +124,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     return current.creationTimestamp();
   }
 
-  private static class DelegatingStream implements HttpClientStream {
+  private static class DelegatingStream implements HttpClientStream, ContentEncoder {
 
     private final Http2UpgradeClientConnection connection;
     private final HttpClientStream delegate;
@@ -174,8 +175,23 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public WriteResult write(ByteBuf buf, boolean end) {
-      return delegate.write(buf, end);
+    public ContentEncoder contentEncoder() {
+      return this;
+    }
+
+    @Override
+    public WriteResult write(ByteBuf buf) {
+      return delegate.contentEncoder().write(buf);
+    }
+
+    @Override
+    public WriteResult end(ByteBuf buf) {
+      return delegate.contentEncoder().end(buf);
+    }
+
+    @Override
+    public WriteResult end() {
+      return delegate.contentEncoder().end();
     }
 
     @Override
@@ -296,7 +312,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
    * The first stream that will send the request using HTTP/1, upgrades the connection when the protocol
    * switches and receives the response with HTTP/2 frames.
    */
-  private static class UpgradingStream implements HttpClientStream {
+  private static class UpgradingStream implements HttpClientStream, ContentEncoder {
 
     void handleUpgrade(io.vertx.core.http.impl.HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
@@ -625,8 +641,23 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public WriteResult write(ByteBuf buf, boolean end) {
-      return write(stream -> stream.write(buf, end), end);
+    public ContentEncoder contentEncoder() {
+      return this;
+    }
+
+    @Override
+    public WriteResult write(ByteBuf buf) {
+      return write(stream -> stream.contentEncoder().write(buf), false);
+    }
+
+    @Override
+    public WriteResult end(ByteBuf buf) {
+      return write(stream -> stream.contentEncoder().end(buf), true);
+    }
+
+    @Override
+    public WriteResult end() {
+      return write(stream -> stream.contentEncoder().end(), true);
     }
 
     @Override

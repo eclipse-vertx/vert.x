@@ -54,6 +54,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
@@ -626,7 +627,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
    * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
    * state managed by the connection and this class defines the state managed by the stream implementation
    */
-  private static class StreamImpl extends Stream implements HttpClientStream, FlowController {
+  private static class StreamImpl extends Stream implements HttpClientStream, ContentEncoder, FlowController {
 
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
     private Handler<MultiMap> trailerHandler;
@@ -789,12 +790,23 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public WriteResult write(ByteBuf buff, boolean end) {
-      if (buff != null || end) {
-        return conn.writeBuffer(this, buff, end, null);
-      } else {
-        throw new IllegalStateException("???");
-      }
+    public ContentEncoder contentEncoder() {
+      return this;
+    }
+
+    @Override
+    public WriteResult write(ByteBuf buff) {
+      return conn.writeBuffer(this, buff, false, null);
+    }
+
+    @Override
+    public WriteResult end(ByteBuf buff) {
+      return conn.writeBuffer(this, buff, true, null);
+    }
+
+    @Override
+    public WriteResult end() {
+      return conn.writeBuffer(this, null, true, null);
     }
 
     @Override

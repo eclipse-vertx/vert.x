@@ -18,6 +18,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpRequestHead;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.http.HttpConfigurator;
@@ -68,12 +69,13 @@ public abstract class ClientContentEncoderTest extends ContentEncoderTestBase {
     });
     startServer(testAddress);
     HttpClientStream stream = client.openStream(requestOptions).await();
+    ContentEncoder encoder = stream.contentEncoder();
     stream.trailersHandler(trailers -> checkpoint.succeed());
     stream.writeHead(head(stream, 9 * 128), EMPTY_BUFFER, false);
     for (int i = 0;i < 8;i++) {
-      stream.write(allocateBuffer(128), false);
+      encoder.write(allocateBuffer(128));
     }
-    stream.write(allocateBuffer(128), true);
+    encoder.end(allocateBuffer(128));
   }
 
   @Test
@@ -81,9 +83,10 @@ public abstract class ClientContentEncoderTest extends ContentEncoderTestBase {
     handler = request -> request.end().onComplete(v -> request.response().end());
     startServer(testAddress);
     HttpClientStream stream = client.openStream(requestOptions).await();
+    ContentEncoder encoder = stream.contentEncoder();
     stream.trailersHandler(trailers -> checkpoint3.succeed());
-    stream.write(allocateBuffer(128), false).onFailure(err -> checkpoint1.succeed());
-    stream.write(allocateBuffer(128), true).onFailure(err -> checkpoint2.succeed());
+    encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
+    encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
     stream.writeHead(head(stream, 0), EMPTY_BUFFER, true);
   }
 
@@ -92,21 +95,23 @@ public abstract class ClientContentEncoderTest extends ContentEncoderTestBase {
     handler = request -> request.end().onComplete(v -> request.response().end());
     startServer(testAddress);
     HttpClientStream stream = client.openStream(requestOptions).await();
+    ContentEncoder encoder = stream.contentEncoder();
     stream.trailersHandler(trailers -> checkpoint3.succeed());
     stream.writeHead(head(stream, 0), EMPTY_BUFFER, true);
-    stream.write(allocateBuffer(128), false).onFailure(err -> checkpoint1.succeed());
-    stream.write(allocateBuffer(128), true).onFailure(err -> checkpoint2.succeed());
+    encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
+    encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
   }
 
   private void fillStream(HttpClientStream stream) {
+    ContentEncoder encoder = stream.contentEncoder();
     stream.writeHead(head(stream, 1L << 40), EMPTY_BUFFER, false);
     while (stream.isWritable()) {
-      stream.write(allocateBuffer(1024), false);
+      encoder.write(allocateBuffer(1024));
     }
     for (int i = 0;i < 16;i++) {
-      stream.write(allocateBuffer(1024), false);
+      encoder.write(allocateBuffer(1024));
     }
-    stream.write(allocateBuffer(1024), true);
+    encoder.end(allocateBuffer(1024));
   }
 
   @Test

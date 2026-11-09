@@ -24,6 +24,7 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
 /**
@@ -31,7 +32,7 @@ import io.vertx.core.net.endpoint.ServerInteraction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class StatisticsGatheringHttpClientStream implements HttpClientStream {
+class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEncoder {
 
   private final HttpClientStream delegate;
   private final ServerInteraction endpointRequest;
@@ -86,11 +87,25 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public WriteResult write(ByteBuf buf, boolean end) {
-    if (end) {
-      endpointRequest.reportRequestEnd();
-    }
-    return delegate.write(buf, end);
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult write(ByteBuf buf) {
+    return delegate.contentEncoder().write(buf);
+  }
+
+  @Override
+  public WriteResult end(ByteBuf buf) {
+    endpointRequest.reportRequestEnd();
+    return delegate.contentEncoder().end(buf);
+  }
+
+  @Override
+  public WriteResult end() {
+    endpointRequest.reportRequestEnd();
+    return delegate.contentEncoder().end();
   }
 
   @Override

@@ -397,12 +397,9 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
   }
 
   private WriteResult write(Buffer chunk, boolean end) {
-    MultiMap trailers = isContentAlwaysEmpty() ? null : trailedMap;
-    WriteResult future = write_(chunk, end && trailers == null);
+    MultiMap trailers = !end || isContentAlwaysEmpty() ? null : trailedMap;
+    WriteResult future = write_(chunk, end, trailers);
     if (end) {
-      if (trailers != null) {
-        future = stream.end(trailers);
-      }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
       if (bodyEndHandler != null) {
@@ -415,14 +412,14 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     return future;
   }
 
-  private WriteResult write_(Buffer chunk, boolean end) {
+  private WriteResult write_(Buffer chunk, boolean end, MultiMap trailers) {
     Handler<Void> headersEndHandler;
     synchronized (conn) {
       if (ended) {
         throw new IllegalStateException("Response has already been written");
       }
       ended = end;
-      if (end && !headWritten && requiresContentLengthHeader()) {
+      if (end && trailers == null && !headWritten && requiresContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
       }
       headersEndHandler = headWritten ? null : this.headersEndHandler;
@@ -441,12 +438,19 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
       }
       sendHeaders = prepareHeaders();
     }
-    if (sendHeaders) {
+    if (trailers != null) {
+      if (sendHeaders) {
+        stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, false);
+      } else if (chunk != null) {
+        stream.write(chunk);
+      }
+      return stream.end(trailers);
+    } else if (sendHeaders) {
       return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, end);
     } else if (end) {
       return chunk != null ? stream.end(chunk) : stream.end();
     } else {
-      return chunk != null ? stream.write(chunk) : stream.write(null, false);
+      return stream.write(chunk);
     }
   }
 

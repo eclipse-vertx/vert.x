@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.http.HttpConfigurator;
 import org.junit.Assert;
@@ -54,13 +55,14 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
   @Test
   public void testWriteReleasesBuffers() throws Exception {
     handler = stream -> {
+      ContentEncoder encoder = stream.contentEncoder();
       stream.trailersHandler(trailers -> {
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
         stream.writeHead(head, EMPTY_BUFFER, false);
         for (int i = 0;i < 8;i++) {
-          stream.write(allocateBuffer(128), false);
+          encoder.write(allocateBuffer(128));
         }
-        stream.write(allocateBuffer(128), true);
+        encoder.end(allocateBuffer(128));
       });
     };
     startServer(testAddress);
@@ -76,9 +78,10 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
   @Test
   public void testWriteBeforeHeadReleasesBuffers(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     handler = stream -> {
+      ContentEncoder encoder = stream.contentEncoder();
       stream.trailersHandler(trailers -> {
-        stream.write(allocateBuffer(128), false).onFailure(err -> checkpoint1.succeed());
-        stream.write(allocateBuffer(128), true).onFailure(err -> checkpoint2.succeed());
+        encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
+        encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
         stream.writeHead(head, EMPTY_BUFFER, true);
       });
@@ -95,11 +98,12 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
   @Test
   public void testWriteAfterEndReleasesBuffers(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     handler = stream -> {
+      ContentEncoder encoder = stream.contentEncoder();
       stream.trailersHandler(trailers -> {
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
         stream.writeHead(head, EMPTY_BUFFER, true);
-        stream.write(allocateBuffer(128), false).onFailure(err -> checkpoint1.succeed());
-        stream.write(allocateBuffer(128), true).onFailure(err -> checkpoint2.succeed());
+        encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
+        encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
       });
     };
     startServer(testAddress);
@@ -112,15 +116,16 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
   }
 
   private void fillStream(HttpServerStream stream) {
+    ContentEncoder encoder = stream.contentEncoder();
     HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
     stream.writeHead(head, EMPTY_BUFFER, false);
     while (stream.isWritable()) {
-      stream.write(allocateBuffer(1024), false);
+      encoder.write(allocateBuffer(1024));
     }
     for (int i = 0;i < 16;i++) {
-      stream.write(allocateBuffer(1024), false);
+      encoder.write(allocateBuffer(1024));
     }
-    stream.write(allocateBuffer(1024), true);
+    encoder.end(allocateBuffer(1024));
   }
 
   @Test

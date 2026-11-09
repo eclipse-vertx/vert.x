@@ -34,6 +34,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.concurrent.WriteOp;
 import io.vertx.core.internal.streams.OutboundWriteStream;
@@ -45,7 +46,7 @@ import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream, FlowController {
+abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, ContentEncoder, Http2Stream, FlowController {
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
@@ -425,7 +426,23 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final WriteResult write(ByteBuf chunk, boolean end) {
+  public final ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  public final WriteResult write(ByteBuf chunk) {
+    return write(chunk, false);
+  }
+
+  public final WriteResult end(ByteBuf chunk) {
+    return write(chunk, true);
+  }
+
+  public final WriteResult end() {
+    return write(null, true);
+  }
+
+  final WriteResult write(ByteBuf chunk, boolean end) {
     return write(new WritePromise(context) {
       @Override
       public void write() {

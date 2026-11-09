@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.http.FlowController;
@@ -41,7 +42,7 @@ import io.vertx.core.net.impl.VertxHandler;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Connection> implements FlowController {
+public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Connection> implements ContentEncoder, FlowController {
 
   // Uses HTTP/2 instance for the moment
   static final HttpResponseHeaders EMPTY = new HttpResponseHeaders(EmptyHttp2Headers.INSTANCE);
@@ -322,7 +323,23 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return fut;
   }
 
-  public WriteResult write(ByteBuf chunk, boolean end) {
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  public WriteResult write(ByteBuf chunk) {
+    return write(chunk, false);
+  }
+
+  public WriteResult end(ByteBuf chunk) {
+    return write(chunk, true);
+  }
+
+  public WriteResult end() {
+    return write(null, true);
+  }
+
+  private WriteResult write(ByteBuf chunk, boolean end) {
     if (chunk == null && !end) {
       return new FailedWrite(context, "A null chunk must end the stream");
     }

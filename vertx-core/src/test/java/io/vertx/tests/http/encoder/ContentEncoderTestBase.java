@@ -26,7 +26,7 @@ import static io.vertx.test.core.AsyncTestBase.assertWaitUntil;
 
 /**
  * Base for stream outbound content tests, among which the ByteBuf ownership contract: a buffer
- * passed to {@code HttpStream.write(ByteBuf, boolean)} is released by the stream whatsoever
+ * passed to {@link io.vertx.core.internal.http.ContentEncoder} is released by the stream whatsoever
  * happens. Any buffer a test allocates with {@link #allocateBuffer(int)} is checked for release
  * when the test ends.
  */
