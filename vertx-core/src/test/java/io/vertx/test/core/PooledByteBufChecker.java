@@ -59,31 +59,31 @@ public class PooledByteBufChecker {
   public synchronized int readableBytes() {
     if (pinned == null) {
       return 0;
+    } else {
+      return pinned.stream().mapToInt(ByteBuf::readableBytes).sum();
     }
-    return pinned.stream().mapToInt(ByteBuf::readableBytes).sum();
   }
 
   /**
    * @return whether the pins are the only references left on the pinned buffers
    */
   public synchronized boolean onlyPinned() {
-    if (pinned == null) {
-      return true;
-    }
-    Map<ByteBuf, Integer> pins = new IdentityHashMap<>();
-    for (ByteBuf buffer : pinned) {
-      pins.merge(counter(buffer), 1, Integer::sum);
-    }
-    for (Map.Entry<ByteBuf, Integer> entry : pins.entrySet()) {
-      if (entry.getKey().refCnt() != entry.getValue()) {
-        return false;
+    if (pinned != null) {
+      Map<ByteBuf, Integer> pins = new IdentityHashMap<>();
+      for (ByteBuf buffer : pinned) {
+        pins.merge(counter(buffer), 1, Integer::sum);
+      }
+      for (Map.Entry<ByteBuf, Integer> entry : pins.entrySet()) {
+        if (entry.getKey().refCnt() != entry.getValue()) {
+          return false;
+        }
       }
     }
     return true;
   }
 
   /**
-   * Wait until the pins are the only references left, then release the pins.
+   * Wait until this {@code PooledByteBufChecker} has exclusive ownership of the pinned buffers, then release the pins.
    */
   public void awaitOnlyPinnedAndUnpin() {
     assertFalse(isEmpty());
