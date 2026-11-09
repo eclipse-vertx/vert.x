@@ -11,8 +11,10 @@
 package io.vertx.core.internal.streams;
 
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Future;
+import io.vertx.core.Completable;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.future.FutureBase;
+import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -29,7 +31,7 @@ public interface WriteStreamInternal<T> extends WriteStream<T> {
   WriteResult write(T data);
 
   @Override
-  Future<Void> end();
+  WriteResult end();
 
   /**
    * Like {@link WriteStream#end(Object)}: write {@code data} then end the stream after the write succeeded,
@@ -38,9 +40,44 @@ public interface WriteStreamInternal<T> extends WriteStream<T> {
    */
   @Override
   default WriteResult end(T data) {
-    WritableWrite ended = new WritableWrite();
-    write(data).compose(v -> end()).onComplete(ended);
-    return ended;
+
+    FutureBase<Void> write = (FutureBase<Void>) write(data);
+
+    // Compose adapted to our case
+    class WritableComposition extends FutureImpl<Void> implements Completable<Void>, WriteResult {
+      public WritableComposition() {
+      }
+
+      @Override
+      public void complete(Void result, Throwable failure) {
+        if (failure != null) {
+          fail(failure);
+        } else {
+          WriteResult end = end();
+          FutureImpl<Void> bluh = (FutureImpl<Void>) end;
+          bluh.addListener(this::completeInternal);
+        }
+      }
+
+      @Override
+      public boolean isWritable() {
+        return true;
+      }
+
+      @Override
+      public WriteResult drainHandler(Handler<Void> handler) {
+        return this;
+      }
+
+      @Override
+      public WriteResult disposeHandler(Handler<Void> handler) {
+        return this;
+      }
+    }
+
+    WritableComposition result = new WritableComposition();
+    write.addListener(result);
+    return result;
   }
 
   @Override

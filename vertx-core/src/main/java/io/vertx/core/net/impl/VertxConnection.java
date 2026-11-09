@@ -19,17 +19,17 @@ import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.concurrent.WriteOp;
 import io.vertx.core.internal.streams.OutboundWriteStream;
+import io.vertx.core.internal.streams.WritableWrite;
 import io.vertx.core.internal.streams.WritePromise;
+import io.vertx.core.internal.streams.WriteResult;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -159,14 +159,14 @@ public class VertxConnection extends ConnectionBase {
   /**
    * Override the {@link ConnectionBase#close()} behavior to cooperate with the shutdown sequence.
    */
-  public final Future<Void> close() {
+  public final WriteResult close() {
     return shutdown(0L, TimeUnit.SECONDS);
   }
 
   /**
    * Calls {@link #shutdown(Duration)}
    */
-  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public final WriteResult shutdown(long timeout, TimeUnit unit) {
     return shutdown(Duration.of(timeout, unit.toChronoUnit()));
   }
 
@@ -176,7 +176,7 @@ public class VertxConnection extends ConnectionBase {
    * @param timeout the shutdown timeout
    * @return the future completed after the channel's closure
    */
-  public final Future<Void> shutdown(Duration timeout) {
+  public final WriteResult shutdown(Duration timeout) {
     if (timeout.isNegative()) {
       throw new IllegalArgumentException("Timeout must be >= 0");
     }
@@ -187,7 +187,7 @@ public class VertxConnection extends ConnectionBase {
     } else {
       exec.execute(() -> shutdown(timeout, promise));
     }
-    PromiseInternal<Void> p = context.promise();
+    WritableWrite p = new WritableWrite(context);
     promise.addListener(p);
     return p.future();
   }

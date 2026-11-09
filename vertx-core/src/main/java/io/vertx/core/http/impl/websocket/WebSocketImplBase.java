@@ -20,7 +20,6 @@ import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -148,7 +147,7 @@ public abstract class WebSocketImplBase<S extends WebSocketInternal> implements 
   }
 
   @Override
-  public Future<Void> shutdown(Duration timeout, short statusCode, @Nullable String reason) {
+  public WriteResult shutdown(Duration timeout, short statusCode, @Nullable String reason) {
     // Close the WebSocket by sending a close frame with specified payload
     ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
     CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
@@ -728,7 +727,12 @@ public abstract class WebSocketImplBase<S extends WebSocketInternal> implements 
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult close() {
+    return (WriteResult) WebSocketInternal.super.close();
+  }
+
+  @Override
+  public WriteResult end() {
     return close();
   }
 }

@@ -27,6 +27,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.file.AsyncFileInternal;
+import io.vertx.core.internal.streams.WritableWrite;
 import io.vertx.core.internal.streams.WritePromise;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.logging.Logger;
@@ -115,14 +116,14 @@ public class AsyncFileImpl implements AsyncFileInternal {
   }
 
   @Override
-  public Future<Void> close() {
-    Promise<Void> promise = context.promise();
+  public WriteResult close() {
+    WritableWrite promise = new WritableWrite(context);
     closeInternal(promise);
     return promise.future();
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     return close();
   }
 

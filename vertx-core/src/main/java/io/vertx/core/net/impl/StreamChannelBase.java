@@ -283,7 +283,7 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     return close();
   }
 

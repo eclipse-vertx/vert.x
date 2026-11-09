@@ -40,6 +40,7 @@ module io.vertx.core {
 
   requires static org.apache.logging.log4j;
   requires static org.slf4j;
+  requires jdk.dynalink;
 
   // Uses
 

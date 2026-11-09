@@ -20,6 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.spi.metrics.*;
 
@@ -83,7 +84,7 @@ public final class WebSocketConnectionImpl extends VertxConnection {
     return shutdown(reason, Duration.ZERO);
   }
 
-  public Future<Void> shutdown(Object reason, Duration timeout) {
+  public WriteResult shutdown(Object reason, Duration timeout) {
     this.reason = reason;
     return shutdown(timeout);
   }
