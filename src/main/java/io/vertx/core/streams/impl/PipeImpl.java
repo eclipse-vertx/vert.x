@@ -84,7 +84,6 @@ public class PipeImpl<T> implements Pipe<T> {
         ws.drainHandler(drainHandler);
       }
     });
-    src.resume();
     result.future().onComplete(ar -> {
       try {
         src.handler(null);
@@ -109,6 +108,7 @@ public class PipeImpl<T> implements Pipe<T> {
         handleFailure(err, completionHandler);
       }
     });
+    src.resume();
   }
 
   private void handleSuccess(Handler<AsyncResult<Void>> completionHandler) {
