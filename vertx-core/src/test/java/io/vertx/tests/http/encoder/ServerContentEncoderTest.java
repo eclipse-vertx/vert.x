@@ -10,24 +10,34 @@
  */
 package io.vertx.tests.http.encoder;
 
+import io.netty.buffer.ByteBuf;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.ContentEncoder;
+import io.vertx.core.internal.http.FlowController;
+import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.test.core.Checkpoint;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfigurator;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the server stream outbound content.
@@ -184,5 +194,57 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
         }))
       .await();
     connection.close().await(20, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testPipeContent() throws Exception {
+    Buffer body = TestUtils.randomBuffer(4 * 1024 * 1024);
+    AtomicInteger pauses = new AtomicInteger();
+    handler = stream -> {
+      ContentEncoder encoder = stream.contentEncoder();
+      stream.contentDecoder(new ContentDecoder<Void>() {
+        FlowController flowController;
+        @Override
+        public void init(FlowController flowController) {
+          this.flowController = flowController;
+        }
+        @Override
+        public void handle(ByteBuf chunk) {
+          WriteResult result = encoder.write(trackBuffer(chunk.retain()));
+          if (!result.isWritable()) {
+            pauses.incrementAndGet();
+            flowController.pause();
+            result.drainHandler(v -> flowController.resume());
+          }
+        }
+        @Override
+        public Void handleEnd() {
+          encoder.end();
+          return null;
+        }
+        @Override
+        public void handleClose(Throwable cause) {
+        }
+      });
+      HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
+      stream.writeHead(head, EMPTY_BUFFER, false);
+    };
+    startServer(testAddress);
+    Buffer received = client
+      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .compose(request -> {
+        // Subscribe before sending: the response is piped while the request is still sent
+        Future<Buffer> response = request.response().compose(resp -> {
+          resp.pause();
+          vertx.setTimer(250, id -> resp.resume());
+          return resp.body();
+        });
+        request.end(body);
+        return response;
+      })
+      .await(20, TimeUnit.SECONDS);
+    assertEquals(body.length(), received.length());
+    assertTrue(body.equals(received));
+    assertTrue(pauses.get() > 0);
   }
 }
