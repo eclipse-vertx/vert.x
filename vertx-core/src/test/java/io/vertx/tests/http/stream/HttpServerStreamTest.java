@@ -147,7 +147,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   }
 
   @Test
-  public void testContentDecoderLifecycleWithFetch(Checkpoint checkpoint) throws Exception {
+  public void testContentDecoderLifecycleWithFetch(Checkpoint checkpoint, Checkpoint firstChunk) throws Exception {
     int numChunks = 10;
     String expectedChunk = TestUtils.randomAlphaString(128);
     handler = stream -> {
@@ -159,6 +159,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           int val = count.incrementAndGet();
           if (val == 1) {
             flowController.pause();
+            firstChunk.succeed();
           } else {
             checkpoint.fail(new AssertionError("chunk delivered after abrupt end"));
           }
@@ -183,6 +184,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     for (int i = 0;i < numChunks;i++) {
       request.write(expectedChunk).await();
     }
+    firstChunk.awaitSuccess();
     request.connection().close().await();
   }
 
