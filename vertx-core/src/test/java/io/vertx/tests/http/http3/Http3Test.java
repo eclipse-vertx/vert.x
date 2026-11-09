@@ -19,19 +19,23 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.PoolOptions;
 import io.vertx.core.http.impl.HttpServerRequestImpl;
 import io.vertx.core.http.impl.http3.Http3ServerStream;
 import io.vertx.core.internal.net.QuicStreamInternal;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpServerConfigurator;
 import io.vertx.tests.http.HttpTest;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class Http3Test extends HttpTest {
@@ -155,6 +159,40 @@ public class Http3Test extends HttpTest {
   @Test
   public void testStreamedRequestDoesNotSendTransferEncoding() throws Exception {
     testRequestDoesNotSendTransferEncoding(req -> {});
+  }
+
+  @Test
+  public void testClientKeepAliveTimeoutNoStreamsNotExpiredEarly(Checkpoint checkpoint) throws Exception {
+    // A pooled connection that never carried a stream must be considered valid until the keep-alive timeout
+    // elapses: the pool cleaner must not evict it right after it is created
+    HttpServerConfigurator serverConfigurator = config.forServer();
+    serverConfigurator.config().getQuicConfig().getTransportConfig().setInitialMaxStreamsBidi(0);
+    server = serverConfigurator.create(vertx);
+    server.requestHandler(req -> req.response().end());
+    startServer(testAddress);
+    int keepAliveTimeoutSeconds = 3;
+    AtomicBoolean closed = new AtomicBoolean();
+    client = config.forClient()
+      .setKeepAliveTimeout(Duration.ofSeconds(keepAliveTimeoutSeconds))
+      .builder(vertx)
+      .withConnectHandler(conn -> {
+        long now = System.currentTimeMillis();
+        conn.closeHandler(v -> {
+          if (closed.compareAndSet(false, true)) {
+            long elapsed = System.currentTimeMillis() - now;
+            long low = keepAliveTimeoutSeconds * 1000 - 500;
+            long high = keepAliveTimeoutSeconds * 1000 + 2000;
+            Assert.assertTrue("Expected connection to be closed after the keep-alive timeout, was closed after " + elapsed + "ms", low < elapsed);
+            Assert.assertTrue("Expected connection to be closed after the keep-alive timeout, was closed after " + elapsed + "ms", elapsed < high);
+            client.close().onComplete(v2 -> {
+              checkpoint.succeed();
+            });
+          }
+        });
+      })
+      .with(new PoolOptions().setCleanerPeriod(1))
+      .build();
+    client.request(requestOptions);
   }
 
   private void testRequestDoesNotSendTransferEncoding(Consumer<HttpClientRequest> configurator) throws Exception {
