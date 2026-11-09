@@ -19,6 +19,9 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
@@ -35,7 +38,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.AsyncTestBase.assertWaitUntil;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -177,5 +182,83 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
     List<String> result = new ArrayList<>(events);
     result.add(outcome.get());
     return result;
+  }
+
+  @Test
+  public void testChunkReleasedAfterHandle() throws Exception {
+    List<ByteBuf> chunks = Collections.synchronizedList(new ArrayList<>());
+    Buffer received = testDecodeContent(new ContentDecoder<>() {
+      final Buffer content = Buffer.buffer();
+      @Override
+      public void init(FlowController flowController) {
+      }
+      @Override
+      public void handle(ByteBuf chunk) {
+        chunks.add(chunk);
+        content.appendBytes(ByteBufUtil.getBytes(chunk));
+      }
+      @Override
+      public Buffer handleEnd() {
+        return content;
+      }
+      @Override
+      public void handleClose(Throwable cause) {
+      }
+    });
+    assertEquals(BODY, received);
+    assertFalse(chunks.isEmpty());
+    // The chunk is released after the handle call
+    assertWaitUntil(() -> chunks.stream().allMatch(chunk -> chunk.refCnt() == 0));
+  }
+
+  @Test
+  public void testRetainedChunkOutlivesHandle() throws Exception {
+    List<ByteBuf> chunks = Collections.synchronizedList(new ArrayList<>());
+    Buffer received = testDecodeContent(new ContentDecoder<>() {
+      @Override
+      public void init(FlowController flowController) {
+      }
+      @Override
+      public void handle(ByteBuf chunk) {
+        chunks.add(chunk.retain());
+      }
+      @Override
+      public Buffer handleEnd() {
+        // The retained chunks remain valid after the handle call
+        Buffer content = Buffer.buffer();
+        for (ByteBuf chunk : chunks) {
+          content.appendBytes(ByteBufUtil.getBytes(chunk));
+          chunk.release();
+        }
+        return content;
+      }
+      @Override
+      public void handleClose(Throwable cause) {
+      }
+    });
+    assertEquals(BODY, received);
+    assertFalse(chunks.isEmpty());
+    assertWaitUntil(() -> chunks.stream().allMatch(chunk -> chunk.refCnt() == 0));
+  }
+
+  private static final Buffer BODY = TestUtils.randomBuffer(64 * 1024);
+
+  private Buffer testDecodeContent(ContentDecoder<Buffer> decoder) throws Exception {
+    server.requestHandler(req -> {
+      ((HttpServerRequestInternal)req).contentDecoder(decoder).onComplete(ar -> {
+        if (ar.succeeded()) {
+          req.response().end(ar.result());
+        } else {
+          req.response().setStatusCode(500).end();
+        }
+      });
+    });
+    startServer(testAddress);
+    return client
+      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .compose(request -> request
+        .send(BODY)
+        .compose(HttpClientResponse::body))
+      .await(Duration.ofSeconds(20));
   }
 }
