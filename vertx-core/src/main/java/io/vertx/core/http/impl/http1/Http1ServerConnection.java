@@ -27,12 +27,10 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.QueryParamDecoder;
@@ -259,9 +257,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       handleError(content);
       return;
     }
-    Buffer buffer = BufferInternal.safeBuffer(content.content());
     Http1ServerRequest request = requestInProgress;
-    request.handleContent(buffer);
+    request.handleContent(content.content());
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();

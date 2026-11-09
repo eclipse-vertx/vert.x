@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl.http1;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -21,6 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.form.FormDecoder;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
@@ -67,7 +69,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   Object trace;
 
   // Event loop and context thread using double checked locking
-  private volatile InboundMessageQueue<Buffer> queue;
+  private volatile InboundMessageQueue<ByteBuf> queue;
 
   // Context thread
   private io.vertx.core.http.HttpVersion version;
@@ -97,23 +99,45 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     this.request = request;
   }
 
-  private InboundMessageQueue<Buffer> queue() {
+  private InboundMessageQueue<ByteBuf> queue() {
     return queue(true);
   }
 
-  private InboundMessageQueue<Buffer> queue(boolean create) {
-    InboundMessageQueue<Buffer> ref = queue;
+  private InboundMessageQueue<ByteBuf> queue(boolean create) {
+    InboundMessageQueue<ByteBuf> ref = queue;
     if (create && ref == null) {
       synchronized (this) {
         ref = queue;
         if (ref == null) {
           ref = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
             @Override
-            protected void handleMessage(Buffer elt) {
-              if (elt == HttpUtils.END_OF_STREAM) {
+            protected void handleMessage(ByteBuf elt) {
+              if (elt == HttpUtils.END_OF_STREAM_2) {
                 onEnd();
               } else {
-                onData(elt);
+                try {
+                  onData(elt);
+                } finally {
+                  elt.release();
+                }
+              }
+            }
+            @Override
+            protected ByteBuf releaseMessage(ByteBuf elt) {
+              if (elt == HttpUtils.END_OF_STREAM_2) {
+                return elt;
+              } else {
+                try {
+                  return VertxByteBufAllocator.DEFAULT.heapBuffer(elt.readableBytes()).writeBytes(elt, elt.readerIndex(), elt.readableBytes());
+                } finally {
+                  elt.release();
+                }
+              }
+            }
+            @Override
+            protected void handleRelease(ByteBuf elt) {
+              if (elt != HttpUtils.END_OF_STREAM_2) {
+                elt.release();
               }
             }
             @Override
@@ -153,13 +177,13 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     }
   }
 
-  void handleContent(Buffer buffer) {
-    InboundMessageQueue<Buffer> queue = queue();
-    queue.add(buffer);
+  void handleContent(ByteBuf chunk) {
+    InboundMessageQueue<ByteBuf> queue = queue();
+    queue.add(chunk);
   }
 
   void handleEnd() {
-    InboundMessageQueue<Buffer> queue = queue(false);
+    InboundMessageQueue<ByteBuf> queue = queue(false);
     if (queue != null) {
       context.execute(this, Http1ServerRequest::onTrailersReceived);
       handleEnd(queue);
@@ -172,8 +196,8 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     trailersReceived = true;
   }
 
-  private void handleEnd(InboundMessageQueue<Buffer> queue) {
-    queue.add(HttpUtils.END_OF_STREAM);
+  private void handleEnd(InboundMessageQueue<ByteBuf> queue) {
+    queue.add(HttpUtils.END_OF_STREAM_2);
   }
 
   private void check100() {
@@ -509,12 +533,14 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
     return eventHandler(true).end();
   }
 
-  private void onData(Buffer data) {
-    bytesRead += data.length();
-    context.dispatch(((BufferInternal)data).getByteBuf(), currentDecoder());
+  private void onData(ByteBuf chunk) {
+    int index = chunk.readerIndex();
+    int length = chunk.readableBytes();
+    bytesRead += length;
+    context.dispatch(chunk, currentDecoder());
     HttpEventHandler handler = eventHandler;
     if (handler != null) {
-      handler.handleChunk(data);
+      handler.handleChunk(BufferInternal.buffer(VertxByteBufAllocator.DEFAULT.heapBuffer(length).writeBytes(chunk, index, length)));
     }
   }
 
@@ -601,6 +627,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   void handleClosed() {
+    InboundMessageQueue<ByteBuf> queue = queue(false);
+    if (queue != null) {
+      queue.closeProducer();
+    }
     context.execute(this, Http1ServerRequest::onClosed);
   }
 
@@ -628,6 +658,10 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   }
 
   void onClosed() {
+    InboundMessageQueue<ByteBuf> queue = queue(false);
+    if (queue != null) {
+      queue.closeConsumer();
+    }
     onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     response.tryClose();
     if (!decoderClosed) {
