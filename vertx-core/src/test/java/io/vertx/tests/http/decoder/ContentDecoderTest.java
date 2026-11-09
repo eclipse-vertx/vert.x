@@ -27,6 +27,7 @@ import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.test.core.Checkpoint;
+import io.vertx.test.core.PooledByteBufChecker;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
@@ -38,9 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.test.core.AsyncTestBase.assertWaitUntil;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -186,7 +185,7 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
 
   @Test
   public void testChunkReleasedAfterHandle() throws Exception {
-    List<ByteBuf> chunks = Collections.synchronizedList(new ArrayList<>());
+    PooledByteBufChecker chunks = new PooledByteBufChecker();
     Buffer received = testDecodeContent(new ContentDecoder<>() {
       final Buffer content = Buffer.buffer();
       @Override
@@ -194,7 +193,7 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
       }
       @Override
       public void handle(ByteBuf chunk) {
-        chunks.add(chunk);
+        chunks.pin(chunk);
         content.appendBytes(ByteBufUtil.getBytes(chunk));
       }
       @Override
@@ -206,21 +205,21 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
       }
     });
     assertEquals(BODY, received);
-    assertFalse(chunks.isEmpty());
     // The chunk is released after the handle call
-    assertWaitUntil(() -> chunks.stream().allMatch(chunk -> chunk.refCnt() == 0));
+    chunks.awaitOnlyPinnedAndUnpin();
   }
 
   @Test
   public void testRetainedChunkOutlivesHandle() throws Exception {
     List<ByteBuf> chunks = Collections.synchronizedList(new ArrayList<>());
+    PooledByteBufChecker pinned = new PooledByteBufChecker();
     Buffer received = testDecodeContent(new ContentDecoder<>() {
       @Override
       public void init(FlowController flowController) {
       }
       @Override
       public void handle(ByteBuf chunk) {
-        chunks.add(chunk.retain());
+        chunks.add(pinned.pin(chunk).retain());
       }
       @Override
       public Buffer handleEnd() {
@@ -237,8 +236,7 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
       }
     });
     assertEquals(BODY, received);
-    assertFalse(chunks.isEmpty());
-    assertWaitUntil(() -> chunks.stream().allMatch(chunk -> chunk.refCnt() == 0));
+    pinned.awaitOnlyPinnedAndUnpin();
   }
 
   private static final Buffer BODY = TestUtils.randomBuffer(64 * 1024);

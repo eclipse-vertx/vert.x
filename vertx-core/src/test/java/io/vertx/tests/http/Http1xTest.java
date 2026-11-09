@@ -6115,7 +6115,7 @@ public class Http1xTest extends HttpTest {
   }
 
   private void testServerByteBufLeak(ThreadingModel threadingModel) throws Exception {
-    List<ByteBuf> content = Collections.synchronizedList(new ArrayList<>());
+    PooledByteBufChecker content = new PooledByteBufChecker();
     HttpClientRequest request = testServerByteBufLeak(threadingModel, content, req -> req.body().onComplete(onSuccess(body -> {
       req.response().end();
     })));
@@ -6124,7 +6124,7 @@ public class Http1xTest extends HttpTest {
     }
     request.end();
     request.response().await();
-    assertServerContentReleased(content);
+    content.awaitOnlyPinnedAndUnpin();
   }
 
   @Test
@@ -6138,7 +6138,7 @@ public class Http1xTest extends HttpTest {
   }
 
   private void testServerByteBufLeakPauseResume(ThreadingModel threadingModel) throws Exception {
-    List<ByteBuf> content = Collections.synchronizedList(new ArrayList<>());
+    PooledByteBufChecker content = new PooledByteBufChecker();
     HttpClientRequest request = testServerByteBufLeak(threadingModel, content, req -> {
       req.handler(chunk -> {
         req.pause();
@@ -6151,7 +6151,7 @@ public class Http1xTest extends HttpTest {
     }
     request.end();
     request.response().await();
-    assertServerContentReleased(content);
+    content.awaitOnlyPinnedAndUnpin();
   }
 
   @Test
@@ -6165,24 +6165,24 @@ public class Http1xTest extends HttpTest {
   }
 
   private void testServerByteBufLeakConnectionClose(ThreadingModel threadingModel) throws Exception {
-    List<ByteBuf> content = Collections.synchronizedList(new ArrayList<>());
+    PooledByteBufChecker content = new PooledByteBufChecker();
     HttpClientRequest request = testServerByteBufLeak(threadingModel, content, HttpServerRequest::pause);
     for (int i = 0;i < 4;i++) {
       request.write(TestUtils.randomBuffer(512)).await();
     }
     // A chunk can be split in several contents
-    assertWaitUntil(() -> content.stream().mapToInt(ByteBuf::readableBytes).sum() == 4 * 512);
+    assertWaitUntil(() -> content.readableBytes() == 4 * 512);
     // The paused request holds the chunks
-    assertTrue(content.stream().allMatch(chunk -> chunk.refCnt() > 0));
+    assertFalse(content.onlyPinned());
     request.connection().close().await();
-    assertServerContentReleased(content);
+    content.awaitOnlyPinnedAndUnpin();
   }
 
   /**
    * Start a server handling its request with {@code app} and tracking the request content in {@code content}, then
    * return a chunked request whose head was sent once the tracking is in place.
    */
-  private HttpClientRequest testServerByteBufLeak(ThreadingModel threadingModel, List<ByteBuf> content, Handler<HttpServerRequest> requestHandler) throws Exception {
+  private HttpClientRequest testServerByteBufLeak(ThreadingModel threadingModel, PooledByteBufChecker content, Handler<HttpServerRequest> requestHandler) throws Exception {
     Promise<Void> tracking = Promise.promise();
     server.requestHandler(req -> {
       requestHandler.handle(req);
@@ -6193,7 +6193,7 @@ public class Http1xTest extends HttpTest {
           public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             // The empty last content is a shared unreleasable buffer
             if (msg instanceof HttpContent && ((HttpContent) msg).content().isReadable()) {
-              content.add(((HttpContent) msg).content());
+              content.pin(((HttpContent) msg).content());
             }
             super.channelRead(ctx, msg);
           }
@@ -6206,10 +6206,5 @@ public class Http1xTest extends HttpTest {
     request.setChunked(true).writeHead().await();
     tracking.future().await();
     return request;
-  }
-
-  private void assertServerContentReleased(List<ByteBuf> content) {
-    assertFalse(content.isEmpty());
-    assertWaitUntil(() -> content.stream().allMatch(chunk -> chunk.refCnt() == 0));
   }
 }
