@@ -10,11 +10,32 @@
  */
 package io.vertx.tests.http.decoder;
 
+import io.vertx.core.transport.Transport;
+import io.vertx.test.core.VertxTestBase;
 import io.vertx.tests.http.http3.Http3Configurator;
+import org.junit.Assume;
+import org.junit.Test;
 
 public class Http3ContentDecoderTest extends ContentDecoderTest {
 
+  private static final String IO_URING_RETENTION = "With io_uring, the server QUIC stream retains its last read buffer, " +
+    "the chunks are slices of, until the connection closes";
+
   public Http3ContentDecoderTest() {
     super(Http3Configurator.INSTANCE);
+  }
+
+  @Test
+  @Override
+  public void testChunkReleasedAfterHandle() throws Exception {
+    Assume.assumeFalse(IO_URING_RETENTION, VertxTestBase.TRANSPORT == Transport.IO_URING);
+    super.testChunkReleasedAfterHandle();
+  }
+
+  @Test
+  @Override
+  public void testRetainedChunkOutlivesHandle() throws Exception {
+    Assume.assumeFalse(IO_URING_RETENTION, VertxTestBase.TRANSPORT == Transport.IO_URING);
+    super.testRetainedChunkOutlivesHandle();
   }
 }
