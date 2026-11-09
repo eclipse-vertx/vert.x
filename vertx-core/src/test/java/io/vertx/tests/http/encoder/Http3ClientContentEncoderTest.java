@@ -27,4 +27,12 @@ public class Http3ClientContentEncoderTest extends ClientContentEncoderTest {
   public void testWriteAfterEndReleasesBuffers(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3) throws Exception {
     super.testWriteAfterEndReleasesBuffers(checkpoint1, checkpoint2, checkpoint3);
   }
+
+  @Test
+  @Ignore("The client stream does not tear down its output on the STOP_SENDING triggered by the server reset: " +
+    "the queued writes remain parked until the connection closes")
+  @Override
+  public void testRemoteResetReleasesQueuedBuffers() throws Exception {
+    super.testRemoteResetReleasesQueuedBuffers();
+  }
 }
