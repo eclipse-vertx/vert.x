@@ -123,7 +123,7 @@ public class FutureImpl<T> extends FutureBase<T> {
     }
   }
 
-  final boolean completeInternal(T result, Throwable err) {
+  public final boolean completeInternal(T result, Throwable err) {
     Completable<? super T> l;
     synchronized (this) {
       if (value != null) {

@@ -278,7 +278,7 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     return delegate().end();
   }
 

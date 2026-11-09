@@ -10,7 +10,6 @@
  */
 package io.vertx.core.internal.streams;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.internal.ContextInternal;
@@ -47,7 +46,7 @@ public final class WritableWrite extends FutureImpl<Void> implements PromiseInte
   }
 
   @Override
-  public Future<Void> future() {
+  public WriteResult future() {
     return this;
   }
 

@@ -111,7 +111,7 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
   }
 
   @Override
-  public Future<Void> end() {
+  public WriteResult end() {
     WritePromise write = new WritePromise(context) {
       @Override
       public void write() {
