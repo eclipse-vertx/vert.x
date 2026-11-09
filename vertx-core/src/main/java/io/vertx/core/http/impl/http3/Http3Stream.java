@@ -317,9 +317,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
         observer.observeOutboundTrailers(bytesWritten);
       }
       trailersSent = true;
-      // TODO: clarify and handle this case to ensure a clean contract, the stream end future is not the
-      // data write result, probably WriteStream#end will be modified as well
-      fut = (WriteResult) stream.end();
+      fut = stream.end();
     }
     return fut;
   }
@@ -331,7 +329,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     if (trailersSent) {
       throw new UnsupportedOperationException("handle me");
     }
-    Future<Void> fut;
+    WriteResult fut;
     if (chunk != null) {
       bytesWritten += chunk.length();
       fut = stream.writeMessage(new DefaultHttp3DataFrame(((BufferInternal)chunk).getByteBuf()));
@@ -345,9 +343,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
         observer.observeOutboundTrailers(bytesWritten);
       }
     }
-    // TODO: clarify and handle this case to ensure a clean contract, the stream end future is not the
-    // data write result, probably WriteStream#end will be modified as well
-    return (WriteResult) fut;
+    return fut;
   }
 
   public Future<Boolean> cancel() {
