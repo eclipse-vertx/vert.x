@@ -57,6 +57,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private Http2Headers trailers;
   private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
+  private boolean encodedByApplication;
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
@@ -84,6 +85,13 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   boolean isPush() {
     return push;
+  }
+
+  /**
+   * @return whether the application set the {@code content-encoding} header, i.e. the body is already encoded
+   */
+  boolean isEncodedByApplication() {
+    return encodedByApplication;
   }
 
   void handleReset(long code) {
@@ -525,7 +533,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private void prepareHeaders() {
     headers.status(status.codeAsText()); // Could be optimized for usual case ?
-    if (contentEncoding != null && headers.get(HttpHeaderNames.CONTENT_ENCODING) == null) {
+    if (headers.contains(HttpHeaderNames.CONTENT_ENCODING)) {
+      encodedByApplication = true;
+    } else if (contentEncoding != null) {
       headers.set(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
     }
     // Sanitize

@@ -134,6 +134,32 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
   }
 
   @Test
+  public void testServerCompressionSkipsEncodedResponse() throws Exception {
+    server.close();
+    HttpServerOptions options = createBaseServerOptions();
+    configureServerCompression(options);
+    server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      req.response()
+        .putHeader(HttpHeaders.CONTENT_ENCODING, encoding())
+        .end(compressedTestString);
+    });
+    startServer();
+    client.request(new RequestOptions()
+      .addHeader(HttpHeaders.ACCEPT_ENCODING, encoding()))
+      .onComplete(onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          assertEquals(encoding(), resp.getHeader(HttpHeaders.CONTENT_ENCODING));
+          resp.body(onSuccess(body -> {
+            assertEquals(StringUtil.toHexString(compressedTestString.getBytes()), StringUtil.toHexString(body.getBytes()));
+            testComplete();
+          }));
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testServerDecompression() throws Exception {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setDecompressionSupported(true));
