@@ -27,6 +27,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1824,6 +1825,45 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testConnectionsAcceptedWhileUpdatingSSLOptions() throws Exception {
+    server = vertx.createHttpServer(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(false).setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS.get()));
+    // Keep an update in progress, as a certificate reload does, while new connections are accepted
+    AtomicBoolean updating = new AtomicBoolean(true);
+    AtomicInteger updates = new AtomicInteger();
+    updateSSLOptionsWhile(updating, updates);
+    try {
+      for (int i = 0;i < 50;i++) {
+        Buffer body = client
+          .request(requestOptions)
+          .compose(req -> req.send().compose(HttpClientResponse::body))
+          .toCompletionStage()
+          .toCompletableFuture()
+          .get(20, TimeUnit.SECONDS);
+        assertEquals("Hello World", body.toString());
+      }
+    } finally {
+      updating.set(false);
+    }
+    assertTrue(updates.get() > 0);
+  }
+
+  private void updateSSLOptionsWhile(AtomicBoolean updating, AtomicInteger updates) {
+    server
+      .updateSSLOptions(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_JKS.get()).getSslOptions(), true)
+      .onComplete(ar -> {
+        updates.incrementAndGet();
+        if (updating.get()) {
+          updateSSLOptionsWhile(updating, updates);
+        }
+      });
   }
 
   @Test
