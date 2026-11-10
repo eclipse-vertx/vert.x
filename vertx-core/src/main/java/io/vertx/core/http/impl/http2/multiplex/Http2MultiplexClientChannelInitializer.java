@@ -24,6 +24,7 @@ import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.impl.tcp.BufferingHttpClientUpgradeHandler;
 import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
@@ -142,7 +143,7 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
         }
       });
       Http2ClientUpgradeCodec upgradeCodec = new Http2ClientUpgradeCodec(http2FrameCodec, multiplex);
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(clientCodec, upgradeCodec, 10_000);
+      HttpClientUpgradeHandler upgradeHandler = new BufferingHttpClientUpgradeHandler(clientCodec, upgradeCodec, 10_000);
       pipeline.addBefore("handler", "upgrade", upgradeHandler);
       pipeline.addBefore("handler", "reject-checker", new ChannelDuplexHandler() {
         @Override

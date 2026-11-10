@@ -1,23 +1,20 @@
 package io.vertx.core.http.impl.http2.codec;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpClientUpgradeHandler;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.impl.tcp.BufferingHttpClientUpgradeHandler;
 import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
@@ -33,10 +30,6 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.Deque;
-
-import static io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection.SEND_BUFFERED_MESSAGES_EVENT;
 
 public class Http2CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
@@ -201,77 +194,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
           handler.clientUpgrade(ctx);
         }
       };
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, upgradeMaxContentLength) {
-
-        private long bufferedSize = 0;
-        private Deque<Object> buffered = new ArrayDeque<>();
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-          if (buffered != null) {
-            // Buffer all messages received from the server until the HTTP request is fully sent.
-            //
-            // Explanation:
-            //
-            // It is necessary that the client only starts to process the response when the request
-            // has been fully sent because the current HTTP2 implementation will not be able to process
-            // the server preface until the client preface has been sent.
-            //
-            // Adding the VertxHttp2ConnectionHandler to the pipeline has two effects:
-            // - it is required to process the server preface
-            // - it will send the request preface to the server
-            //
-            // As we are adding this handler to the pipeline when we receive the 101 response from the server
-            // this might send the client preface before the initial HTTP request (doing the upgrade) is fully sent
-            // resulting in corrupting the protocol (the server might interpret it as an corrupted connection preface).
-            //
-            // Therefore we must buffer all pending messages until the request is fully sent.
-
-            int maxContent = maxContentLength();
-            boolean lower = bufferedSize < maxContent;
-            if (msg instanceof ByteBufHolder) {
-              bufferedSize += ((ByteBufHolder)msg).content().readableBytes();
-            } else if (msg instanceof ByteBuf) {
-              bufferedSize += ((ByteBuf)msg).readableBytes();
-            }
-            buffered.add(msg);
-
-            if (bufferedSize >= maxContent && lower) {
-              ctx.fireExceptionCaught(new TooLongFrameException("Max content exceeded " + maxContentLength() + " bytes."));
-            }
-          } else {
-            super.channelRead(ctx, msg);
-          }
-        }
-
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-          if (SEND_BUFFERED_MESSAGES_EVENT == evt) {
-            Deque<Object> messages = buffered;
-            buffered = null;
-            Object msg;
-            while ((msg = messages.poll()) != null) {
-              super.channelRead(ctx, msg);
-            }
-          } else {
-            super.userEventTriggered(ctx, evt);
-          }
-        }
-
-        @Override
-        public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-          if (buffered != null) {
-            Deque<Object> messages = buffered;
-            buffered = null;
-            Object msg;
-            while ((msg = messages.poll()) != null) {
-              ReferenceCountUtil.release(msg);
-            }
-          }
-          super.handlerRemoved(ctx);
-        }
-
-      };
+      HttpClientUpgradeHandler upgradeHandler = new BufferingHttpClientUpgradeHandler(httpCodec, upgradeCodec, upgradeMaxContentLength);
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
     }
