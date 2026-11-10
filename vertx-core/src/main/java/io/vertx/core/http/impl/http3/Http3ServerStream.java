@@ -110,11 +110,6 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
   }
 
   @Override
-  public WriteResult end(MultiMap headers) {
-    return writeHeaders((HttpHeaders) headers, null, true);
-  }
-
-  @Override
   public Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority) {
     return null;
   }

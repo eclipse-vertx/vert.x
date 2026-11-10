@@ -1251,6 +1251,17 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testWriteHeadTwice() throws Exception {
+    server.requestHandler(req -> req.end().onComplete(v -> req.response().end()));
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+    req.writeHead().await();
+    Future<Void> second = req.writeHead();
+    assertThatThrownBy(second::await).hasMessage("Head already sent");
+    req.end().compose(v -> req.response()).compose(HttpClientResponse::end).await();
+  }
+
+  @Test
   public void testRequestBodyBufferAtEnd() throws Exception {
     Buffer body = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> req.bodyHandler(buffer -> {
@@ -1723,6 +1734,93 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         }))
       .await();
     assertTrue(trailers.isEmpty());
+  }
+
+  @Test
+  public void testRequestTrailers() throws Exception {
+    testRequestTrailers("the-body", req -> req.end("the-body"));
+  }
+
+  @Test
+  public void testRequestTrailersWithoutBody() throws Exception {
+    testRequestTrailers("", HttpClientRequest::end);
+  }
+
+  @Test
+  public void testRequestTrailersStreamedBody() throws Exception {
+    testRequestTrailers("the-body", req -> {
+      req.write("the-");
+      return req.end("body");
+    });
+  }
+
+  private void testRequestTrailers(String expectedBody, Function<HttpClientRequest, Future<Void>> sender) throws Exception {
+    server.requestHandler(req -> req.body().onComplete(TestUtils.onSuccess(body -> {
+      assertEquals(expectedBody, body.toString());
+      assertEquals("foo_value", req.getTrailer("foo"));
+      assertEquals("bar_value", req.trailers().get("Bar"));
+      assertEquals(List.of("juu_value_1", "juu_value_2"), req.trailers().getAll("juu"));
+      assertNull(req.headers().get("foo"));
+      req.response().end();
+    })));
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .compose(req -> {
+        req.putTrailer("foo", "foo_value");
+        req.trailers().set("bar", "bar_value");
+        List<String> juu = List.of("juu_value_1", "juu_value_2");
+        req.putTrailer("juu", juu);
+        Future<HttpClientResponse> response = req.response();
+        return sender.apply(req).compose(v -> response);
+      })
+      .compose(resp -> {
+        assertEquals(200, resp.statusCode());
+        return resp.end();
+      })
+      .await();
+  }
+
+  @Test
+  public void testRequestNoTrailers() throws Exception {
+    server.requestHandler(req -> req.end().onComplete(TestUtils.onSuccess(v -> {
+      assertTrue(req.trailers().isEmpty());
+      assertNull(req.getTrailer("foo"));
+      req.response().end();
+    })));
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .compose(req -> req
+        .send("the-body")
+        .compose(HttpClientResponse::end))
+      .await();
+  }
+
+  @Test
+  public void testRequestForbiddenTrailer() throws Exception {
+    server.requestHandler(req -> fail("Unexpected request"));
+    startServer(testAddress);
+    for (String name : List.of("content-length", "Transfer-Encoding", "trailer", "host", "authorization", "cookie", "te")) {
+      HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+      req.putTrailer(name, "value");
+      assertThatThrownBy(() -> req.end("the-body").await()).isInstanceOf(IllegalArgumentException.class);
+      assertThatThrownBy(() -> req.response().await());
+    }
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+    assertThatThrownBy(() -> req.putTrailer("foo", "bar\r\nhost: evil")).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> req.trailers().add("foo", "bar\r\nhost: evil")).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> req.putTrailer(":path", "/evil")).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> req.putTrailer("foo bar", "value")).isInstanceOf(IllegalArgumentException.class);
+    req.reset();
+  }
+
+  @Test
+  public void testConnectRequestTrailers() throws Exception {
+    server.requestHandler(req -> {});
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).await();
+    assertThatThrownBy(req::trailers).isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> req.putTrailer("foo", "foo_value")).isInstanceOf(IllegalStateException.class);
+    req.reset();
   }
 
   @Test
@@ -3935,6 +4033,11 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
+      public MultiMap trailers() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(String name, String value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
       public Future<Void> write(String chunk) { throw new UnsupportedOperationException(); }
       public Future<Void> write(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public HttpClientRequest traceOperation(String op) { throw new UnsupportedOperationException(); }

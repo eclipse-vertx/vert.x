@@ -33,7 +33,6 @@ public interface HttpServerStream extends HttpStream {
   HttpServerConnection connection();
 
   WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end);
-  WriteResult end(MultiMap headers);
 
   Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority);
 

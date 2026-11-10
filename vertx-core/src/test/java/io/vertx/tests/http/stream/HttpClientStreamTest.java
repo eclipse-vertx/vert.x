@@ -14,8 +14,11 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
@@ -79,6 +82,36 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       HostAndPort.authority("localhost", testAddress.port()),
       null);
     stream.writeHead(head, Buffer.buffer(), true);
+  }
+
+  @Test
+  public void testWriteTrailers(Checkpoint checkpoint) throws Exception {
+    handler = request -> request.body().onComplete(ar -> {
+      if (ar.succeeded() && "the-body".equals(ar.result().toString()) && "trailer_value".equals(request.getTrailer("trailer_key"))) {
+        checkpoint.succeed();
+      } else {
+        checkpoint.fail(new AssertionError("Unexpected request " + ar + " " + request.trailers()));
+      }
+      request.response().end();
+    });
+    startServer(testAddress);
+    HttpClientStream stream = client.openStream(requestOptions).await();
+    HttpClientConnection connection = stream.connection();
+    MultiMap headers = connection.newHttpRequestHeaders();
+    if (stream.version() == HttpVersion.HTTP_1_1) {
+      headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
+    }
+    HttpRequestHead head = new HttpRequestHead(
+      "https",
+      HttpMethod.POST,
+      "/",
+      headers,
+      HostAndPort.authority("localhost", testAddress.port()),
+      null);
+    MultiMap trailers = connection.newHttpRequestHeaders();
+    trailers.set("trailer_key", "trailer_value");
+    stream.writeHead(head, Buffer.buffer("the-body"), false);
+    stream.end(trailers);
   }
 
   @Test

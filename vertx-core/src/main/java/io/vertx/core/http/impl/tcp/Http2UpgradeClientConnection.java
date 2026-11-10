@@ -26,7 +26,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
@@ -43,6 +42,7 @@ import javax.net.ssl.SSLSession;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * A connection that attempts to perform a protocol upgrade to H2C. The connection might use HTTP/1 or H2C
@@ -84,7 +84,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
 
   @Override
   public MultiMap newHttpRequestHeaders() {
-    return Http1xHeaders.httpHeaders();
+    return current.newHttpRequestHeaders();
   }
 
   @Override
@@ -175,6 +175,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     @Override
     public WriteResult write(Buffer buf, boolean end) {
       return delegate.write(buf, end);
+    }
+
+    @Override
+    public WriteResult end(MultiMap trailers) {
+      return delegate.end(trailers);
     }
 
     @Override
@@ -620,9 +625,18 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
 
     @Override
     public WriteResult write(Buffer buf, boolean end) {
+      return write(stream -> stream.write(buf, end), end);
+    }
+
+    @Override
+    public WriteResult end(MultiMap trailers) {
+      return write(stream -> stream.end(trailers), true);
+    }
+
+    private WriteResult write(Function<HttpClientStream, WriteResult> op, boolean end) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        WriteResult future = upgradingStream.write(buf, end);
+        WriteResult future = op.apply(upgradingStream);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           future.onComplete(ar -> {
@@ -636,7 +650,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
         // The write is deferred to the event loop: assume writable during the upgrade window
         WritableWrite promise = new WritableWrite(upgradingStream.context());
         exec.execute(() -> {
-          Future<Void> future = write(buf, end);
+          Future<Void> future = write(op, end);
           future.onComplete(promise);
         });
         return promise;

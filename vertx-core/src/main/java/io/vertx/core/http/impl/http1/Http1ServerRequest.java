@@ -28,6 +28,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.http.impl.SafeContentDecoder;
@@ -91,6 +92,7 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   private boolean contentStarted;
   private boolean decoderClosed;
   private boolean trailersReceived;
+  private MultiMap trailers;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
     super(conn.queryParamDecoder());
@@ -180,6 +182,19 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   void handleContent(ByteBuf chunk) {
     InboundMessageQueue<ByteBuf> queue = queue();
     queue.add(chunk);
+  }
+
+  void handleTrailers(MultiMap trailers) {
+    context.execute(trailers, this::onTrailers);
+  }
+
+  private void onTrailers(MultiMap trailers) {
+    MultiMap t = this.trailers;
+    if (t != null) {
+      t.setAll(trailers);
+    } else {
+      this.trailers = trailers;
+    }
   }
 
   void handleEnd() {
@@ -509,6 +524,20 @@ public class Http1ServerRequest extends HttpServerRequestBase implements io.vert
   @Override
   public boolean isEnded() {
     return response.requestEnded;
+  }
+
+  @Override
+  public String getTrailer(String trailerName) {
+    MultiMap t = trailers;
+    return t != null ? t.get(trailerName) : null;
+  }
+
+  @Override
+  public MultiMap trailers() {
+    if (trailers == null) {
+      trailers = Http1xHeaders.caseInsensitive();
+    }
+    return trailers;
   }
 
   @Override

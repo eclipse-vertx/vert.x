@@ -294,6 +294,10 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     return (S)this;
   }
 
+  public final WriteResult end(MultiMap trailers) {
+    return writeHeaders((HttpHeaders) trailers, null, true);
+  }
+
   WriteResult writeHeaders(HttpHeaders headers, Buffer chunk, boolean end) {
     if (trailersSent) {
       throw new UnsupportedOperationException("handle me");

@@ -133,7 +133,13 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           HttpContent content = (HttpContent) msg;
           ByteBuf buf = VertxHandler.safeBuffer(content.content());
           boolean end = msg instanceof LastHttpContent;
-          ctx.fireChannelRead(new DefaultHttp2DataFrame(buf, end, 0));
+          HttpHeaders trailers = end ? ((LastHttpContent) msg).trailingHeaders() : EmptyHttpHeaders.INSTANCE;
+          ctx.fireChannelRead(new DefaultHttp2DataFrame(buf, end && trailers.isEmpty(), 0));
+          if (!trailers.isEmpty()) {
+            DefaultHttp2Headers http2Trailers = new DefaultHttp2Headers();
+            trailers.forEach(trailer -> http2Trailers.add(trailer.getKey().toLowerCase(), trailer.getValue()));
+            ctx.fireChannelRead(new DefaultHttp2HeadersFrame(http2Trailers, true));
+          }
           if (end) {
             ChannelPipeline pipeline = ctx.pipeline();
             pipeline.remove("h2c");

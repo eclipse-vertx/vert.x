@@ -21,6 +21,8 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.ContentDecoder;
@@ -577,6 +579,29 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       .await();
     assertEquals(1, trailers.size());
     assertEquals("trailer_value", trailers.get("trailer_key"));
+  }
+
+  @Test
+  public void testReadTrailers(Checkpoint checkpoint) throws Exception {
+    handler = stream -> {
+      stream.trailersHandler(trailers -> {
+        if ("trailer_value".equals(trailers.get("trailer_key"))) {
+          checkpoint.succeed();
+        } else {
+          checkpoint.fail(new AssertionError("Unexpected trailers " + trailers));
+        }
+        HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
+        stream.writeHead(head, EMPTY_BUFFER, true);
+      });
+    };
+    startServer(testAddress);
+    client
+      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+      .compose(request -> request
+        .putTrailer("trailer_key", "trailer_value")
+        .send("the-body")
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
   @Test

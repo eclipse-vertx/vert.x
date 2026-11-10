@@ -53,7 +53,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -608,6 +610,26 @@ public final class HttpUtils {
   }
 
   private static final Consumer<CharSequence> HEADER_VALUE_VALIDATOR = HttpUtils::validateHeaderValue;
+
+  private static final Set<String> FORBIDDEN_TRAILERS = Set.of(
+    "content-length", "transfer-encoding", "trailer",
+    "connection", "keep-alive", "proxy-connection", "upgrade", "te",
+    "host",
+    "authorization", "proxy-authorization", "cookie");
+
+  /**
+   * Validate trailers to send, rejecting pseudo-headers and the fields a recipient merging trailers into headers
+   * would act on: framing, connection-specific, routing, authentication and state fields.
+   *
+   * @throws IllegalArgumentException when a field cannot be a trailer
+   */
+  public static void validateTrailers(MultiMap trailers) {
+    for (String name : trailers.names()) {
+      if (name.startsWith(":") || FORBIDDEN_TRAILERS.contains(name.toLowerCase(Locale.ROOT))) {
+        throw new IllegalArgumentException("Forbidden trailer field: " + name);
+      }
+    }
+  }
 
   public static void validateHeader(CharSequence name, CharSequence value) {
     validateHeaderName(name);

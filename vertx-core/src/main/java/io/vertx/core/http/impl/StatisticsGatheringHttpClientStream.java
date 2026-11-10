@@ -93,6 +93,12 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public WriteResult end(MultiMap trailers) {
+    endpointRequest.reportRequestEnd();
+    return delegate.end(trailers);
+  }
+
+  @Override
   public Future<Void> writeFrame(int type, int flags, Buffer payload) {
     return delegate.writeFrame(type, flags, payload);
   }

@@ -59,6 +59,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private int maxRedirects;
   private int numberOfRedirections;
   private final MultiMap headers;
+  private MultiMap trailers;
   private boolean trailersSent;
   private boolean headersSent;
   private boolean isConnect;
@@ -220,6 +221,45 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
+  public synchronized MultiMap trailers() {
+    if (trailers == null) {
+      if (getMethod() == HttpMethod.CONNECT) {
+        throw new IllegalStateException("A CONNECT request cannot send trailers");
+      }
+      trailers = stream.connection().newHttpRequestHeaders();
+    }
+    return trailers;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(String name, String value) {
+    checkEnded();
+    trailers().set(name, value);
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(CharSequence name, CharSequence value) {
+    checkEnded();
+    trailers().set(name, value);
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(String name, Iterable<String> values) {
+    checkEnded();
+    trailers().set(name, values);
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> values) {
+    checkEnded();
+    trailers().set(name, values);
+    return this;
+  }
+
+  @Override
   public synchronized HttpClientRequestInternal setWriteQueueMaxSize(int maxSize) {
     checkEnded();
     stream.setWriteQueueMaxSize(maxSize);
@@ -344,6 +384,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       if (chunked || headers.contains(CONTENT_LENGTH) || headers.contains(TRANSFER_ENCODING)) {
         return context.failedFuture(new IllegalStateException("A tunnel request cannot declare content-length or transfer-encoding"));
+      }
+      if (trailers != null) {
+        return context.failedFuture(new IllegalStateException("A tunnel request cannot send trailers"));
       }
     }
     doWrite(null, false, true);
@@ -535,6 +578,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private WriteResult doWrite(Buffer buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
+    MultiMap trailers;
+    Throwable failure;
     synchronized (this) {
       if (reset != null) {
         return new FailedWrite(context, reset);
@@ -561,8 +606,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
         }
       }
-      if (!headersSent) {
+      trailers = this.trailers;
+      failure = end && trailers != null ? checkTrailers(trailers) : null;
+      if (failure == null && !headersSent) {
         if (!connect) {
+          if (trailers != null && version() == HttpVersion.HTTP_1_1 && !headers.contains(CONTENT_LENGTH)) {
+            chunked = true;
+          }
           boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
           if (end) {
             if (buff != null && requiresContentLength) {
@@ -585,25 +635,57 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       trailersSent = end;
     }
 
+    if (failure != null) {
+      reset(0, failure);
+      return new FailedWrite(context, failure);
+    }
     WriteResult future;
-    if (writeHead) {
-      HttpMethod method = getMethod();
-      String uri = getURI();
-      if (uri.isEmpty()) {
-        uri = "/";
+    if (writeEnd && trailers != null) {
+      if (writeHead) {
+        stream.writeHead(head(), buff, false);
+      } else if (buff != null) {
+        stream.write(buff, false);
       }
-      HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), traceOperation);
-      future = stream.writeHead(head, buff, writeEnd);
+      future = stream.end(trailers);
+    } else if (writeHead) {
+      future = stream.writeHead(head(), buff, writeEnd);
+    } else if (buff == null && !end) {
+      future = new FailedWrite(context, "Head already sent");
     } else {
-      if (buff == null && !end) {
-        throw new IllegalArgumentException();
-      }
       future = stream.write(buff, writeEnd);
     }
     if (end) {
       tryComplete();
     }
     return future;
+  }
+
+  private HttpRequestHead head() {
+    HttpMethod method = getMethod();
+    String uri = getURI();
+    if (uri.isEmpty()) {
+      uri = "/";
+    }
+    return new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), traceOperation);
+  }
+
+  private Throwable checkTrailers(MultiMap trailers) {
+    if (getMethod() == HttpMethod.CONNECT) {
+      return new IllegalStateException("A CONNECT request cannot send trailers");
+    }
+    HttpVersion version = version();
+    if (version == HttpVersion.HTTP_1_0) {
+      return new IllegalStateException("HTTP/1.0 cannot send trailers");
+    }
+    if (version == HttpVersion.HTTP_1_1 && !(headersSent ? chunked : chunked || !headers.contains(CONTENT_LENGTH))) {
+      return new IllegalStateException("HTTP/1.1 trailers require chunked encoding");
+    }
+    try {
+      HttpUtils.validateTrailers(trailers);
+    } catch (IllegalArgumentException e) {
+      return e;
+    }
+    return null;
   }
 
   private void checkEnded() {

@@ -235,6 +235,56 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
+   * Returns the HTTP trailers of this request, the map is created on the first call.
+   *
+   * <p> Calling this method commits the request to sending trailers when it ends: HTTP/1.x sends the request with
+   * chunked encoding, HTTP/2 and HTTP/3 end the stream with a trailers frame, even when no trailer has been added.
+   * Do not call this method unless trailers are actually written.
+   *
+   * <p> Ending the request fails and resets it when the trailers cannot be sent: an HTTP/1.x request whose
+   * head was sent without chunked encoding, an HTTP/1.x request declaring a content length or an HTTP/1.0 request,
+   * or trailers containing fields that cannot be trailers, such as framing, routing or authentication fields.
+   *
+   * @return The HTTP trailers
+   * @throws IllegalStateException for a {@code CONNECT} request
+   */
+  @CacheReturn
+  MultiMap trailers();
+
+  /**
+   * Put an HTTP trailer.
+   *
+   * <p> Like {@link #trailers()}, this commits the request to sending trailers when it ends.
+   *
+   * @param name  the trailer name
+   * @param value  the trailer value
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest putTrailer(String name, String value);
+
+  /**
+   * Like {@link #putTrailer(String, String)} but using CharSequence
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  HttpClientRequest putTrailer(CharSequence name, CharSequence value);
+
+  /**
+   * Like {@link #putTrailer(String, String)} but providing multiple values via a String Iterable
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  HttpClientRequest putTrailer(String name, Iterable<String> values);
+
+  /**
+   * Like {@link #putTrailer(String, Iterable)} but with CharSequence Iterable
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> values);
+
+  /**
    * Set the trace operation of this request.
    *
    * @param op the operation

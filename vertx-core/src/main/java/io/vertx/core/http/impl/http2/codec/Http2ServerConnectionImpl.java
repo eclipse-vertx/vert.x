@@ -148,8 +148,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       stream.context().execute(stream.unwrap(), streamHandler);
       stream.onHeaders(headersMap);
     } else {
-      // Http server request trailer - not implemented yet (in api)
       stream = nettyStream.getProperty(streamKey);
+      if (endOfStream) {
+        stream.onTrailers(new HttpRequestHeaders(headers));
+      }
+      return;
     }
     if (endOfStream) {
       stream.onTrailers();

@@ -322,6 +322,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public final WriteResult write(WritePromise write) {
+    first_ = false;
     outboundQueue.add(write);
     return write;
   }
