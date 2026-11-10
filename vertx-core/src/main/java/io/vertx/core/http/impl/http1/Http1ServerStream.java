@@ -19,7 +19,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
-import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.streams.WriteResult;
@@ -69,7 +68,7 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
     requestEnded = true;
     Handler<MultiMap> handler = trailersHandler;
     if (handler != null) {
-      context.dispatch(Http1xHeaders.caseInsensitive(), handler);
+      context.dispatch(trailers(), handler);
     }
     checkCloseHandler();
   }

@@ -380,6 +380,20 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
   boolean isEnded();
 
   /**
+   * Return the first trailer value with the specified name
+   *
+   * @param trailerName  the trailer name
+   * @return the trailer value
+   */
+  @Nullable String getTrailer(String trailerName);
+
+  /**
+   * @return the trailers, empty until the request has ended
+   */
+  @CacheReturn
+  MultiMap trailers();
+
+  /**
    * Set a custom frame handler. The handler will get notified when the http stream receives an custom HTTP/2
    * frame. HTTP/2 permits extension of the protocol.
    *

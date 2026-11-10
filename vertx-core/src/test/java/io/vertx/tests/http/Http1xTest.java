@@ -3431,6 +3431,72 @@ public class Http1xTest extends HttpTest {
       .await();
     checkpoint.awaitSuccess();
   }
+
+  @Test
+  public void testRequestTrailersWithContentLength() throws Exception {
+    server.requestHandler(req -> fail("Unexpected request"));
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+    req.putHeader(HttpHeaders.CONTENT_LENGTH, "8");
+    req.putTrailer("foo", "foo_value");
+    assertThatThrownBy(() -> req.end("the-body").await()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void testRequestTrailersAfterNonChunkedHead(Checkpoint checkpoint) throws Exception {
+    server.requestHandler(req -> req.end().onComplete(ar -> {
+      if (ar.failed()) {
+        checkpoint.succeed();
+      } else {
+        checkpoint.fail(new AssertionError("Unexpected request end"));
+      }
+    }));
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+    req.putHeader(HttpHeaders.CONTENT_LENGTH, "8");
+    req.write("the-").await();
+    req.putTrailer("foo", "foo_value");
+    assertThatThrownBy(() -> req.end().await()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void testHttp10RequestTrailers() throws Exception {
+    server.requestHandler(req -> fail("Unexpected request"));
+    startServer(testAddress);
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setProtocolVersion(HttpVersion.HTTP_1_0)).await();
+    req.putTrailer("foo", "foo_value");
+    assertThatThrownBy(() -> req.end("the-body").await()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void testServerRequestTrailersIgnoreFramingFields() throws Exception {
+    Promise<MultiMap> received = Promise.promise();
+    server.requestHandler(req -> req.end().onComplete(v -> {
+      received.complete(req.trailers());
+      req.response().end();
+    }));
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    NetSocket so = client.connect(testAddress).await();
+    so.write("POST / HTTP/1.1\r\n" +
+      "host: localhost\r\n" +
+      "transfer-encoding: chunked\r\n" +
+      "\r\n" +
+      "4\r\n" +
+      "body\r\n" +
+      "0\r\n" +
+      "foo: foo_value\r\n" +
+      "content-length: 10\r\n" +
+      "transfer-encoding: chunked\r\n" +
+      "trailer: foo\r\n" +
+      "\r\n");
+    MultiMap trailers = received.future().await();
+    assertEquals("foo_value", trailers.get("foo"));
+    assertNull(trailers.get("content-length"));
+    assertNull(trailers.get("transfer-encoding"));
+    assertNull(trailers.get("trailer"));
+  }
+
   @Test
   public void testInvalidTrailerInHttpServerRequest(Checkpoint checkpoint) throws Exception {
     testHttpServerRequestDecodeError(checkpoint, so -> {

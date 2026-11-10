@@ -141,8 +141,7 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.requestHandler(req -> {
       req.bodyHandler(body -> {
-        // No API to get client trailers
-        req.response().end(body);
+        req.response().end(body + ":" + req.getTrailer("key"));
       });
     });
 
@@ -156,7 +155,23 @@ public class Http3ServerTest extends VertxTestBase {
     stream.end(new DefaultHttp3Headers().set("key", "value"));
 
 
-    Assert.assertEquals("chunk", new String(stream.responseBody()));
+    Assert.assertEquals("chunk:value", new String(stream.responseBody()));
+  }
+
+  @Test
+  public void testTrailersWithPseudoHeader() throws Exception {
+    CompletableFuture<Boolean> ended = new CompletableFuture<>();
+    server.requestHandler(req -> req.end().onComplete(ar -> ended.complete(ar.succeeded())));
+    server.listen(8443, "localhost").await();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
+    CompletableFuture<Long> resetCode = new CompletableFuture<>();
+    stream.resetHandler(resetCode::complete);
+    stream.write(new DefaultHttp3Headers().method("POST").path("/"));
+    stream.write("chunk".getBytes(StandardCharsets.UTF_8));
+    stream.end(new DefaultHttp3Headers().path("/evil"));
+    Assert.assertEquals(Http3ErrorCode.H3_MESSAGE_ERROR.code(), (long) resetCode.get(20, TimeUnit.SECONDS));
+    Assert.assertFalse(ended.get(20, TimeUnit.SECONDS));
   }
 
   @Test

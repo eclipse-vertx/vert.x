@@ -1883,6 +1883,30 @@ public class Http2ClientTest extends Http2TestBase {
     Assert.assertEquals("the-body", body.await().toString());
   }
 
+  @Test
+  public void testClearTextUpgradeRequestTrailers() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST));
+    server.requestHandler(req -> req.body().onComplete(TestUtils.onSuccess(body -> {
+      req.response().end(body + ":" + req.getTrailer("foo"));
+    })));
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(true));
+    for (int i = 0;i < 2;i++) {
+      Buffer body = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+        .compose(req -> req
+          .putTrailer("foo", "foo_value")
+          .send("the-body")
+          .compose(response -> {
+            Assert.assertEquals(HttpVersion.HTTP_2, response.version());
+            return response.body();
+          }))
+        .await();
+      Assert.assertEquals("request " + i, "the-body:foo_value", body.toString());
+    }
+  }
+
   private void testIdleTimeout(HttpServerOptions serverOptions, HttpClientOptions clientOptions) throws Exception {
     waitFor(3);
     server.close();

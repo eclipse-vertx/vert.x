@@ -668,6 +668,34 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testRequestTrailersWithPseudoHeader() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> req.end().onComplete(ar -> {
+      Assert.assertTrue("Unexpected request end with trailers " + req.trailers(), ar.failed());
+      complete();
+    }));
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+          vertx.runOnContext(v -> {
+            Assert.assertEquals(Http2Error.PROTOCOL_ERROR.code(), errorCode);
+            complete();
+          });
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, POST("/"), 0, false, request.context.newPromise());
+      request.encoder.writeData(request.context, id, BufferInternal.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().path("/evil"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    await();
+  }
+
+  @Test
   public void testConnect() throws Exception {
     server.requestHandler(req -> {
       Assert.assertEquals(HttpMethod.CONNECT, req.method());

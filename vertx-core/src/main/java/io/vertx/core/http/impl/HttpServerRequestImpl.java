@@ -59,6 +59,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   private String scheme;
   private String uri;
   private MultiMap headersMap;
+  private MultiMap trailers;
   private HostAndPort authority;
   private HostAndPort realAuthority;
   private String absoluteURI;
@@ -200,6 +201,12 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
   }
 
   public void handleTrailers(MultiMap trailers) {
+    MultiMap t = this.trailers;
+    if (t != null) {
+      t.setAll(trailers);
+    } else {
+      this.trailers = trailers;
+    }
   }
 
   public Void handleEnd() {
@@ -471,6 +478,20 @@ public class HttpServerRequestImpl extends HttpServerRequestBase implements Cont
     synchronized (connection) {
       return ended;
     }
+  }
+
+  @Override
+  public String getTrailer(String trailerName) {
+    MultiMap t = trailers;
+    return t != null ? t.get(trailerName) : null;
+  }
+
+  @Override
+  public MultiMap trailers() {
+    if (trailers == null) {
+      trailers = MultiMap.caseInsensitiveMultiMap();
+    }
+    return trailers;
   }
 
   @Override

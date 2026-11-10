@@ -43,6 +43,7 @@ public interface HttpStream {
   ByteBufAllocator allocator();
 
   WriteResult write(Buffer buf, boolean end);
+  WriteResult end(MultiMap trailers);
 
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);

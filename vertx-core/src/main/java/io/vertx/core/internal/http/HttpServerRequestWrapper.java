@@ -222,6 +222,16 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public String getTrailer(String trailerName) {
+    return delegate.getTrailer(trailerName);
+  }
+
+  @Override
+  public MultiMap trailers() {
+    return delegate.trailers();
+  }
+
+  @Override
   @Fluent
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
     return delegate.customFrameHandler(handler);

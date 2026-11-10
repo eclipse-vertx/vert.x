@@ -322,7 +322,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
   }
 
-  private void writeBufferToChannel(Stream s, ByteBuf buff, boolean end, Promise<Void> listener) {
+  private void writeBufferToChannel(Stream s, ByteBuf buff, boolean end, HttpHeaders trailers, Promise<Void> listener) {
     assert current == s;
     s.bytesWritten += buff != null ? buff.readableBytes() : 0L;
     Object msg;
@@ -336,7 +336,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       }
     } else {
       if (end) {
-        if (buff != null && buff.isReadable()) {
+        if (trailers != null) {
+          msg = new DefaultLastHttpContent(buff != null ? buff : Unpooled.EMPTY_BUFFER, trailers);
+        } else if (buff != null && buff.isReadable()) {
           msg = new DefaultLastHttpContent(buff, false);
         } else {
           msg = LastHttpContent.EMPTY_LAST_CONTENT;
@@ -410,14 +412,14 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     return write;
   }
 
-  private WriteResult writeBuffer(Stream stream, ByteBuf buff, boolean end) {
+  private WriteResult writeBuffer(Stream stream, ByteBuf buff, boolean end, HttpHeaders trailers) {
     WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
         if (stream.reset) {
           tryFail("Stream reset");
         } else {
-          writeBufferToChannel(stream, buff, end, this);
+          writeBufferToChannel(stream, buff, end, trailers, this);
         }
       }
     };
@@ -759,10 +761,15 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     @Override
     public WriteResult write(Buffer buff, boolean end) {
       if (buff != null || end) {
-        return conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end);
+        return conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, null);
       } else {
         throw new IllegalStateException("???");
       }
+    }
+
+    @Override
+    public WriteResult end(MultiMap trailers) {
+      return conn.writeBuffer(this, null, true, (HttpHeaders) trailers);
     }
 
     @Override

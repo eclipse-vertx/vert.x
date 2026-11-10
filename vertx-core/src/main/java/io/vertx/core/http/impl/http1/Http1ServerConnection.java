@@ -29,6 +29,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
 import io.vertx.core.internal.ContextInternal;
@@ -259,8 +260,11 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     }
     Http1ServerRequest request = requestInProgress;
     request.handleContent(content.content());
-    //TODO chunk trailers
     if (content instanceof LastHttpContent) {
+      HttpHeaders trailers = ((LastHttpContent) content).trailingHeaders();
+      if (!trailers.isEmpty()) {
+        request.handleTrailers(new HeadersAdaptor(trailers));
+      }
       onEnd();
     }
   }
