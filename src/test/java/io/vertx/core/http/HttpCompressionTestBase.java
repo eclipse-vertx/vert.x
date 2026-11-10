@@ -43,7 +43,7 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
       " * You may elect to redistribute this code under either of these licenses.\n" +
       " */";
 
-  private Buffer compressedTestString;
+  protected Buffer compressedTestString;
 
   public HttpCompressionTestBase() {
   }

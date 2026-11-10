@@ -11,6 +11,9 @@
 
 package io.vertx.core.http;
 
+import io.netty.util.internal.StringUtil;
+import org.junit.Test;
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
@@ -29,5 +32,36 @@ public class Http2CompressionTest extends GzipHttpCompressionTestBase {
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return Http2TestBase.createHttp2ClientOptions().setDefaultPort(DEFAULT_HTTPS_PORT).setDefaultHost(DEFAULT_HTTPS_HOST);
+  }
+
+  @Test
+  public void testServerCompressionSkipsEncodedPushResponse() throws Exception {
+    server.close();
+    HttpServerOptions options = createBaseServerOptions();
+    configureServerCompression(options);
+    server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/pushed").onComplete(onSuccess(pushed -> {
+        pushed
+          .putHeader(HttpHeaders.CONTENT_ENCODING, encoding())
+          .end(compressedTestString);
+        req.response().end();
+      }));
+    });
+    startServer();
+    client.request(new RequestOptions()
+      .addHeader(HttpHeaders.ACCEPT_ENCODING, encoding()))
+      .onComplete(onSuccess(req -> {
+        req
+          .pushHandler(pushReq -> pushReq.response().onComplete(onSuccess(pushResp -> {
+            assertEquals(encoding(), pushResp.getHeader(HttpHeaders.CONTENT_ENCODING));
+            pushResp.body().onComplete(onSuccess(body -> {
+              assertEquals(StringUtil.toHexString(compressedTestString.getBytes()), StringUtil.toHexString(body.getBytes()));
+              testComplete();
+            }));
+          })))
+          .send();
+      }));
+    await();
   }
 }
