@@ -79,6 +79,11 @@ public class PipeImpl<T> implements Pipe<T> {
       if (ws.writeQueueFull()) {
         src.pause();
         ws.drainHandler(drainHandler);
+        // The drain event is edge-triggered and is dropped when no drain handler is registered: if the destination
+        // drained after the check above and before the registration, nobody will call the handler
+        if (!ws.writeQueueFull()) {
+          src.resume();
+        }
       }
     });
     src.resume();
