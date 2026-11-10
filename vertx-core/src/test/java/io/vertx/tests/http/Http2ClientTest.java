@@ -1860,6 +1860,29 @@ public class Http2ClientTest extends Http2TestBase {
         clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
   }
 
+  @Test
+  public void testClearTextUpgradeRequestBodyAfterServerUpgrade() throws Exception {
+    Promise<Void> received = Promise.promise();
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST));
+    server.requestHandler(req -> {
+      received.complete();
+      req.body().onComplete(TestUtils.onSuccess(body -> req.response().end(body)));
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(true));
+    HttpClientRequest req = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+    req.setChunked(true);
+    Future<Buffer> body = req.response().compose(HttpClientResponse::body);
+    req.writeHead().await();
+    // The server answers 101 on the request head, let the client receive it before the body is sent
+    received.future().await();
+    Thread.sleep(100);
+    req.end("the-body").await();
+    Assert.assertEquals("the-body", body.await().toString());
+  }
+
   private void testIdleTimeout(HttpServerOptions serverOptions, HttpClientOptions clientOptions) throws Exception {
     waitFor(3);
     server.close();
