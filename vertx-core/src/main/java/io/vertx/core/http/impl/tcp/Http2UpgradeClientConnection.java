@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.tcp;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,7 +20,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
@@ -31,6 +31,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.streams.WritableWrite;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
@@ -122,7 +123,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     return current.creationTimestamp();
   }
 
-  private static class DelegatingStream implements HttpClientStream {
+  private static class DelegatingStream implements HttpClientStream, ContentEncoder {
 
     private final Http2UpgradeClientConnection connection;
     private final HttpClientStream delegate;
@@ -168,13 +169,29 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public WriteResult writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
-      return delegate.writeHead(request, buf, end);
+    public HttpClientStream head(io.vertx.core.http.impl.HttpRequestHead request) {
+      delegate.head(request);
+      return this;
     }
 
     @Override
-    public WriteResult write(Buffer buf, boolean end) {
-      return delegate.write(buf, end);
+    public ContentEncoder contentEncoder() {
+      return this;
+    }
+
+    @Override
+    public WriteResult write(ByteBuf buf) {
+      return delegate.contentEncoder().write(buf);
+    }
+
+    @Override
+    public WriteResult end(ByteBuf buf) {
+      return delegate.contentEncoder().end(buf);
+    }
+
+    @Override
+    public WriteResult end() {
+      return delegate.contentEncoder().end();
     }
 
     @Override
@@ -295,7 +312,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
    * The first stream that will send the request using HTTP/1, upgrades the connection when the protocol
    * switches and receives the response with HTTP/2 frames.
    */
-  private static class UpgradingStream implements HttpClientStream {
+  private static class UpgradingStream implements HttpClientStream, ContentEncoder {
 
     void handleUpgrade(io.vertx.core.http.impl.HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
@@ -390,9 +407,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
      * HTTP/2 clear text upgrade here.
      */
     @Override
-    public WriteResult writeHead(io.vertx.core.http.impl.HttpRequestHead request,
-                                 Buffer buf,
-                                 boolean end) {
+    public HttpClientStream head(io.vertx.core.http.impl.HttpRequestHead request) {
       UpgradeResult blah = new UpgradeResult() {
         @Override
         public void upgradeAccepted(io.vertx.core.http.impl.HttpClientConnection connection, HttpClientStream upgradedStream) {
@@ -413,29 +428,15 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
           log.error(cause.getMessage(), cause);
         }
       };
-      upgrade.upgrade(upgradingStream, request, buf, end,
+      upgrade.upgrade(upgradingStream, request, null, false,
         upgradingConnection.channelHandlerContext().channel(), clientMetrics, blah);
-      // The head is the first write of the stream: it cannot reach the high-water mark
-      WritableWrite promise = new WritableWrite(upgradingStream.context());
-      writeHead(request, buf, end, promise);
-      return promise;
-    }
-
-    private void writeHead(io.vertx.core.http.impl.HttpRequestHead head,
-                           Buffer buf,
-                           boolean end,
-                           Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeHead(head, buf, end)
-          .onComplete(promise);
-        if (end) {
-          ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
-          pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES_EVENT);
-        }
+        upgradingStream.head(request);
       } else {
-        exec.execute(() -> writeHead(head, buf, end, promise));
+        exec.execute(() -> upgradingStream.head(request));
       }
+      return this;
     }
 
     @Override
@@ -624,8 +625,23 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public WriteResult write(Buffer buf, boolean end) {
-      return write(stream -> stream.write(buf, end), end);
+    public ContentEncoder contentEncoder() {
+      return this;
+    }
+
+    @Override
+    public WriteResult write(ByteBuf buf) {
+      return write(stream -> stream.contentEncoder().write(buf), false);
+    }
+
+    @Override
+    public WriteResult end(ByteBuf buf) {
+      return write(stream -> stream.contentEncoder().end(buf), true);
+    }
+
+    @Override
+    public WriteResult end() {
+      return write(stream -> stream.contentEncoder().end(), true);
     }
 
     @Override

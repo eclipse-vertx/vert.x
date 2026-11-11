@@ -26,7 +26,6 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
-import io.vertx.core.internal.streams.WriteResult;
 
 import java.util.Map;
 
@@ -129,7 +128,10 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
   }
 
   @Override
-  public WriteResult writeHead(HttpRequestHead request, Buffer chunk, boolean end) {
+  public Http3ClientStream head(HttpRequestHead request) {
+    if (head != null) {
+      throw new IllegalStateException("Head already set");
+    }
     HttpRequestHeaders headers = ((HttpRequestHeaders)request.headers());
     headers.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
     headers.authority(request.authority);
@@ -140,7 +142,8 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
       headers.scheme("https");
     }
     headers.prepare();
-    return writeHeaders(headers, chunk, end);
+    head = headers;
+    return this;
   }
 
   @Override

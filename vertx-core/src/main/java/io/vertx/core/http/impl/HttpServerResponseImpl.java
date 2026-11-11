@@ -305,7 +305,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()), null, false);
+    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()));
   }
 
   @Override
@@ -333,7 +333,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.EARLY_HINTS.code(), HttpResponseStatus.EARLY_HINTS.reasonPhrase(), http2Headers), null, false);
+    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.EARLY_HINTS.code(), HttpResponseStatus.EARLY_HINTS.reasonPhrase(), http2Headers));
   }
 
   @Override
@@ -397,12 +397,9 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
   }
 
   private WriteResult write(Buffer chunk, boolean end) {
-    MultiMap trailers = isContentAlwaysEmpty() ? null : trailedMap;
-    WriteResult future = write_(chunk, end && trailers == null);
+    MultiMap trailers = !end || isContentAlwaysEmpty() ? null : trailedMap;
+    WriteResult future = write_(chunk, end, trailers);
     if (end) {
-      if (trailers != null) {
-        future = stream.end(trailers);
-      }
       Handler<Void> bodyEndHandler = this.bodyEndHandler;
       Handler<Void> endHandler = this.endHandler;
       if (bodyEndHandler != null) {
@@ -415,14 +412,14 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     return future;
   }
 
-  private WriteResult write_(Buffer chunk, boolean end) {
+  private WriteResult write_(Buffer chunk, boolean end, MultiMap trailers) {
     Handler<Void> headersEndHandler;
     synchronized (conn) {
       if (ended) {
         throw new IllegalStateException("Response has already been written");
       }
       ended = end;
-      if (end && !headWritten && requiresContentLengthHeader()) {
+      if (end && trailers == null && !headWritten && requiresContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
       }
       headersEndHandler = headWritten ? null : this.headersEndHandler;
@@ -442,9 +439,17 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
       sendHeaders = prepareHeaders();
     }
     if (sendHeaders) {
-      return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, end);
+      stream.head(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap));
+    }
+    if (trailers != null) {
+      if (chunk != null) {
+        stream.write(chunk);
+      }
+      return stream.end(trailers);
+    } else if (end) {
+      return chunk != null ? stream.end(chunk) : stream.end();
     } else {
-      return stream.write(chunk, end);
+      return stream.write(chunk);
     }
   }
 
@@ -462,7 +467,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
 
   private Future<Void> checkSendHeaders() {
     if (prepareHeaders()) {
-      return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), null, false);
+      return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap));
     } else {
       return null;
     }
@@ -720,7 +725,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
         file.close();
       } catch (Exception ignore) {
       }
-      stream.write(null, true).onComplete(promise);
+      stream.end().onComplete(promise);
     } else {
       stream.sendFile(file, promise);
     }

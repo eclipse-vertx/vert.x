@@ -19,6 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -120,6 +121,11 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
       @Override
       public void write() {
         unsafeWrite(message, false, this);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        ReferenceCountUtil.release(message);
+        super.cancel(cause);
       }
     };
     writeToChannel(messageWrite);

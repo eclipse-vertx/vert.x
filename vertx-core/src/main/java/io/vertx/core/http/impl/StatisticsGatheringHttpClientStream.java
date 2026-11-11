@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
@@ -23,6 +24,7 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
 /**
@@ -30,7 +32,7 @@ import io.vertx.core.net.endpoint.ServerInteraction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class StatisticsGatheringHttpClientStream implements HttpClientStream {
+class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEncoder {
 
   private final HttpClientStream delegate;
   private final ServerInteraction endpointRequest;
@@ -76,20 +78,32 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public WriteResult writeHead(HttpRequestHead request, Buffer buf, boolean end) {
+  public HttpClientStream head(HttpRequestHead request) {
     endpointRequest.reportRequestBegin();
-    if (end) {
-      endpointRequest.reportRequestEnd();
-    }
-    return delegate.writeHead(request, buf, end);
+    delegate.head(request);
+    return this;
   }
 
   @Override
-  public WriteResult write(Buffer buf, boolean end) {
-    if (end) {
-      endpointRequest.reportRequestEnd();
-    }
-    return delegate.write(buf, end);
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult write(ByteBuf buf) {
+    return delegate.contentEncoder().write(buf);
+  }
+
+  @Override
+  public WriteResult end(ByteBuf buf) {
+    endpointRequest.reportRequestEnd();
+    return delegate.contentEncoder().end(buf);
+  }
+
+  @Override
+  public WriteResult end() {
+    endpointRequest.reportRequestEnd();
+    return delegate.contentEncoder().end();
   }
 
   @Override

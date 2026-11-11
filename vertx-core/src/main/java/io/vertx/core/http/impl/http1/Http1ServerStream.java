@@ -22,15 +22,17 @@ import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.streams.WriteResult;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.net.HostAndPort;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http1ServerStream extends Http1ServerRequest implements HttpServerStream, FlowController {
+public class Http1ServerStream extends Http1ServerRequest implements HttpServerStream, ContentEncoder, FlowController {
 
   private boolean headersSent;
+  private HttpResponseHead head;
   private Handler<HttpRequestHead> headHandler;
   private Handler<MultiMap> trailersHandler;
   private Handler<Void> closeHandler;
@@ -96,50 +98,74 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   @Override
-  public WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
-    if (headersSent) {
-      return new FailedWrite(context, "Headers already sent");
+  public Http1ServerStream head(HttpResponseHead head) {
+    if (this.head != null || headersSent) {
+      throw new IllegalStateException("Head already set");
     }
-    if (responseEnded) {
-      throw new IllegalStateException("Response already ended");
+    this.head = head;
+    return this;
+  }
+
+  private boolean sendHead() {
+    HttpResponseHead head = this.head;
+    if (head == null) {
+      return false;
     }
+    this.head = null;
     headersSent = true;
-    try {
-      Http1ServerResponse response = response();
-      response.setStatusCode(head.statusCode);
-      response.headers().setAll(head.headers);
-      responseEnded = end;
-      if (chunk.length() > 0) {
-        if (end) {
-          return response.end(chunk);
-        } else {
-          return response.write(chunk);
-        }
-      } else {
-        if (end) {
-          return response.end();
-        } else {
-          return response.writeHead();
-        }
-      }
-    } finally {
-      checkCloseHandler();
-    }
+    Http1ServerResponse response = response();
+    response.setStatusCode(head.statusCode);
+    response.headers().setAll(head.headers);
+    return true;
   }
 
   @Override
-  public WriteResult write(Buffer buf, boolean end) {
-    if (!headersSent) {
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult write(ByteBuf buf) {
+    return write(buf, false);
+  }
+
+  @Override
+  public WriteResult end(ByteBuf buf) {
+    return write(buf, true);
+  }
+
+  /**
+   * Ends the stream outbound content, as {@link ContentEncoder#end()}. This deliberately overrides the unrelated
+   * {@link Http1ServerRequest#end()} (the end of the inbound request): this object is exposed either as a stream or
+   * as a request, never as both. To be fixed eventually, by not inheriting the request.
+   */
+  @Override
+  public WriteResult end() {
+    return write(null, true);
+  }
+
+  private WriteResult write(ByteBuf buf, boolean end) {
+    if (!headersSent && head == null) {
+      if (buf != null) {
+        buf.release();
+      }
       return new FailedWrite(context, "Headers must be sent prior sending a message");
     }
     if (responseEnded) {
-      throw new IllegalStateException("Response already ended");
+      if (buf != null) {
+        buf.release();
+      }
+      return new FailedWrite(context, "Response already ended");
     }
     try {
+      boolean headOnly = sendHead() && !end && !buf.isReadable();
       Http1ServerResponse response = response();
       if (end) {
         responseEnded = true;
-        return buf.length() > 0 ? response.end(buf) : response.end();
+        return buf != null ? response.end(buf) : response.end();
+      } else if (headOnly) {
+        buf.release();
+        return response.writeHead();
       } else {
         return response.write(buf);
       }
@@ -150,11 +176,14 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
 
   @Override
   public WriteResult end(MultiMap headers) {
-    if (!headersSent) {
+    if (!headersSent && head == null) {
       return new FailedWrite(context, "Headers must be sent prior sending a message");
     }
     if (responseEnded) {
       throw new IllegalStateException("Response already ended");
+    }
+    if (sendHead() && !headers.isEmpty()) {
+      response().setChunked(true);
     }
     try {
       responseEnded = true;

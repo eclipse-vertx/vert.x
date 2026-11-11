@@ -34,6 +34,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.concurrent.WriteOp;
 import io.vertx.core.internal.streams.OutboundWriteStream;
@@ -45,7 +46,7 @@ import static io.vertx.core.http.impl.HttpUtils.END_OF_STREAM_2;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream, FlowController {
+abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, ContentEncoder, Http2Stream, FlowController {
 
   private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
@@ -350,6 +351,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public final WriteResult end(MultiMap headers) {
+    writeHeadIfSet(null, false);
     return writeHeaders((HttpHeaders) headers, true, true);
   }
 
@@ -425,30 +427,69 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.sendFile(id, file, promise);
   }
 
-  public final WriteResult write(Buffer chunk, boolean end) {
-    return writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end);
+  public final ContentEncoder contentEncoder() {
+    return this;
   }
 
-  public final WriteResult writeData(ByteBuf chunk, boolean end) {
+  public final WriteResult write(ByteBuf chunk) {
+    return write(chunk, false);
+  }
+
+  public final WriteResult end(ByteBuf chunk) {
+    return write(chunk, true);
+  }
+
+  public final WriteResult end() {
+    return write(null, true);
+  }
+
+  final WriteResult write(ByteBuf chunk, boolean end) {
+    WriteResult head = writeHeadIfSet(chunk, end);
+    if (head != null) {
+      return head;
+    }
     return write(new WritePromise(context) {
       @Override
       public void write() {
         writeData0(chunk == null ? Unpooled.EMPTY_BUFFER : chunk, end, this);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        if (chunk != null) {
+          chunk.release();
+        }
+        super.cancel(cause);
       }
     });
   }
 
   void writeData0(ByteBuf buf, boolean end, Promise<Void> promise) {
     if (reset != -1L) {
+      if (buf != null) {
+        buf.release();
+      }
       promise.fail("Stream reset");
       return;
     }
     if (failure != null) {
+      if (buf != null) {
+        buf.release();
+      }
       promise.fail(failure);
       return;
     }
     if (!headersSent) {
+      if (buf != null) {
+        buf.release();
+      }
       promise.fail("Headers must be sent before sending a message");
+      return;
+    }
+    if (trailersSent) {
+      if (buf != null) {
+        buf.release();
+      }
+      promise.fail("Stream already ended");
       return;
     }
     ByteBuf chunk;
@@ -596,6 +637,14 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   abstract void handleHeader(HttpHeaders map);
+
+  /**
+   * Write the head set on this stream with {@code chunk}, an empty or {@code null} chunk that does not end the stream
+   * writes the head alone.
+   *
+   * @return the write result or {@code null} when no head is set
+   */
+  abstract WriteResult writeHeadIfSet(ByteBuf chunk, boolean end);
 
   public S closeHandler(Handler<Void> handler) {
     closeHandler = handler;

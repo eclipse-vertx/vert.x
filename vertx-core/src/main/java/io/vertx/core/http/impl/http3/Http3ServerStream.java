@@ -30,7 +30,6 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.QuicStreamInternal;
-import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
 
 /**
@@ -102,11 +101,15 @@ public class Http3ServerStream extends Http3Stream<Http3ServerStream, Http3Serve
   }
 
   @Override
-  public WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
+  public Http3ServerStream head(HttpResponseHead head) {
+    if (this.head != null) {
+      throw new IllegalStateException("Head already set");
+    }
     HttpResponseHeaders headers = (HttpResponseHeaders) head.headers;
     headers.status(head.statusCode);
     headers.prepare();
-    return writeHeaders(headers, chunk, end);
+    this.head = headers;
+    return this;
   }
 
   @Override

@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.core.internal.http.FlowController;
@@ -41,7 +42,7 @@ import io.vertx.core.net.impl.VertxHandler;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Connection> implements FlowController {
+public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Connection> implements ContentEncoder, FlowController {
 
   // Uses HTTP/2 instance for the moment
   static final HttpResponseHeaders EMPTY = new HttpResponseHeaders(EmptyHttp2Headers.INSTANCE);
@@ -53,6 +54,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   private boolean headersReceived;
   private boolean headersSent;
+  HttpHeaders head;
   private boolean trailersReceived;
   private boolean trailersSent;
   private boolean reset;
@@ -295,12 +297,17 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public final WriteResult end(MultiMap trailers) {
-    return writeHeaders((HttpHeaders) trailers, null, true);
+    HttpHeaders head = this.head;
+    if (head != null) {
+      this.head = null;
+      writeHeaders(head, false);
+    }
+    return writeHeaders((HttpHeaders) trailers, true);
   }
 
-  WriteResult writeHeaders(HttpHeaders headers, Buffer chunk, boolean end) {
+  private WriteResult writeHeaders(HttpHeaders headers, boolean end) {
     if (trailersSent) {
-      throw new UnsupportedOperationException("handle me");
+      return new FailedWrite(context, "Stream already ended");
     }
     if (observer != null) {
       observer.observeOutboundHeaders(headers);
@@ -308,33 +315,63 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     headersSent = true;
     Http3HeadersFrame frame = new DefaultHttp3HeadersFrame((Http3Headers) headers.unwrap());
     WriteResult fut = stream.writeMessage(frame);
-    if (chunk != null) {
-      bytesWritten += chunk.length();
-      fut = stream.writeMessage(new DefaultHttp3DataFrame(((BufferInternal)chunk).getByteBuf()));
-    }
     if (end) {
       if (observer != null) {
         observer.observeOutboundTrailers(bytesWritten);
       }
       trailersSent = true;
-      // TODO: clarify and handle this case to ensure a clean contract, the stream end future is not the
-      // data write result, probably WriteStream#end will be modified as well
-      fut = (WriteResult) stream.end();
+      fut = stream.end();
     }
     return fut;
   }
 
-  public WriteResult write(Buffer chunk, boolean end) {
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  public WriteResult write(ByteBuf chunk) {
+    return write(chunk, false);
+  }
+
+  public WriteResult end(ByteBuf chunk) {
+    return write(chunk, true);
+  }
+
+  public WriteResult end() {
+    return write(null, true);
+  }
+
+  private WriteResult write(ByteBuf chunk, boolean end) {
+    if (chunk == null && !end) {
+      return new FailedWrite(context, "A null chunk must end the stream");
+    }
+    HttpHeaders head = this.head;
+    if (head != null) {
+      this.head = null;
+      if (chunk == null || (!end && !chunk.isReadable())) {
+        if (chunk != null) {
+          chunk.release();
+        }
+        return writeHeaders(head, end);
+      }
+      writeHeaders(head, false);
+    }
     if (!headersSent) {
+      if (chunk != null) {
+        chunk.release();
+      }
       return new FailedWrite(context, "Headers must be sent before sending a message");
     }
     if (trailersSent) {
-      throw new UnsupportedOperationException("handle me");
+      if (chunk != null) {
+        chunk.release();
+      }
+      return new FailedWrite(context, "Stream already ended");
     }
-    Future<Void> fut;
+    WriteResult fut;
     if (chunk != null) {
-      bytesWritten += chunk.length();
-      fut = stream.writeMessage(new DefaultHttp3DataFrame(((BufferInternal)chunk).getByteBuf()));
+      bytesWritten += chunk.readableBytes();
+      fut = stream.writeMessage(new DefaultHttp3DataFrame(chunk));
     } else {
       fut = null;
     }
@@ -345,9 +382,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
         observer.observeOutboundTrailers(bytesWritten);
       }
     }
-    // TODO: clarify and handle this case to ensure a clean contract, the stream end future is not the
-    // data write result, probably WriteStream#end will be modified as well
-    return (WriteResult) fut;
+    return fut;
   }
 
   public Future<Boolean> cancel() {

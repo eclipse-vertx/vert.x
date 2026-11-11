@@ -47,6 +47,7 @@ import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
+  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
@@ -639,20 +640,25 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       reset(0, failure);
       return new FailedWrite(context, failure);
     }
+    if (writeHead) {
+      stream.head(head());
+    }
     WriteResult future;
     if (writeEnd && trailers != null) {
-      if (writeHead) {
-        stream.writeHead(head(), buff, false);
-      } else if (buff != null) {
-        stream.write(buff, false);
+      if (buff != null) {
+        stream.write(buff);
       }
       future = stream.end(trailers);
+    } else if (writeEnd) {
+      future = buff != null ? stream.end(buff) : stream.end();
+    } else if (buff != null) {
+      future = stream.write(buff);
     } else if (writeHead) {
-      future = stream.writeHead(head(), buff, writeEnd);
-    } else if (buff == null && !end) {
+      future = stream.write(EMPTY_BUFFER);
+    } else if (!end) {
       future = new FailedWrite(context, "Head already sent");
     } else {
-      future = stream.write(buff, writeEnd);
+      future = new FailedWrite(context, "A CONNECT request cannot be ended");
     }
     if (end) {
       tryComplete();

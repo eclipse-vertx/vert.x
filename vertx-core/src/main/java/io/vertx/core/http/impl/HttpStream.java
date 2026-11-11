@@ -15,10 +15,12 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,8 +44,24 @@ public interface HttpStream {
   ContextInternal context();
   ByteBufAllocator allocator();
 
-  WriteResult write(Buffer buf, boolean end);
+  /**
+   * @return the encoder of the outbound content of this stream
+   */
+  ContentEncoder contentEncoder();
+
   WriteResult end(MultiMap trailers);
+
+  default WriteResult write(Buffer buf) {
+    return contentEncoder().write(((BufferInternal)buf).getByteBuf());
+  }
+
+  default WriteResult end(Buffer buf) {
+    return contentEncoder().end(((BufferInternal)buf).getByteBuf());
+  }
+
+  default WriteResult end() {
+    return contentEncoder().end();
+  }
 
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);

@@ -50,10 +50,10 @@ import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
@@ -401,11 +401,21 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       @Override
       public void write() {
         if (stream.reset) {
+          if (buf != null) {
+            buf.release();
+          }
           tryFail("Stream reset");
         } else {
           stream.request = request;
           beginRequest(stream, request, buf, end, this);
         }
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        if (buf != null) {
+          buf.release();
+        }
+        super.cancel(cause);
       }
     };
     writeToChannel(write);
@@ -417,10 +427,30 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       @Override
       public void write() {
         if (stream.reset) {
+          if (buff != null) {
+            buff.release();
+          }
           tryFail("Stream reset");
+        } else if (stream.request == null) {
+          if (buff != null) {
+            buff.release();
+          }
+          tryFail("Headers must be sent prior sending a message");
+        } else if (stream.requestEnded) {
+          if (buff != null) {
+            buff.release();
+          }
+          tryFail("Request already ended");
         } else {
           writeBufferToChannel(stream, buff, end, trailers, this);
         }
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        if (buff != null) {
+          buff.release();
+        }
+        super.cancel(cause);
       }
     };
     writeToChannel(write);
@@ -596,7 +626,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
    * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
    * state managed by the connection and this class defines the state managed by the stream implementation
    */
-  private static class StreamImpl extends Stream implements HttpClientStream, FlowController {
+  private static class StreamImpl extends Stream implements HttpClientStream, ContentEncoder, FlowController {
 
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
     private Handler<MultiMap> trailerHandler;
@@ -610,6 +640,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     private ContentDecoder<?> contentDecoder;
     private boolean contentStarted;
+    private io.vertx.core.http.impl.HttpRequestHead head;
 
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
@@ -754,21 +785,54 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public WriteResult writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
-      return conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end);
+    public HttpClientStream head(io.vertx.core.http.impl.HttpRequestHead request) {
+      if (head != null) {
+        throw new IllegalStateException("Head already set");
+      }
+      head = request;
+      return this;
     }
 
     @Override
-    public WriteResult write(Buffer buff, boolean end) {
-      if (buff != null || end) {
-        return conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, null);
-      } else {
-        throw new IllegalStateException("???");
+    public ContentEncoder contentEncoder() {
+      return this;
+    }
+
+    @Override
+    public WriteResult write(ByteBuf buff) {
+      return write(buff, false);
+    }
+
+    @Override
+    public WriteResult end(ByteBuf buff) {
+      return write(buff, true);
+    }
+
+    @Override
+    public WriteResult end() {
+      return write(null, true);
+    }
+
+    private WriteResult write(ByteBuf buff, boolean end) {
+      io.vertx.core.http.impl.HttpRequestHead request = head;
+      if (request != null) {
+        head = null;
+        if (buff != null && !end && !buff.isReadable()) {
+          buff.release();
+          buff = null;
+        }
+        return conn.writeHead(this, request, buff, end);
       }
+      return conn.writeBuffer(this, buff, end, null);
     }
 
     @Override
     public WriteResult end(MultiMap trailers) {
+      io.vertx.core.http.impl.HttpRequestHead request = head;
+      if (request != null) {
+        head = null;
+        conn.writeHead(this, request, null, false);
+      }
       return conn.writeBuffer(this, null, true, (HttpHeaders) trailers);
     }
 
