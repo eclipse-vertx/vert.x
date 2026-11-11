@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.http.encoder;
 
-import io.vertx.test.core.Checkpoint;
 import io.vertx.tests.http.http3.Http3Configurator;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -19,13 +18,6 @@ public class Http3ClientContentEncoderTest extends ClientContentEncoderTest {
 
   public Http3ClientContentEncoderTest() {
     super(Http3Configurator.INSTANCE);
-  }
-
-  @Test
-  @Ignore("Write after end throws UnsupportedOperationException: handle me")
-  @Override
-  public void testWriteAfterEndReleasesBuffers(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3) throws Exception {
-    super.testWriteAfterEndReleasesBuffers(checkpoint1, checkpoint2, checkpoint3);
   }
 
   @Test

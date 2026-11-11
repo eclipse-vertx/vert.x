@@ -307,7 +307,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   private WriteResult writeHeaders(HttpHeaders headers, boolean end) {
     if (trailersSent) {
-      throw new UnsupportedOperationException("handle me");
+      return new FailedWrite(context, "Stream already ended");
     }
     if (observer != null) {
       observer.observeOutboundHeaders(headers);
@@ -366,7 +366,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
       if (chunk != null) {
         chunk.release();
       }
-      throw new UnsupportedOperationException("handle me");
+      return new FailedWrite(context, "Stream already ended");
     }
     WriteResult fut;
     if (chunk != null) {
