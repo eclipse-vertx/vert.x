@@ -68,7 +68,7 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
       ContentEncoder encoder = stream.contentEncoder();
       stream.trailersHandler(trailers -> {
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-        stream.writeHead(head, EMPTY_BUFFER, false);
+        stream.writeHead(head);
         for (int i = 0;i < 8;i++) {
           encoder.write(allocateBuffer(128));
         }
@@ -93,7 +93,7 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
         encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
         encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-        stream.writeHead(head, EMPTY_BUFFER, true);
+        stream.head(head).end();
       });
     };
     startServer(testAddress);
@@ -111,7 +111,7 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
       ContentEncoder encoder = stream.contentEncoder();
       stream.trailersHandler(trailers -> {
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-        stream.writeHead(head, EMPTY_BUFFER, true);
+        stream.head(head).end();
         encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
         encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
       });
@@ -128,7 +128,7 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
   private void fillStream(HttpServerStream stream) {
     ContentEncoder encoder = stream.contentEncoder();
     HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-    stream.writeHead(head, EMPTY_BUFFER, false);
+    stream.writeHead(head);
     while (stream.isWritable()) {
       encoder.write(allocateBuffer(1024));
     }
@@ -227,7 +227,7 @@ public abstract class ServerContentEncoderTest extends ContentEncoderTestBase {
         }
       });
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false);
+      stream.writeHead(head);
     };
     startServer(testAddress);
     Buffer received = client

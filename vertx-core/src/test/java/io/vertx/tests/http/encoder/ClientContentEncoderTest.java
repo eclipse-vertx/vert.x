@@ -71,7 +71,7 @@ public abstract class ClientContentEncoderTest extends ContentEncoderTestBase {
     HttpClientStream stream = client.openStream(requestOptions).await();
     ContentEncoder encoder = stream.contentEncoder();
     stream.trailersHandler(trailers -> checkpoint.succeed());
-    stream.writeHead(head(stream, 9 * 128), EMPTY_BUFFER, false);
+    stream.writeHead(head(stream, 9 * 128));
     for (int i = 0;i < 8;i++) {
       encoder.write(allocateBuffer(128));
     }
@@ -87,7 +87,7 @@ public abstract class ClientContentEncoderTest extends ContentEncoderTestBase {
     stream.trailersHandler(trailers -> checkpoint3.succeed());
     encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
     encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
-    stream.writeHead(head(stream, 0), EMPTY_BUFFER, true);
+    stream.head(head(stream, 0)).end();
   }
 
   @Test
@@ -97,14 +97,14 @@ public abstract class ClientContentEncoderTest extends ContentEncoderTestBase {
     HttpClientStream stream = client.openStream(requestOptions).await();
     ContentEncoder encoder = stream.contentEncoder();
     stream.trailersHandler(trailers -> checkpoint3.succeed());
-    stream.writeHead(head(stream, 0), EMPTY_BUFFER, true);
+    stream.head(head(stream, 0)).end();
     encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
     encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
   }
 
   private void fillStream(HttpClientStream stream) {
     ContentEncoder encoder = stream.contentEncoder();
-    stream.writeHead(head(stream, 1L << 40), EMPTY_BUFFER, false);
+    stream.writeHead(head(stream, 1L << 40));
     while (stream.isWritable()) {
       encoder.write(allocateBuffer(1024));
     }

@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.streams.WriteResult;
@@ -34,13 +33,11 @@ public interface HttpClientStream extends HttpStream {
    */
   HttpClientStream head(HttpRequestHead request);
 
-  default WriteResult writeHead(HttpRequestHead request, Buffer chunk, boolean end) {
-    head(request);
-    if (end) {
-      return chunk != null ? end(chunk) : end();
-    } else {
-      return write(chunk != null ? chunk : BufferInternal.buffer(Unpooled.EMPTY_BUFFER));
-    }
+  /**
+   * Write the head alone, as {@link #head} followed by an empty write.
+   */
+  default WriteResult writeHead(HttpRequestHead request) {
+    return head(request).write(BufferInternal.buffer(Unpooled.EMPTY_BUFFER));
   }
 
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);

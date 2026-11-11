@@ -305,9 +305,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream
-      .head(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()))
-      .write(EMPTY_BUFFER);
+    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()));
   }
 
   @Override
@@ -335,9 +333,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream
-      .head(new HttpResponseHead(HttpResponseStatus.EARLY_HINTS.code(), HttpResponseStatus.EARLY_HINTS.reasonPhrase(), http2Headers))
-      .write(EMPTY_BUFFER);
+    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.EARLY_HINTS.code(), HttpResponseStatus.EARLY_HINTS.reasonPhrase(), http2Headers));
   }
 
   @Override
@@ -471,9 +467,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
 
   private Future<Void> checkSendHeaders() {
     if (prepareHeaders()) {
-      return stream
-        .head(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap))
-        .write(EMPTY_BUFFER);
+      return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap));
     } else {
       return null;
     }

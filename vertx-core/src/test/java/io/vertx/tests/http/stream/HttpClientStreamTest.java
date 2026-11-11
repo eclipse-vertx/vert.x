@@ -81,7 +81,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
       null);
-    stream.writeHead(head, Buffer.buffer(), true);
+    stream.head(head).end();
   }
 
   @Test
@@ -110,7 +110,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       null);
     MultiMap trailers = connection.newHttpRequestHeaders();
     trailers.set("trailer_key", "trailer_value");
-    stream.writeHead(head, Buffer.buffer("the-body"), false);
+    stream.head(head).write(Buffer.buffer("the-body"));
     stream.end(trailers);
   }
 
@@ -192,7 +192,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
       null);
-    stream.writeHead(head, Buffer.buffer(), true);
+    stream.head(head).end();
   }
 
   @Test
@@ -288,6 +288,6 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
       null);
-    stream.writeHead(head, Buffer.buffer(), true);
+    stream.head(head).end();
   }
 }

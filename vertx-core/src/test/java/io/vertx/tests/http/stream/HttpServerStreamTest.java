@@ -350,7 +350,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       stream.exceptionHandler(err -> events.add(err == FAILURE ? "stream-exception" : "stream-exception:" + err));
       stream.trailersHandler(trailers -> {
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-        stream.writeHead(head, EMPTY_BUFFER, true);
+        stream.head(head).end();
       });
       stream.closeHandler(v -> {
         events.add("stream-close");
@@ -381,7 +381,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void testHandleCloseEndingResponse1(Checkpoint checkpoint) throws Exception {
     testHandleCloseEndingResponse(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, true);
+      stream.head(head).end();
     });
   }
 
@@ -389,7 +389,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void testHandleCloseEndingResponse2(Checkpoint checkpoint) throws Exception {
     testHandleCloseEndingResponse(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false);
+      stream.writeHead(head);
       stream.end(EMPTY_BUFFER);
     });
   }
@@ -398,7 +398,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void testHandleCloseEndingResponse3(Checkpoint checkpoint) throws Exception {
     testHandleCloseEndingResponse(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false);
+      stream.writeHead(head);
       stream.end(stream.connection().newHeaders());
     });
   }
@@ -430,7 +430,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void testHandleCloseEndingRequest1(Checkpoint checkpoint) throws Exception {
     testHandleCloseEndingRequest(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, true);
+      stream.head(head).end();
     });
   }
 
@@ -438,7 +438,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void testHandleCloseEndingRequest2(Checkpoint checkpoint) throws Exception {
     testHandleCloseEndingRequest(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false);
+      stream.writeHead(head);
       stream.end(EMPTY_BUFFER);
     });
   }
@@ -447,7 +447,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void testHandleCloseEndingRequest3(Checkpoint checkpoint) throws Exception {
     testHandleCloseEndingRequest(checkpoint, stream -> {
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false);
+      stream.writeHead(head);
       stream.end(stream.connection().newHeaders());
     });
   }
@@ -479,7 +479,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         }
       });
       HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, true);
+      stream.head(head).end();
     };
     startServer(testAddress);
     HttpConnection connection = client
@@ -522,7 +522,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         200,
         null,
         stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false)
+      stream.writeHead(head)
         .onComplete(checkpoint1);
       stream.end(Buffer.buffer("Hello"))
         .onComplete(checkpoint2);
@@ -536,7 +536,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         200,
         null,
         stream.connection().newHeaders());
-      stream.writeHead(head, Buffer.buffer("Hello"), true)
+      stream.head(head).end(Buffer.buffer("Hello"))
         .onComplete(checkpoint);
     });
   }
@@ -638,7 +638,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint.fail(new AssertionError("Unexpected trailers " + trailers));
         }
         HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
-        stream.writeHead(head, EMPTY_BUFFER, true);
+        stream.head(head).end();
       });
     };
     startServer(testAddress);
@@ -660,7 +660,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         200,
         null,
         stream.connection().newHeaders());
-      stream.writeHead(head, EMPTY_BUFFER, false);
+      stream.writeHead(head);
       int count = 0;
       while (stream.isWritable()) {
         stream.write(chunk);

@@ -17,7 +17,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
@@ -40,13 +39,11 @@ public interface HttpServerStream extends HttpStream {
    */
   HttpServerStream head(HttpResponseHead head);
 
-  default WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
-    head(head);
-    if (end) {
-      return chunk != null ? end(chunk) : end();
-    } else {
-      return write(chunk != null ? chunk : BufferInternal.buffer(Unpooled.EMPTY_BUFFER));
-    }
+  /**
+   * Write the head alone, as {@link #head} followed by an empty write.
+   */
+  default WriteResult writeHead(HttpResponseHead head) {
+    return head(head).write(BufferInternal.buffer(Unpooled.EMPTY_BUFFER));
   }
 
   Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority);
