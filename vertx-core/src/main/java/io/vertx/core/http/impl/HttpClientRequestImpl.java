@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.internal.http.ContentEncoder;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.vertx.codegen.annotations.Nullable;
@@ -31,7 +32,10 @@ import io.vertx.core.net.ProxyType;
 
 import java.util.ArrayList;
 import java.util.List;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.buffer.CompositeByteBuf;
 import java.util.Base64;
 import java.util.Map;
@@ -44,10 +48,9 @@ import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
+public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest, ContentEncoder {
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
-  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
@@ -531,13 +534,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(String chunk) {
-    return write(BufferInternal.buffer(chunk), true);
+    return write(BufferInternal.buffer(chunk).getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(BufferInternal.buffer(chunk, enc), true);
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), true);
   }
 
   @Override
@@ -545,7 +548,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (chunk == null) {
       throw new NullPointerException("no null chunk accepted");
     }
-    return write(chunk, true);
+    return write(((BufferInternal) chunk).getByteBuf(), true);
   }
 
   @Override
@@ -558,34 +561,51 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (chunk == null) {
       throw new NullPointerException("no null chunk accepted");
     }
-    return write(chunk, false);
+    return write(((BufferInternal) chunk).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    return write(BufferInternal.buffer(chunk), false);
+    return write(BufferInternal.buffer(chunk).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(BufferInternal.buffer(chunk, enc), false);
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), false);
   }
 
-  private WriteResult write(Buffer buff, boolean end) {
+  @Override
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult write(ByteBuf chunk) {
+    return write(chunk, false);
+  }
+
+  @Override
+  public WriteResult end(ByteBuf chunk) {
+    return write(chunk, true);
+  }
+
+  private WriteResult write(ByteBuf buff, boolean end) {
     return doWrite(buff, end, false);
   }
 
-  private WriteResult doWrite(Buffer buff, boolean end, boolean connect) {
+  private WriteResult doWrite(ByteBuf buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
     MultiMap trailers;
     Throwable failure;
     synchronized (this) {
       if (reset != null) {
+        ReferenceCountUtil.release(buff);
         return new FailedWrite(context, reset);
       }
       if (trailersSent) {
+        ReferenceCountUtil.release(buff);
         return new FailedWrite(context, new IllegalStateException("Request already complete"));
       }
       if (followRedirects && getMethod() == HttpMethod.QUERY) {
@@ -596,14 +616,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
               currentLen += b.length();
             }
           }
-          if (currentLen + buff.length() > maxRedirectBufferSize) {
+          if (currentLen + buff.readableBytes() > maxRedirectBufferSize) {
             followRedirects = false;
             bodyBuffer = null;
           } else {
             if (bodyBuffer == null) {
               bodyBuffer = new ArrayList<>();
             }
-            bodyBuffer.add(buff.copy());
+            bodyBuffer.add(Buffer.buffer(ByteBufUtil.getBytes(buff)));
           }
         }
       }
@@ -617,7 +637,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
           if (end) {
             if (buff != null && requiresContentLength) {
-              headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
+              headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
             }
           } else if (requiresContentLength) {
             chunked = true;
@@ -637,24 +657,26 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
 
     if (failure != null) {
+      ReferenceCountUtil.release(buff);
       reset(0, failure);
       return new FailedWrite(context, failure);
     }
     if (writeHead) {
       stream.head(head());
     }
+    ContentEncoder encoder = stream.contentEncoder();
     WriteResult future;
     if (writeEnd && trailers != null) {
       if (buff != null) {
-        stream.write(buff);
+        encoder.write(buff);
       }
       future = stream.end(trailers);
     } else if (writeEnd) {
-      future = buff != null ? stream.end(buff) : stream.end();
+      future = buff != null ? encoder.end(buff) : encoder.end();
     } else if (buff != null) {
-      future = stream.write(buff);
+      future = encoder.write(buff);
     } else if (writeHead) {
-      future = stream.write(EMPTY_BUFFER);
+      future = encoder.write(Unpooled.EMPTY_BUFFER);
     } else if (!end) {
       future = new FailedWrite(context, "Head already sent");
     } else {

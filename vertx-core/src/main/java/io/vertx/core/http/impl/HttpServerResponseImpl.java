@@ -11,6 +11,8 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.internal.streams.FailedWrite;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -46,9 +48,8 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerResponseImpl implements HttpServerResponseInternal {
+public class HttpServerResponseImpl implements HttpServerResponseInternal, ContentEncoder {
 
-  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
   private final HttpServerStream stream;
   private final HttpServerConnection conn;
@@ -338,17 +339,17 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
 
   @Override
   public WriteResult write(Buffer chunk) {
-    return write(chunk, false);
+    return write(((BufferInternal) chunk).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    return write(Buffer.buffer(chunk, enc), false);
+    return write(Buffer.buffer(chunk, enc));
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    return write(Buffer.buffer(chunk), false);
+    return write(Buffer.buffer(chunk));
   }
 
   @Override
@@ -363,12 +364,37 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
 
   @Override
   public WriteResult end(Buffer chunk) {
-    return write(chunk, true);
+    return write(((BufferInternal) chunk).getByteBuf(), true);
   }
 
   @Override
   public WriteResult end() {
     return write(null, true);
+  }
+
+  @Override
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult write(ByteBuf chunk) {
+    return writeByteBuf(chunk, false);
+  }
+
+  @Override
+  public WriteResult end(ByteBuf chunk) {
+    return writeByteBuf(chunk, true);
+  }
+
+  private WriteResult writeByteBuf(ByteBuf chunk, boolean end) {
+    synchronized (conn) {
+      if (ended) {
+        chunk.release();
+        return new FailedWrite(context, "Response has already been written");
+      }
+    }
+    return write(chunk, end);
   }
 
   Future<NetSocket> netSocket(ReadStream<Buffer> inbound) {
@@ -396,7 +422,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     return netSocket;
   }
 
-  private WriteResult write(Buffer chunk, boolean end) {
+  private WriteResult write(ByteBuf chunk, boolean end) {
     MultiMap trailers = !end || isContentAlwaysEmpty() ? null : trailedMap;
     WriteResult future = write_(chunk, end, trailers);
     if (end) {
@@ -412,7 +438,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     return future;
   }
 
-  private WriteResult write_(Buffer chunk, boolean end, MultiMap trailers) {
+  private WriteResult write_(ByteBuf chunk, boolean end, MultiMap trailers) {
     Handler<Void> headersEndHandler;
     synchronized (conn) {
       if (ended) {
@@ -420,7 +446,7 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
       }
       ended = end;
       if (end && trailers == null && !headWritten && requiresContentLengthHeader()) {
-        headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.length()));
+        headers().set(HttpHeaderNames.CONTENT_LENGTH, chunk == null ? "0" : HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
       headersEndHandler = headWritten ? null : this.headersEndHandler;
     }
@@ -430,10 +456,11 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     boolean sendHeaders;
     synchronized (conn) {
       if (chunk != null) {
-        bytesWritten += chunk.length();
+        bytesWritten += chunk.readableBytes();
         if (isContentAlwaysEmpty()) {
           // Suppressed chunk: write an empty buffer so the result remains sequenced with the other stream writes
-          chunk = EMPTY_BUFFER;
+          chunk.release();
+          chunk = Unpooled.EMPTY_BUFFER;
         }
       }
       sendHeaders = prepareHeaders();
@@ -441,15 +468,16 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     if (sendHeaders) {
       stream.head(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap));
     }
+    ContentEncoder encoder = stream.contentEncoder();
     if (trailers != null) {
       if (chunk != null) {
-        stream.write(chunk);
+        encoder.write(chunk);
       }
       return stream.end(trailers);
     } else if (end) {
-      return chunk != null ? stream.end(chunk) : stream.end();
+      return chunk != null ? encoder.end(chunk) : encoder.end();
     } else {
-      return stream.write(chunk);
+      return encoder.write(chunk);
     }
   }
 

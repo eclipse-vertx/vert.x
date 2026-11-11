@@ -11,6 +11,8 @@
 
 package io.vertx.core.http.impl.http1;
 
+import io.vertx.core.internal.streams.FailedWrite;
+import io.vertx.core.internal.http.ContentEncoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -54,7 +56,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1ServerResponse implements HttpServerResponseInternal, HttpResponse {
+public class Http1ServerResponse implements HttpServerResponseInternal, ContentEncoder, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
@@ -286,17 +288,18 @@ public class Http1ServerResponse implements HttpServerResponseInternal, HttpResp
 
   @Override
   public WriteResult write(Buffer chunk) {
+    checkValid();
     return write(((BufferInternal)chunk).getByteBuf());
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    return write(BufferInternal.buffer(chunk, enc).getByteBuf());
+    return write(BufferInternal.buffer(chunk, enc));
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    return write(BufferInternal.buffer(chunk).getByteBuf());
+    return write(BufferInternal.buffer(chunk));
   }
 
   @Override
@@ -329,12 +332,20 @@ public class Http1ServerResponse implements HttpServerResponseInternal, HttpResp
 
   @Override
   public WriteResult end(Buffer chunk) {
+    checkValid();
     return end(((BufferInternal)chunk).getByteBuf());
   }
 
-  WriteResult end(ByteBuf data) {
+  @Override
+  public ContentEncoder contentEncoder() {
+    return this;
+  }
+
+  @Override
+  public WriteResult end(ByteBuf data) {
     if (trailersSent) {
-      throw new IllegalStateException(RESPONSE_WRITTEN);
+      data.release();
+      return new FailedWrite(context, RESPONSE_WRITTEN);
     }
     trailersSent = true;
     bytesWritten += data.readableBytes();
@@ -629,8 +640,12 @@ public class Http1ServerResponse implements HttpServerResponseInternal, HttpResp
     }
   }
 
-  WriteResult write(ByteBuf chunk) {
-    checkValid();
+  @Override
+  public WriteResult write(ByteBuf chunk) {
+    if (trailersSent) {
+      chunk.release();
+      return new FailedWrite(context, RESPONSE_WRITTEN);
+    }
     if (!headersSent && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       if (version != HttpVersion.HTTP_1_0) {
         headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
