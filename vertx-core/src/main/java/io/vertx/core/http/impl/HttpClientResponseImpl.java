@@ -24,6 +24,7 @@ import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.ContentDecoder;
+import io.vertx.core.internal.http.HttpClientResponseInternal;
 import io.vertx.core.internal.http.FlowController;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -36,7 +37,7 @@ import java.util.List;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientResponseImpl implements HttpClientResponse, ContentDecoder<Void> {
+public class HttpClientResponseImpl implements HttpClientResponseInternal, ContentDecoder<Void> {
 
   private static final Throwable ENDED_SENTINEL = new Throwable();
 
@@ -382,5 +383,10 @@ public class HttpClientResponseImpl implements HttpClientResponse, ContentDecode
 
   @Override
   public void handleClose(Throwable cause) {
+  }
+
+  @Override
+  public <T> Future<T> contentDecoder(ContentDecoder<T> decoder) {
+    return stream.contentDecoder(decoder);
   }
 }

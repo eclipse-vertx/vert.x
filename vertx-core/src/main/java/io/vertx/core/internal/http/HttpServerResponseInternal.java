@@ -23,6 +23,11 @@ import io.vertx.core.internal.streams.WriteStreamInternal;
  */
 public interface HttpServerResponseInternal extends HttpServerResponse, WriteStreamInternal<Buffer> {
 
+  /**
+   * @return the encoder of the response content, writes go through the response: head, framing, end and trailers
+   */
+  ContentEncoder contentEncoder();
+
   @Override
   WriteResult write(Buffer data);
 

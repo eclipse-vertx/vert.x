@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.internal.http.ContentEncoder;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -71,6 +72,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public WriteResult write(Buffer data) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public ContentEncoder contentEncoder() {
     throw new IllegalStateException();
   }
 

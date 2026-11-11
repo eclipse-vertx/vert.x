@@ -29,6 +29,11 @@ public interface HttpClientRequestInternal extends HttpClientRequest, WriteStrea
    */
   Object metric();
 
+  /**
+   * @return the encoder of the request content, writes go through the request: head, framing, end and trailers
+   */
+  ContentEncoder contentEncoder();
+
   @Override
   WriteResult write(Buffer data);
 
