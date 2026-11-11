@@ -668,6 +668,34 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testBodylessResponseIsSingleHeadersFrame() throws Exception {
+    server.requestHandler(req -> req.response().setStatusCode(204).end());
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
+          vertx.runOnContext(v -> {
+            Assert.assertEquals("204", headers.status().toString());
+            Assert.assertTrue(endStream);
+            testComplete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+          vertx.runOnContext(v -> Assert.fail("Unexpected DATA frame"));
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    await();
+  }
+
+  @Test
   public void testRequestTrailersWithPseudoHeader() throws Exception {
     waitFor(2);
     server.requestHandler(req -> req.end().onComplete(ar -> {

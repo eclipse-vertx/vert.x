@@ -305,7 +305,9 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()), null, false);
+    return stream
+      .head(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()))
+      .write(EMPTY_BUFFER);
   }
 
   @Override
@@ -333,7 +335,9 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.EARLY_HINTS.code(), HttpResponseStatus.EARLY_HINTS.reasonPhrase(), http2Headers), null, false);
+    return stream
+      .head(new HttpResponseHead(HttpResponseStatus.EARLY_HINTS.code(), HttpResponseStatus.EARLY_HINTS.reasonPhrase(), http2Headers))
+      .write(EMPTY_BUFFER);
   }
 
   @Override
@@ -438,15 +442,14 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
       }
       sendHeaders = prepareHeaders();
     }
+    if (sendHeaders) {
+      stream.head(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap));
+    }
     if (trailers != null) {
-      if (sendHeaders) {
-        stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, false);
-      } else if (chunk != null) {
+      if (chunk != null) {
         stream.write(chunk);
       }
       return stream.end(trailers);
-    } else if (sendHeaders) {
-      return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), chunk, end);
     } else if (end) {
       return chunk != null ? stream.end(chunk) : stream.end();
     } else {
@@ -468,7 +471,9 @@ public class HttpServerResponseImpl implements HttpServerResponseInternal {
 
   private Future<Void> checkSendHeaders() {
     if (prepareHeaders()) {
-      return stream.writeHead(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap), null, false);
+      return stream
+        .head(new HttpResponseHead(status.code(), status.reasonPhrase(), headersMap))
+        .write(EMPTY_BUFFER);
     } else {
       return null;
     }
