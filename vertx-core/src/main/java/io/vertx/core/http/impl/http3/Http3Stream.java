@@ -54,6 +54,7 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
 
   private boolean headersReceived;
   private boolean headersSent;
+  HttpHeaders head;
   private boolean trailersReceived;
   private boolean trailersSent;
   private boolean reset;
@@ -296,10 +297,15 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   public final WriteResult end(MultiMap trailers) {
-    return writeHeaders((HttpHeaders) trailers, null, true);
+    HttpHeaders head = this.head;
+    if (head != null) {
+      this.head = null;
+      writeHeaders(head, false);
+    }
+    return writeHeaders((HttpHeaders) trailers, true);
   }
 
-  WriteResult writeHeaders(HttpHeaders headers, Buffer chunk, boolean end) {
+  private WriteResult writeHeaders(HttpHeaders headers, boolean end) {
     if (trailersSent) {
       throw new UnsupportedOperationException("handle me");
     }
@@ -309,10 +315,6 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     headersSent = true;
     Http3HeadersFrame frame = new DefaultHttp3HeadersFrame((Http3Headers) headers.unwrap());
     WriteResult fut = stream.writeMessage(frame);
-    if (chunk != null) {
-      bytesWritten += chunk.length();
-      fut = stream.writeMessage(new DefaultHttp3DataFrame(((BufferInternal)chunk).getByteBuf()));
-    }
     if (end) {
       if (observer != null) {
         observer.observeOutboundTrailers(bytesWritten);
@@ -342,6 +344,17 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   private WriteResult write(ByteBuf chunk, boolean end) {
     if (chunk == null && !end) {
       return new FailedWrite(context, "A null chunk must end the stream");
+    }
+    HttpHeaders head = this.head;
+    if (head != null) {
+      this.head = null;
+      if (chunk == null || (!end && !chunk.isReadable())) {
+        if (chunk != null) {
+          chunk.release();
+        }
+        return writeHeaders(head, end);
+      }
+      writeHeaders(head, false);
     }
     if (!headersSent) {
       if (chunk != null) {

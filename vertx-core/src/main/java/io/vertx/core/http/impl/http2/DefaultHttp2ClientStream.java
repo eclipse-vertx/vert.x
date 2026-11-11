@@ -17,7 +17,6 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.*;
@@ -29,7 +28,6 @@ import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.internal.streams.WritePromise;
 import io.vertx.core.internal.streams.WriteResult;
@@ -56,6 +54,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   private final ClientStreamObserver observable;
   private String scheme;
   private HostAndPort authority;
+  private HttpRequestHead head;
 
   // Handlers
   private Handler<HttpResponseHead> headersHandler;
@@ -109,10 +108,28 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   @Override
-  public WriteResult writeHead(HttpRequestHead request, Buffer buf, boolean end) {
+  public DefaultHttp2ClientStream head(HttpRequestHead request) {
+    if (head != null) {
+      throw new IllegalStateException("Head already set");
+    }
     scheme = request.scheme;
     authority = request.authority;
-    return write(new HeadersWrite(context, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end));
+    head = request;
+    return this;
+  }
+
+  @Override
+  WriteResult writeHeadIfSet(ByteBuf chunk, boolean end) {
+    HttpRequestHead request = head;
+    if (request == null) {
+      return null;
+    }
+    head = null;
+    if (chunk != null && !end && !chunk.isReadable()) {
+      chunk.release();
+      chunk = null;
+    }
+    return write(new HeadersWrite(context, request, chunk, end));
   }
 
   @Override
@@ -168,6 +185,9 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
       try {
         connection.createStream(DefaultHttp2ClientStream.this);
       } catch (Exception ex) {
+        if (buf != null) {
+          buf.release();
+        }
         fail(ex);
         onException(ex);
         return;
@@ -178,6 +198,14 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
       } else {
         writeHeaders0(headers, e, true, this);
       }
+    }
+
+    @Override
+    public void cancel(Throwable cause) {
+      if (buf != null) {
+        buf.release();
+      }
+      super.cancel(cause);
     }
   }
 

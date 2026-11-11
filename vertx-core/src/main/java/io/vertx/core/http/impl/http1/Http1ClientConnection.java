@@ -50,7 +50,6 @@ import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.http.impl.SafeContentDecoder;
 import io.vertx.core.internal.http.ContentDecoder;
@@ -641,6 +640,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     private ContentDecoder<?> contentDecoder;
     private boolean contentStarted;
+    private io.vertx.core.http.impl.HttpRequestHead head;
 
     StreamImpl(ContextInternal context, Http1ClientConnection conn, int id, Object metric) {
       super(context, conn, id, metric);
@@ -785,8 +785,12 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
 
     @Override
-    public WriteResult writeHead(io.vertx.core.http.impl.HttpRequestHead request, Buffer buf, boolean end) {
-      return conn.writeHead(this, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end);
+    public HttpClientStream head(io.vertx.core.http.impl.HttpRequestHead request) {
+      if (head != null) {
+        throw new IllegalStateException("Head already set");
+      }
+      head = request;
+      return this;
     }
 
     @Override
@@ -796,21 +800,39 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
     @Override
     public WriteResult write(ByteBuf buff) {
-      return conn.writeBuffer(this, buff, false, null);
+      return write(buff, false);
     }
 
     @Override
     public WriteResult end(ByteBuf buff) {
-      return conn.writeBuffer(this, buff, true, null);
+      return write(buff, true);
     }
 
     @Override
     public WriteResult end() {
-      return conn.writeBuffer(this, null, true, null);
+      return write(null, true);
+    }
+
+    private WriteResult write(ByteBuf buff, boolean end) {
+      io.vertx.core.http.impl.HttpRequestHead request = head;
+      if (request != null) {
+        head = null;
+        if (buff != null && !end && !buff.isReadable()) {
+          buff.release();
+          buff = null;
+        }
+        return conn.writeHead(this, request, buff, end);
+      }
+      return conn.writeBuffer(this, buff, end, null);
     }
 
     @Override
     public WriteResult end(MultiMap trailers) {
+      io.vertx.core.http.impl.HttpRequestHead request = head;
+      if (request != null) {
+        head = null;
+        conn.writeHead(this, request, null, false);
+      }
       return conn.writeBuffer(this, null, true, (HttpHeaders) trailers);
     }
 

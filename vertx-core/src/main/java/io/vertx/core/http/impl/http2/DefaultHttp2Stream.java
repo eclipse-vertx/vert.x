@@ -351,6 +351,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public final WriteResult end(MultiMap headers) {
+    writeHeadIfSet(null, false);
     return writeHeaders((HttpHeaders) headers, true, true);
   }
 
@@ -443,6 +444,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   final WriteResult write(ByteBuf chunk, boolean end) {
+    WriteResult head = writeHeadIfSet(chunk, end);
+    if (head != null) {
+      return head;
+    }
     return write(new WritePromise(context) {
       @Override
       public void write() {
@@ -632,6 +637,14 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   abstract void handleHeader(HttpHeaders map);
+
+  /**
+   * Write the head set on this stream with {@code chunk}, an empty or {@code null} chunk that does not end the stream
+   * writes the head alone.
+   *
+   * @return the write result or {@code null} when no head is set
+   */
+  abstract WriteResult writeHeadIfSet(ByteBuf chunk, boolean end);
 
   public S closeHandler(Handler<Void> handler) {
     closeHandler = handler;

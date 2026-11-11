@@ -78,12 +78,10 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
   }
 
   @Override
-  public WriteResult writeHead(HttpRequestHead request, Buffer buf, boolean end) {
+  public HttpClientStream head(HttpRequestHead request) {
     endpointRequest.reportRequestBegin();
-    if (end) {
-      endpointRequest.reportRequestEnd();
-    }
-    return delegate.writeHead(request, buf, end);
+    delegate.head(request);
+    return this;
   }
 
   @Override

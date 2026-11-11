@@ -10,13 +10,13 @@
  */
 package io.vertx.core.http.impl.http2;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
@@ -29,7 +29,6 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -47,6 +46,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   private String scheme;
   private HttpMethod method;
   private String uri;
+  private HttpResponseHeaders head;
 
   // Client handlers
   private Handler<HttpRequestHead> headersHandler;
@@ -163,13 +163,30 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     }
   }
 
-  public final WriteResult writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
+  public final DefaultHttp2ServerStream head(HttpResponseHead head) {
+    if (this.head != null) {
+      throw new IllegalStateException("Head already set");
+    }
     HttpResponseHeaders headers = (HttpResponseHeaders)head.headers();
     headers.status(head.statusCode);
-    if (chunk != null) {
+    this.head = headers;
+    return this;
+  }
+
+  @Override
+  WriteResult writeHeadIfSet(ByteBuf chunk, boolean end) {
+    HttpResponseHeaders headers = head;
+    if (headers == null) {
+      return null;
+    }
+    head = null;
+    if (chunk != null && (end || chunk.isReadable())) {
       writeHeaders(headers, false, false);
-      return write(((BufferInternal)chunk).getByteBuf(), end);
+      return write(chunk, end);
     } else {
+      if (chunk != null) {
+        chunk.release();
+      }
       return writeHeaders(headers, end, true);
     }
   }

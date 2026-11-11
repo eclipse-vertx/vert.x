@@ -566,8 +566,8 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         stream.connection().newHeaders());
       MultiMap trailers = stream.connection().newHeaders();
       trailers.set("trailer_key", "trailer_value");
-      stream.writeHead(head, EMPTY_BUFFER, false);
-      stream.end(trailers)
+      stream.head(head)
+        .end(trailers)
         .onComplete(checkpoint);
     };
     startServer(testAddress);
@@ -579,6 +579,53 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       .await();
     assertEquals(1, trailers.size());
     assertEquals("trailer_value", trailers.get("trailer_key"));
+  }
+
+  @Test
+  public void testWriteHeadAndFlush() throws Exception {
+    Promise<Void> responded = Promise.promise();
+    handler = stream -> {
+      stream.trailersHandler(trailers -> {
+        HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
+        stream.head(head).write(EMPTY_BUFFER);
+        responded.future().onComplete(v -> stream.context().runOnContext(v2 -> stream.end(Buffer.buffer("body"))));
+      });
+    };
+    startServer(testAddress);
+    Buffer body = client
+      .request(requestOptions)
+      .compose(request -> request
+        .send()
+        .compose(response -> {
+          responded.complete();
+          return response.body();
+        }))
+      .await();
+    assertEquals("body", body.toString());
+  }
+
+  @Test
+  public void testWriteHeadTwice(Checkpoint checkpoint) throws Exception {
+    handler = stream -> {
+      stream.trailersHandler(trailers -> {
+        HttpResponseHead head = new HttpResponseHead(200, null, stream.connection().newHeaders());
+        stream.head(head);
+        try {
+          stream.head(head);
+          checkpoint.fail(new AssertionError("Expected a failure"));
+        } catch (IllegalStateException expected) {
+          checkpoint.succeed();
+        }
+        stream.end();
+      });
+    };
+    startServer(testAddress);
+    client
+      .request(requestOptions)
+      .compose(request -> request
+        .send()
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
   @Test

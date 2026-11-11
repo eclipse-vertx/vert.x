@@ -115,6 +115,39 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testWriteHeadAndFlush(Checkpoint checkpoint) throws Exception {
+    Promise<Void> received = Promise.promise();
+    handler = request -> {
+      received.complete();
+      request.body().onComplete(ar -> {
+        if (ar.succeeded() && "the-body".equals(ar.result().toString())) {
+          checkpoint.succeed();
+        } else {
+          checkpoint.fail(new AssertionError("Unexpected request " + ar));
+        }
+        request.response().end();
+      });
+    };
+    startServer(testAddress);
+    HttpClientStream stream = client.openStream(requestOptions).await();
+    HttpClientConnection connection = stream.connection();
+    MultiMap headers = connection.newHttpRequestHeaders();
+    if (stream.version() == HttpVersion.HTTP_1_1) {
+      headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
+    }
+    HttpRequestHead head = new HttpRequestHead(
+      "https",
+      HttpMethod.POST,
+      "/",
+      headers,
+      HostAndPort.authority("localhost", testAddress.port()),
+      null);
+    stream.head(head).write(Buffer.buffer());
+    received.future().await();
+    stream.end(Buffer.buffer("the-body"));
+  }
+
+  @Test
   public void testContentDecoderAbruptEnd(Checkpoint checkpoint) throws Exception {
     Promise<Void> received = Promise.promise();
     handler = request -> {
