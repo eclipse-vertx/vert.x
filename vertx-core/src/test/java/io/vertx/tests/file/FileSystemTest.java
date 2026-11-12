@@ -1293,13 +1293,25 @@ public class FileSystemTest extends VertxTestBase {
     // The result is bound to the caller context, not the file context
     Context writerContext = ((VertxInternal) vertx).createEventLoopContext();
     writerContext.runOnContext(v -> {
+      List<WriteResult> results = new ArrayList<>();
       while (true) {
-        WriteResult result = file.write(chunk);
-        result.onComplete(ar -> Assert.assertSame(writerContext, Vertx.currentContext()));
-        if (!result.isWritable()) {
-          result.drainHandler(v2 -> {
+        WriteResult current = file.write(chunk);
+        results.add(current);
+        if (!current.isWritable()) {
+          AtomicInteger count = new AtomicInteger(1 + results.size());
+          Runnable check = () -> {
             Assert.assertSame(writerContext, Vertx.currentContext());
-            testComplete();
+            if (count.decrementAndGet() == 0) {
+              testComplete();
+            }
+          };
+          for (WriteResult result : results) {
+            result.onComplete(ar -> {
+              check.run();
+            });
+          }
+          current.drainHandler(v2 -> {
+            check.run();
           });
           break;
         }
