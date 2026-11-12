@@ -342,47 +342,46 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
   }
 
   private WriteResult write(ByteBuf chunk, boolean end) {
-    if (chunk == null && !end) {
-      return new FailedWrite(context, "A null chunk must end the stream");
-    }
-    HttpHeaders head = this.head;
-    if (head != null) {
-      this.head = null;
-      if (chunk == null || (!end && !chunk.isReadable())) {
-        if (chunk != null) {
-          chunk.release();
+    boolean written = false;
+    try {
+      if (chunk == null && !end) {
+        return new FailedWrite(context, "A null chunk must end the stream");
+      }
+      HttpHeaders head = this.head;
+      if (head != null) {
+        this.head = null;
+        if (chunk == null || (!end && !chunk.isReadable())) {
+          return writeHeaders(head, end);
         }
-        return writeHeaders(head, end);
+        writeHeaders(head, false);
       }
-      writeHeaders(head, false);
-    }
-    if (!headersSent) {
+      if (!headersSent) {
+        return new FailedWrite(context, "Headers must be sent before sending a message");
+      }
+      if (trailersSent) {
+        return new FailedWrite(context, "Stream already ended");
+      }
+      WriteResult fut;
       if (chunk != null) {
-        chunk.release();
+        bytesWritten += chunk.readableBytes();
+        fut = stream.writeMessage(new DefaultHttp3DataFrame(chunk));
+        written = true;
+      } else {
+        fut = null;
       }
-      return new FailedWrite(context, "Headers must be sent before sending a message");
-    }
-    if (trailersSent) {
-      if (chunk != null) {
-        chunk.release();
+      if (end) {
+        trailersSent = true;
+        fut = stream.end();
+        if (observer != null) {
+          observer.observeOutboundTrailers(bytesWritten);
+        }
       }
-      return new FailedWrite(context, "Stream already ended");
-    }
-    WriteResult fut;
-    if (chunk != null) {
-      bytesWritten += chunk.readableBytes();
-      fut = stream.writeMessage(new DefaultHttp3DataFrame(chunk));
-    } else {
-      fut = null;
-    }
-    if (end) {
-      trailersSent = true;
-      fut = stream.end();
-      if (observer != null) {
-        observer.observeOutboundTrailers(bytesWritten);
+      return fut;
+    } finally {
+      if (!written) {
+        ReferenceCountUtil.release(chunk);
       }
     }
-    return fut;
   }
 
   public Future<Boolean> cancel() {

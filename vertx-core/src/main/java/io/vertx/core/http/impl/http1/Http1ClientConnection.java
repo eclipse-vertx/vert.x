@@ -400,21 +400,24 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
-        if (stream.reset) {
-          if (buf != null) {
-            buf.release();
+        boolean written = false;
+        try {
+          if (stream.reset) {
+            tryFail("Stream reset");
+          } else {
+            stream.request = request;
+            beginRequest(stream, request, buf, end, this);
+            written = true;
           }
-          tryFail("Stream reset");
-        } else {
-          stream.request = request;
-          beginRequest(stream, request, buf, end, this);
+        } finally {
+          if (!written) {
+            ReferenceCountUtil.release(buf);
+          }
         }
       }
       @Override
       public void cancel(Throwable cause) {
-        if (buf != null) {
-          buf.release();
-        }
+        ReferenceCountUtil.release(buf);
         super.cancel(cause);
       }
     };
@@ -426,30 +429,27 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     WritePromise write = new WritePromise(stream.context) {
       @Override
       public void write() {
-        if (stream.reset) {
-          if (buff != null) {
-            buff.release();
+        boolean written = false;
+        try {
+          if (stream.reset) {
+            tryFail("Stream reset");
+          } else if (stream.request == null) {
+            tryFail("Headers must be sent prior sending a message");
+          } else if (stream.requestEnded) {
+            tryFail("Request already ended");
+          } else {
+            writeBufferToChannel(stream, buff, end, trailers, this);
+            written = true;
           }
-          tryFail("Stream reset");
-        } else if (stream.request == null) {
-          if (buff != null) {
-            buff.release();
+        } finally {
+          if (!written) {
+            ReferenceCountUtil.release(buff);
           }
-          tryFail("Headers must be sent prior sending a message");
-        } else if (stream.requestEnded) {
-          if (buff != null) {
-            buff.release();
-          }
-          tryFail("Request already ended");
-        } else {
-          writeBufferToChannel(stream, buff, end, trailers, this);
         }
       }
       @Override
       public void cancel(Throwable cause) {
-        if (buff != null) {
-          buff.release();
-        }
+        ReferenceCountUtil.release(buff);
         super.cancel(cause);
       }
     };
