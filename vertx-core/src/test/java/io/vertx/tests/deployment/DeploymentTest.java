@@ -1413,8 +1413,7 @@ public class DeploymentTest extends VertxTestBase {
           testComplete();
         }));
       }
-    }, new DeploymentOptions().setClassLoader(cl)).onComplete(TestUtils.onSuccess(id -> {
-    }));
+    }, new DeploymentOptions().setClassLoader(cl)).await();
     await();
   }
 
