@@ -13,6 +13,7 @@ package io.vertx.core.http.impl.http1;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.stream.ChunkedInput;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -145,32 +146,35 @@ public class Http1ServerStream extends Http1ServerRequest implements HttpServerS
   }
 
   private WriteResult write(ByteBuf buf, boolean end) {
-    if (!headersSent && head == null) {
-      if (buf != null) {
-        buf.release();
-      }
-      return new FailedWrite(context, "Headers must be sent prior sending a message");
-    }
-    if (responseEnded) {
-      if (buf != null) {
-        buf.release();
-      }
-      return new FailedWrite(context, "Response already ended");
-    }
+    boolean written = false;
     try {
-      boolean headOnly = sendHead() && !end && !buf.isReadable();
-      Http1ServerResponse response = response();
-      if (end) {
-        responseEnded = true;
-        return buf != null ? response.end(buf) : response.end();
-      } else if (headOnly) {
-        buf.release();
-        return response.writeHead();
-      } else {
-        return response.write(buf);
+      if (!headersSent && head == null) {
+        return new FailedWrite(context, "Headers must be sent prior sending a message");
+      }
+      if (responseEnded) {
+        return new FailedWrite(context, "Response already ended");
+      }
+      try {
+        boolean headOnly = sendHead() && !end && !buf.isReadable();
+        Http1ServerResponse response = response();
+        WriteResult result;
+        if (end) {
+          responseEnded = true;
+          result = buf != null ? response.end(buf) : response.end();
+        } else if (headOnly) {
+          return response.writeHead();
+        } else {
+          result = response.write(buf);
+        }
+        written = true;
+        return result;
+      } finally {
+        checkCloseHandler();
       }
     } finally {
-      checkCloseHandler();
+      if (!written) {
+        ReferenceCountUtil.release(buf);
+      }
     }
   }
 

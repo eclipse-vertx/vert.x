@@ -17,6 +17,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.stream.ChunkedInput;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -464,50 +465,46 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   void writeData0(ByteBuf buf, boolean end, Promise<Void> promise) {
-    if (reset != -1L) {
-      if (buf != null) {
-        buf.release();
+    boolean written = false;
+    try {
+      if (reset != -1L) {
+        promise.fail("Stream reset");
+        return;
       }
-      promise.fail("Stream reset");
-      return;
-    }
-    if (failure != null) {
-      if (buf != null) {
-        buf.release();
+      if (failure != null) {
+        promise.fail(failure);
+        return;
       }
-      promise.fail(failure);
-      return;
-    }
-    if (!headersSent) {
-      if (buf != null) {
-        buf.release();
+      if (!headersSent) {
+        promise.fail("Headers must be sent before sending a message");
+        return;
       }
-      promise.fail("Headers must be sent before sending a message");
-      return;
-    }
-    if (trailersSent) {
-      if (buf != null) {
-        buf.release();
+      if (trailersSent) {
+        promise.fail("Stream already ended");
+        return;
       }
-      promise.fail("Stream already ended");
-      return;
-    }
-    ByteBuf chunk;
-    if (buf == null && end) {
-      chunk = Unpooled.EMPTY_BUFFER;
-    } else {
-      chunk = buf;
-    }
-    int numOfBytes = chunk.readableBytes();
-    bytesWritten += numOfBytes;
-    if (end) {
-      trailersSent = true;
-      StreamObserver observer = observer();
-      if (observer != null) {
-        observer.observeOutboundTrailers(bytesWritten);
+      ByteBuf chunk;
+      if (buf == null && end) {
+        chunk = Unpooled.EMPTY_BUFFER;
+      } else {
+        chunk = buf;
+      }
+      int numOfBytes = chunk.readableBytes();
+      bytesWritten += numOfBytes;
+      if (end) {
+        trailersSent = true;
+        StreamObserver observer = observer();
+        if (observer != null) {
+          observer.observeOutboundTrailers(bytesWritten);
+        }
+      }
+      connection.writeData(id, chunk, end, promise);
+      written = true;
+    } finally {
+      if (!written) {
+        ReferenceCountUtil.release(buf);
       }
     }
-    connection.writeData(id, chunk, end, promise);
   }
 
   @Override

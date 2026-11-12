@@ -595,97 +595,104 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private WriteResult doWrite(ByteBuf buff, boolean end, boolean connect) {
-    boolean writeHead;
-    boolean writeEnd;
-    MultiMap trailers;
-    Throwable failure;
-    synchronized (this) {
-      if (reset != null) {
-        ReferenceCountUtil.release(buff);
-        return new FailedWrite(context, reset);
-      }
-      if (trailersSent) {
-        ReferenceCountUtil.release(buff);
-        return new FailedWrite(context, new IllegalStateException("Request already complete"));
-      }
-      if (followRedirects && getMethod() == HttpMethod.QUERY) {
-        if (buff != null) {
-          int currentLen = 0;
-          if (bodyBuffer != null) {
-            for (Buffer b : bodyBuffer) {
-              currentLen += b.length();
+    boolean written = false;
+    try {
+      boolean writeHead;
+      boolean writeEnd;
+      MultiMap trailers;
+      Throwable failure;
+      synchronized (this) {
+        if (reset != null) {
+          return new FailedWrite(context, reset);
+        }
+        if (trailersSent) {
+          return new FailedWrite(context, new IllegalStateException("Request already complete"));
+        }
+        if (followRedirects && getMethod() == HttpMethod.QUERY) {
+          if (buff != null) {
+            int currentLen = 0;
+            if (bodyBuffer != null) {
+              for (Buffer b : bodyBuffer) {
+                currentLen += b.length();
+              }
             }
-          }
-          if (currentLen + buff.readableBytes() > maxRedirectBufferSize) {
-            followRedirects = false;
-            bodyBuffer = null;
-          } else {
-            if (bodyBuffer == null) {
-              bodyBuffer = new ArrayList<>();
+            if (currentLen + buff.readableBytes() > maxRedirectBufferSize) {
+              followRedirects = false;
+              bodyBuffer = null;
+            } else {
+              if (bodyBuffer == null) {
+                bodyBuffer = new ArrayList<>();
+              }
+              bodyBuffer.add(Buffer.buffer(ByteBufUtil.getBytes(buff)));
             }
-            bodyBuffer.add(Buffer.buffer(ByteBufUtil.getBytes(buff)));
           }
         }
-      }
-      trailers = this.trailers;
-      failure = end && trailers != null ? checkTrailers(trailers) : null;
-      if (failure == null && !headersSent) {
-        if (!connect) {
-          if (trailers != null && version() == HttpVersion.HTTP_1_1 && !headers.contains(CONTENT_LENGTH)) {
-            chunked = true;
-          }
-          boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
-          if (end) {
-            if (buff != null && requiresContentLength) {
-              headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
+        trailers = this.trailers;
+        failure = end && trailers != null ? checkTrailers(trailers) : null;
+        if (failure == null && !headersSent) {
+          if (!connect) {
+            if (trailers != null && version() == HttpVersion.HTTP_1_1 && !headers.contains(CONTENT_LENGTH)) {
+              chunked = true;
             }
-          } else if (requiresContentLength) {
-            chunked = true;
+            boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
+            if (end) {
+              if (buff != null && requiresContentLength) {
+                headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
+              }
+            } else if (requiresContentLength) {
+              chunked = true;
+            }
+            if (chunked) {
+              headers.set(TRANSFER_ENCODING, CHUNKED);
+            }
           }
-          if (chunked) {
-            headers.set(TRANSFER_ENCODING, CHUNKED);
-          }
+          headersSent = true;
+          isConnect = connect;
+          writeHead = true;
+        } else {
+          writeHead = false;
         }
-        headersSent = true;
-        isConnect = connect;
-        writeHead = true;
-      } else {
-        writeHead = false;
+        writeEnd = !isConnect && end;
+        trailersSent = end;
       }
-      writeEnd = !isConnect && end;
-      trailersSent = end;
-    }
 
-    if (failure != null) {
-      ReferenceCountUtil.release(buff);
-      reset(0, failure);
-      return new FailedWrite(context, failure);
-    }
-    if (writeHead) {
-      stream.head(head());
-    }
-    ContentEncoder encoder = stream.contentEncoder();
-    WriteResult future;
-    if (writeEnd && trailers != null) {
-      if (buff != null) {
-        encoder.write(buff);
+      if (failure != null) {
+        reset(0, failure);
+        return new FailedWrite(context, failure);
       }
-      future = stream.end(trailers);
-    } else if (writeEnd) {
-      future = buff != null ? encoder.end(buff) : encoder.end();
-    } else if (buff != null) {
-      future = encoder.write(buff);
-    } else if (writeHead) {
-      future = encoder.write(Unpooled.EMPTY_BUFFER);
-    } else if (!end) {
-      future = new FailedWrite(context, "Head already sent");
-    } else {
-      future = new FailedWrite(context, "A CONNECT request cannot be ended");
+      if (writeHead) {
+        stream.head(head());
+      }
+      ContentEncoder encoder = stream.contentEncoder();
+      WriteResult future;
+      if (writeEnd && trailers != null) {
+        if (buff != null) {
+          encoder.write(buff);
+          written = true;
+        }
+        future = stream.end(trailers);
+      } else if (writeEnd) {
+        future = buff != null ? encoder.end(buff) : encoder.end();
+        written = true;
+      } else if (buff != null) {
+        future = encoder.write(buff);
+        written = true;
+      } else if (writeHead) {
+        future = encoder.write(Unpooled.EMPTY_BUFFER);
+      } else if (!end) {
+        future = new FailedWrite(context, "Head already sent");
+      } else {
+        future = new FailedWrite(context, "A CONNECT request cannot be ended");
+      }
+      if (end) {
+        tryComplete();
+      }
+      return future;
+    } finally {
+      if (!written) {
+        ReferenceCountUtil.release(buff);
+      }
     }
-    if (end) {
-      tryComplete();
-    }
-    return future;
   }
 
   private HttpRequestHead head() {
