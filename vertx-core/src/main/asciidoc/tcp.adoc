@@ -278,6 +278,14 @@ specifying the port and host of the server, returning a future completed with th
 {@link examples.TcpExamples#connectingToAServer}
 ----
 
+{@link io.vertx.core.net.ConnectOptions} gives more control over the connection, e.g. the local address the
+connection is bound to before connecting, when the operating system default is not desired:
+
+[source,$lang]
+----
+{@link examples.TcpExamples#connectingToAServerFromALocalAddress}
+----
+
 === Making connections to Unix domain sockets
 
 When running on JDK 16+, or using a <<_native_transports,native transport>>, a client can connect to Unix domain sockets:
