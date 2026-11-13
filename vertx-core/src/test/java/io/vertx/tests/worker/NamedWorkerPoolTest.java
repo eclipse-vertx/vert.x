@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.tests.vertx.VertxTest;
 import org.junit.Test;
 
 import java.util.*;
@@ -369,6 +370,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     Vertx vertx = Vertx.vertx();
     WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-123");
     vertx.close().onComplete(v -> {
+      // Force the actual worker pool to be collected
+      VertxTest.runGC();
       try {
         vertx.executeBlocking(() -> {
           fail();
