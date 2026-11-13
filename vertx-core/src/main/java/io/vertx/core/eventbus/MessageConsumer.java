@@ -40,6 +40,9 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   /**
    * Set an exception handler on the consumer.
    * <p>
+  /**
+   * Set an exception handler on the consumer.
+   * <p>
    * The handler is called with an exception thrown by the message handler or processor; when no handler
    * is set, the exception is reported to the context.
    * <p>
