@@ -19,6 +19,8 @@ import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class PipeImpl<T> implements Pipe<T> {
 
   private final Promise<Void> result;
@@ -76,12 +78,24 @@ public class PipeImpl<T> implements Pipe<T> {
       endOnSuccess = this.endOnSuccess;
       endOnFailure = this.endOnFailure;
     }
-    Handler<Void> drainHandler = v -> src.resume();
+    class DrainHandler extends AtomicLong implements Handler<Void> {
+      @Override
+      public void handle(Void event) {
+        incrementAndGet();
+        src.resume();
+      }
+    }
+    DrainHandler drainHandler = new DrainHandler();
+    ws.drainHandler(drainHandler);
     src.handler(item -> {
+      long epoch = drainHandler.get();
       ws.write(item, this::handleWriteResult);
       if (ws.writeQueueFull()) {
         src.pause();
         ws.drainHandler(drainHandler);
+        if (drainHandler.get() != epoch) {
+          src.resume();
+        }
       }
     });
     src.resume();
