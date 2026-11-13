@@ -12,10 +12,14 @@ package io.vertx.core.streams;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -280,5 +284,145 @@ public class PipeTest extends AsyncTestBase {
     AsyncResult<Void> ar = res.get(0);
     assertTrue(ar.failed());
     assertEquals(ar.cause().getClass(), VertxException.class);
+  }
+
+  @Test
+  public void testDrainBetweenQueueFullCheckAndHandlerRegistration() {
+    // A write stream that is full after each write and which drains right after being sampled as full, i.e. before
+    // the caller can register a drain handler. As in HttpClientRequestImpl, a drain event is dropped when no
+    // drain handler is registered.
+    class DrainingBeforeRegistrationWriteStream implements WriteStream<Buffer> {
+
+      private final List<Buffer> written = new ArrayList<>();
+      private Handler<Void> drainHandler;
+      private boolean pendingWrite;
+
+      @Override
+      public synchronized Future<Void> write(Buffer data) {
+        written.add(data);
+        pendingWrite = true;
+        return Future.succeededFuture();
+      }
+
+      @Override
+      public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
+        write(data).onComplete(handler);
+      }
+
+      @Override
+      public synchronized boolean writeQueueFull() {
+        if (!pendingWrite) {
+          return false;
+        }
+        pendingWrite = false;
+        // The event-loop flushes the queue here: the drain event fires, but no handler is registered yet
+        Handler<Void> handler = drainHandler;
+        if (handler != null) {
+          handler.handle(null);
+        }
+        return true; // the sampled value is stale by the time the caller uses it
+      }
+
+      @Override
+      public synchronized DrainingBeforeRegistrationWriteStream drainHandler(Handler<Void> handler) {
+        drainHandler = handler;
+        return this;
+      }
+
+      @Override
+      public DrainingBeforeRegistrationWriteStream exceptionHandler(Handler<Throwable> handler) {
+        return this;
+      }
+
+      @Override
+      public DrainingBeforeRegistrationWriteStream setWriteQueueMaxSize(int maxSize) {
+        return this;
+      }
+
+      @Override
+      public void end(Handler<AsyncResult<Void>> handler) {
+        handler.handle(Future.succeededFuture());
+      }
+    }
+    FakeStream<Buffer> src = new FakeStream<>();
+    DrainingBeforeRegistrationWriteStream dst = new DrainingBeforeRegistrationWriteStream();
+    src.pipeTo(dst);
+
+    // The queue is full after the 1st item, and drains before the pipe registered its drain handler
+    src.emit(Buffer.buffer("1"));
+    // The pipe paused the source and waits for a drain event that has already fired and been dropped: this item
+    // stays buffered in the source and is never written, i.e. the upload stalls
+    src.emit(Buffer.buffer("2"));
+
+    Assert.assertEquals("the pipe must resume the source once the destination drained", 2, dst.written.size());
+  }
+
+  @Test
+  public void testDrainOnAnotherThreadBeforeHandlerRegistration() {
+    // A write stream that is full after each write and which drains on another thread right after being sampled as
+    // full, the drain event is dropped when no drain handler is registered at the time of the probe.
+    class DrainingOnAnotherThreadDuringProbeWriteStream implements WriteStream<Buffer> {
+
+      private final List<Buffer> written = Collections.synchronizedList(new ArrayList<>());
+      private Handler<Void> drainHandler;
+      private boolean pendingWrite;
+
+      @Override
+      public synchronized Future<Void> write(Buffer data) {
+        written.add(data);
+        pendingWrite = true;
+        return Future.succeededFuture();
+      }
+
+      @Override
+      public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
+        write(data).onComplete(handler);
+      }
+
+      @Override
+      public boolean writeQueueFull() {
+        Handler<Void> handler;
+        synchronized (this) {
+          if (!pendingWrite) {
+            return false;
+          }
+          pendingWrite = false;
+          handler = drainHandler;
+        }
+        if (handler != null) {
+          new Thread(() -> handler.handle(null)).start();
+        }
+        return true;
+      }
+
+      @Override
+      public synchronized DrainingOnAnotherThreadDuringProbeWriteStream drainHandler(Handler<Void> handler) {
+        drainHandler = handler;
+        return this;
+      }
+
+      @Override
+      public DrainingOnAnotherThreadDuringProbeWriteStream exceptionHandler(Handler<Throwable> handler) {
+        return this;
+      }
+
+      @Override
+      public DrainingOnAnotherThreadDuringProbeWriteStream setWriteQueueMaxSize(int maxSize) {
+        return this;
+      }
+
+      @Override
+      public void end(Handler<AsyncResult<Void>> handler) {
+        handler.handle(Future.succeededFuture());
+      }
+    }
+    int num = 100;
+    FakeStream<Buffer> src = new FakeStream<>();
+    DrainingOnAnotherThreadDuringProbeWriteStream dst = new DrainingOnAnotherThreadDuringProbeWriteStream();
+    src.pipeTo(dst);
+    for (int i = 0; i < num; i++) {
+      src.emit(Buffer.buffer("" + i));
+    }
+    assertWaitUntil(() -> dst.written.size() == num);
   }
 }
