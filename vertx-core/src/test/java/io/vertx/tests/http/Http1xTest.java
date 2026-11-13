@@ -778,6 +778,15 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPoolOptionsConnectionSelection() {
+    assertEquals(ConnectionSelection.LIFO, new PoolOptions().getConnectionSelection());
+    assertEquals(ConnectionSelection.LIFO, new PoolOptions(new JsonObject()).getConnectionSelection());
+    PoolOptions options = new PoolOptions().setConnectionSelection(ConnectionSelection.ROUND_ROBIN);
+    assertEquals(ConnectionSelection.ROUND_ROBIN, new PoolOptions(options).getConnectionSelection());
+    assertEquals(ConnectionSelection.ROUND_ROBIN, new PoolOptions(options.toJson()).getConnectionSelection());
+  }
+
+  @Test
   public void testCopyServerOptions() {
     HttpServerOptions options = new HttpServerOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
