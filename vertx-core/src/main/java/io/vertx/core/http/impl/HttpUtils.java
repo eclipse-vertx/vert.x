@@ -592,7 +592,7 @@ public final class HttpUtils {
           int ret = 0;
           while (pos < to) {
             int ch = value.charAt(pos++);
-            if (ch >= '0' && ch < '9') {
+            if (ch >= '0' && ch <= '9') {
               ret = ret * 10 + (ch - '0');
             } else {
               ret = -1;

@@ -48,6 +48,14 @@ public class HttpUtilsTest {
     assertKeepAliveTimeout("a=4, timeout=5", 5);
     assertKeepAliveTimeout("a=4,timeout=5 ", 5);
 
+    // every digit must be accepted, including '9'
+    assertKeepAliveTimeout("timeout=9", 9);
+    assertKeepAliveTimeout("timeout=19", 19);
+    assertKeepAliveTimeout("timeout=90", 90);
+    assertKeepAliveTimeout("timeout=120", 120);
+    assertKeepAliveTimeout("timeout=3600", 3600);
+    assertKeepAliveTimeout("a=4,timeout=1234567890", 1234567890);
+
     assertKeepAliveTimeout("", -1);
     assertKeepAliveTimeout("a=4", -1);
     assertKeepAliveTimeout("timeout", -1);
