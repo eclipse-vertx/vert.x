@@ -122,10 +122,7 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, value);
-    }
-    headers.add(HttpUtils.toLowerCase(name), value);
+    headers.add(validateName(name), validateValue(value));
     return this;
   }
 
@@ -134,10 +131,7 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, values);
-    }
-    headers.add(HttpUtils.toLowerCase(name), values);
+    headers.add(validateName(name), validateValues(values));
     return this;
   }
 
@@ -162,10 +156,8 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, value);
-    }
-    name = (String) HttpUtils.toLowerCase(name);
+    name = (String) validateName(name);
+    validateValue(value);
     if (value != null) {
       headers.set(name, value);
     } else {
@@ -179,10 +171,7 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, values);
-    }
-    headers.set(HttpUtils.toLowerCase(name), values);
+    headers.set(validateName(name), validateValues(values));
     return this;
   }
 
@@ -325,10 +314,7 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, value);
-    }
-    headers.add(HttpUtils.toLowerCase(name), value);
+    headers.add(validateName(name), validateValue(value));
     return this;
   }
 
@@ -337,10 +323,7 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, values);
-    }
-    headers.add(HttpUtils.toLowerCase(name), values);
+    headers.add(validateName(name), validateValues(values));
     return this;
   }
 
@@ -349,10 +332,8 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, value);
-    }
-    name = HttpUtils.toLowerCase(name);
+    name = validateName(name);
+    validateValue(value);
     if (value != null) {
       headers.set(name, value);
     } else {
@@ -366,10 +347,7 @@ public class HttpHeaders implements MultiMap {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
-    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      HttpUtils.validateHeader(name, values);
-    }
-    headers.set(HttpUtils.toLowerCase(name), values);
+    headers.set(validateName(name), validateValues(values));
     return this;
   }
 
@@ -406,6 +384,35 @@ public class HttpHeaders implements MultiMap {
 
   HttpHeaders copy(boolean mutable, Headers<CharSequence, CharSequence, ?> headers) {
     return new HttpHeaders(mutable, new DefaultHttp2Headers().setAll(headers));
+  }
+
+  /**
+   * @return Netty headers for this class, names are validated by {@link #validateName} so Netty only validates
+   *         them when Vert.x header validation is disabled
+   */
+  public static DefaultHttp2Headers newHttp2Headers() {
+    return new DefaultHttp2Headers(HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION, true, 16);
+  }
+
+  private static CharSequence validateName(CharSequence name) {
+    if (HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
+      return HttpUtils.toLowerCase(name);
+    }
+    return HttpUtils.validateAndLowerCaseHeaderName(name);
+  }
+
+  private static <T extends CharSequence> T validateValue(T value) {
+    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION && value != null) {
+      HttpUtils.validateHeaderValue(value);
+    }
+    return value;
+  }
+
+  private static <T extends Iterable<? extends CharSequence>> T validateValues(T values) {
+    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
+      HttpUtils.validateHeaderValues(values);
+    }
+    return values;
   }
 
   private static boolean isPseudoHeader(CharSequence cs) {
