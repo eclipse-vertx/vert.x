@@ -40,7 +40,7 @@ import java.util.function.Function;
 class SharedHttpClientConnectionGroup extends ManagedResource {
 
   /**
-   * LIFO pool selector.
+   * LIFO pool selector: among the connections with capacity, the one that received a response most recently.
    */
   private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LIFO_SELECTOR = (waiter, connections) -> {
     int size = connections.size();
@@ -49,13 +49,10 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     for (int i = 0; i < size; i++) {
       PoolConnection<HttpClientConnection> pooled = connections.get(i);
       if (pooled.available() > 0) {
-        HttpClientConnection conn = pooled.get();
-        if (selected == null) {
+        long received = pooled.get().lastResponseReceivedTimestamp();
+        if (selected == null || received > last) {
           selected = pooled;
-        } else {
-          if (conn.lastResponseReceivedTimestamp() > last) {
-            selected = pooled;
-          }
+          last = received;
         }
       }
     }
