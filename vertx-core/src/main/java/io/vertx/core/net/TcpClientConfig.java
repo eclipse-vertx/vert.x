@@ -55,10 +55,6 @@ public class TcpClientConfig extends TcpEndpointConfig {
 
   public TcpClientConfig(NetClientOptions options) {
     this((ClientOptionsBase)options);
-    String localAddress = options.getLocalAddress();
-    if (localAddress != null) {
-      setLocalAddress(SocketAddress.inetSocketAddress(0, localAddress));
-    }
     setReconnectAttempts(options.getReconnectAttempts());
     setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
   }
@@ -69,6 +65,10 @@ public class TcpClientConfig extends TcpEndpointConfig {
     setMetricsName(options.getMetricsName());
     setNonProxyHosts(options.getNonProxyHosts() != null ? new ArrayList<>(options.getNonProxyHosts()) : null);
     setProxyOptions(options.getProxyOptions() != null ? new ProxyOptions(options.getProxyOptions()) : null);
+    String localAddress = options.getLocalAddress();
+    if (localAddress != null) {
+      setLocalAddress(SocketAddress.inetSocketAddress(0, localAddress));
+    }
   }
 
   public TcpClientConfig setTransportConfig(TcpConfig transportConfig) {
