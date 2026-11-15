@@ -395,10 +395,13 @@ public class HttpHeaders implements MultiMap {
   }
 
   private static CharSequence validateName(CharSequence name) {
-    if (HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
-      return HttpUtils.toLowerCase(name);
+    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
+      if (name.length() == 0) {
+        throw new IllegalArgumentException("empty headers are not allowed");
+      }
+      HttpUtils.validateHeaderName(name);
     }
-    return HttpUtils.validateAndLowerCaseHeaderName(name);
+    return HttpUtils.toLowerCase(name);
   }
 
   private static <T extends CharSequence> T validateValue(T value) {

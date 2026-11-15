@@ -869,35 +869,6 @@ public final class HttpUtils {
     }
   }
 
-  /**
-   * Validate the header {@code name} like {@link #validateHeaderName}, reject empty names and convert it to lower case
-   * in a single pass.
-   */
-  public static CharSequence validateAndLowerCaseHeaderName(CharSequence name) {
-    StringBuilder buffer = null;
-    int len = name.length();
-    if (len == 0) {
-      // HTTP/2 and HTTP/3 do not allow empty names
-      throw new IllegalArgumentException("empty headers are not allowed");
-    }
-    for (int index = 0; index < len; index++) {
-      char c = name.charAt(index);
-      if (c > 0x7f) {
-        throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + name);
-      }
-      if (!VALID_H_NAME_ASCII_CHARS[c]) {
-        throw new IllegalArgumentException("a header name cannot contain some prohibited characters, such as : " + name);
-      }
-      if (c >= 'A' && c <= 'Z') {
-        if (buffer == null) {
-          buffer = new StringBuilder(name);
-        }
-        buffer.setCharAt(index, (char)(c + ('a' - 'A')));
-      }
-    }
-    return buffer != null ? buffer.toString() : name;
-  }
-
   private static void validateAsciiHeaderName(AsciiString value) {
     final int len = value.length();
     final int off = value.arrayOffset();
