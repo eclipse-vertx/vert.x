@@ -55,6 +55,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
 
   protected final Supplier<SslContextFactory> supplier;
   protected final boolean useWorkerPool;
+  private final boolean openSslEngine;
   private final Map<ConfigKey, Future<Config>> configMap;
   private final Map<ProviderKey, Future<P>> sslContextProviderMap;
   private boolean closed;
@@ -68,6 +69,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     this.sslContextProviderMap = new LruCache<>(cacheMaxSize);
     this.supplier = sslEngineOptions::sslContextFactory;
     this.useWorkerPool = sslEngineOptions.getUseWorkerThread();
+    this.openSslEngine = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.closed = false;
   }
 
@@ -164,7 +166,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
                                       boolean force,
                                       ContextInternal ctx) {
     Promise<P> promise;
-    ProviderKey k = new ProviderKey(options);
+    ProviderKey k = new ProviderKey(options, openSslEngine);
     synchronized (this) {
       if (closed) {
         return ctx.failedFuture("SslContextManager closed");
@@ -188,22 +190,22 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     return promise.future();
   }
 
-  private static TrustOptions trustOptionsOf(SSLOptions sslOptions) {
+  private static TrustOptions trustOptionsOf(SSLOptions sslOptions, boolean openSsl) {
     if (sslOptions instanceof ClientSSLOptions) {
       ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
       if (clientSSLOptions.isTrustAll()) {
-        return TrustAllOptions.instance(!clientSSLOptions.getHostnameVerificationAlgorithm().isEmpty());
+        return TrustAllOptions.instance(!clientSSLOptions.getHostnameVerificationAlgorithm().isEmpty(), openSsl);
       }
     }
     return sslOptions.getTrustOptions();
   }
 
   private Future<Config> buildConfig(SSLOptions sslOptions, boolean force, ContextInternal ctx) {
-    if (trustOptionsOf(sslOptions) == null && sslOptions.getKeyCertOptions() == null) {
+    if (trustOptionsOf(sslOptions, openSslEngine) == null && sslOptions.getKeyCertOptions() == null) {
       return ctx.succeededFuture(NULL_CONFIG);
     }
     Promise<Config> promise;
-    ConfigKey k = new ConfigKey(sslOptions);
+    ConfigKey k = new ConfigKey(sslOptions, openSslEngine);
     synchronized (this) {
       if (closed) {
         return ctx.failedFuture("SslContextManager closed");
@@ -229,7 +231,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
         keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
         keyManagerFactoryMapper = sslOptions.getKeyCertOptions().keyManagerFactoryMapper(ctx.owner());
       }
-      TrustOptions trustOptions = trustOptionsOf(sslOptions);
+      TrustOptions trustOptions = trustOptionsOf(sslOptions, openSslEngine);
       if (trustOptions != null) {
         trustManagerFactory = trustOptions.getTrustManagerFactory(ctx.owner());
         trustManagerMapper = trustOptions.trustManagerMapper(ctx.owner());
@@ -271,13 +273,13 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     private final List<String> crlPaths;
     private final List<Buffer> crlValues;
 
-    public ConfigKey(SSLOptions options) {
+    public ConfigKey(SSLOptions options, boolean openSsl) {
 
       List<Buffer> crlValues = options.getCrlValues();
       List<String> crlPaths = options.getCrlPaths();
 
       this.keyCertOptions = options.getKeyCertOptions();
-      this.trustOptions = trustOptionsOf(options);
+      this.trustOptions = trustOptionsOf(options, openSsl);
       this.crlPaths = crlPaths != null ? new ArrayList<>(crlPaths) : null;
       this.crlValues = crlValues != null ? new ArrayList<>(crlValues) : null;
     }
@@ -330,7 +332,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     private final Set<String> enabledCipherSuites;
     private final Set<String> enabledSecuredTransportProtocols;
 
-    public ProviderKey(SSLOptions options) {
+    public ProviderKey(SSLOptions options, boolean openSsl) {
 
       String hostnameIdentificationAlgorithm;
       ClientAuth clientAuth;
@@ -345,7 +347,7 @@ public abstract class SslContextManager<P extends SslContextProvider> {
         clientAuth = null;
       }
 
-      this.config = new ConfigKey(options);
+      this.config = new ConfigKey(options, openSsl);
       this.hostnameIdentificationAlgorithm = hostnameIdentificationAlgorithm;
       this.clientAuth = clientAuth;
       Set<String> enabledCipherSuites = options.getEnabledCipherSuites();
