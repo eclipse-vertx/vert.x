@@ -10,11 +10,12 @@
  */
 package io.vertx.tests.tls;
 
-import io.vertx.core.Future;
+import io.netty.handler.ssl.OpenSsl;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
@@ -37,17 +38,38 @@ public class HttpHostnameVerificationTest extends VertxTestBase {
     HttpServer server = vertx.createHttpServer(new HttpServerOptions()
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
-    server.requestHandler(req -> {
-      req.response().end("example.com");
-    });
-    awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST));
+    server.requestHandler(req -> req.response().end("example.com"));
+    server.listen(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST).await();
     HttpClient client = vertx.createHttpClient(new HttpClientOptions().setVerifyHost(false).setSsl(true).setTrustAll(true));
-    RequestOptions options = new RequestOptions().setHost("example.com").setPort(HttpTestBase.DEFAULT_HTTPS_PORT);
-    Future<Buffer> response = client.request(options)
+    Buffer body = client.request(new RequestOptions().setHost("example.com").setPort(HttpTestBase.DEFAULT_HTTPS_PORT))
       .compose(req -> req
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::body));
-    assertEquals("example.com", awaitFuture(response).toString());
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals("example.com", body.toString());
+  }
+
+  @Test
+  public void testTrustAllWithOpenSslAndVerifyHost() throws Exception {
+    org.junit.Assume.assumeTrue(OpenSsl.isAvailable());
+    HttpServer server = vertx.createHttpServer(new HttpServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.requestHandler(req -> req.response().end("ok"));
+    server.listen(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST).await();
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions()));
+    Buffer body = client.request(new RequestOptions()
+        .setHost("localhost")
+        .setPort(HttpTestBase.DEFAULT_HTTPS_PORT))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals("ok", body.toString());
   }
 }
