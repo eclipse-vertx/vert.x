@@ -61,7 +61,7 @@ public class Http3Settings extends HttpSettings {
         "Value of setting QPACK_BLOCKED_STREAMS must be >= 0");
     };
     QPACK_BLOCKED_STREAMS = new HttpSetting<>(0x07, "QPACK_BLOCKED_STREAMS", 0L,
-      val -> val, val -> val, qpackMaxTableCapacityValidator, EnumSet.of(HttpVersion.HTTP_3));
+      val -> val, val -> val, qpackBlockedStreamsValidator, EnumSet.of(HttpVersion.HTTP_3));
   }
 
   public Http3Settings() {
