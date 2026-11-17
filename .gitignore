@@ -21,3 +21,4 @@ test-tmp
 *.swp
 .vertx
 .java-version
+.claude
