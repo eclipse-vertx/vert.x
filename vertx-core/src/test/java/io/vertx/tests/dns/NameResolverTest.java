@@ -900,7 +900,7 @@ public class NameResolverTest extends VertxTestBase {
     List<MockDnsServer> dnsServers = new ArrayList<>();
     try {
       for (int index = 1; index <= num; index++) {
-        MockDnsServer server = new MockDnsServer(vertx).store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
+        MockDnsServer server = new MockDnsServer(vertx).testLookup4("127.0.0." + index);
         server.port(MockDnsServer.PORT + index);
         server.start();
         dnsServers.add(server);
