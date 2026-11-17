@@ -2795,6 +2795,41 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testPlainHttp1RequestOnH2CServer() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setUseAlpn(false)
+      .setSsl(false));
+    server.requestHandler(req -> {
+      Assert.assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end("Yolo!");
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(clientOptions
+      .setProtocolVersion(HttpVersion.HTTP_1_1)
+      .setUseAlpn(false)
+      .setSsl(false));
+    client.request(new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setURI("/test"))
+      .compose(HttpClientRequest::send)
+      .compose(resp -> {
+        Assert.assertEquals(200, resp.statusCode());
+        Assert.assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        return resp.body();
+      })
+      .onComplete(TestUtils.onSuccess(body -> {
+        Assert.assertEquals("Yolo!", body.toString());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
   public void testUpgradeToClearTextGet() throws Exception {
     testUpgradeToClearText(HttpMethod.GET, Buffer.buffer(), options -> {});
   }

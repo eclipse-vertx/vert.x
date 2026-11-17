@@ -115,6 +115,7 @@ public class HttpServerConnectionInitializer {
     if (http2Config != null) {
       if (http2Config.getMultiplexImplementation()) {
         http2ChannelInitializer = new Http2MultiplexServerChannelInitializer(
+          this,
           context,
           compressionManager,
           useDecompression,
