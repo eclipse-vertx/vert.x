@@ -41,6 +41,11 @@ public class Http3Settings extends HttpSettings {
    */
   public static final HttpSetting<Long> QPACK_BLOCKED_STREAMS;
 
+  /**
+   * HTTP/3 {@code H3_DATAGRAM} setting
+   */
+  public static final HttpSetting<Boolean> H3_DATAGRAM;
+
   static {
     LongConsumer qpackMaxTableCapacityValidator = value -> {
       Arguments.require(value >= 0L,
@@ -62,6 +67,13 @@ public class Http3Settings extends HttpSettings {
     };
     QPACK_BLOCKED_STREAMS = new HttpSetting<>(0x07, "QPACK_BLOCKED_STREAMS", 0L,
       val -> val, val -> val, qpackBlockedStreamsValidator, EnumSet.of(HttpVersion.HTTP_3));
+
+    LongConsumer h3DatagramValidator = value -> {
+      Arguments.require(value == 0L || value == 1L,
+        "Value of setting H3_DATAGRAM must be 0 or 1");
+    };
+    H3_DATAGRAM = new HttpSetting<>(0x33, "H3_DATAGRAM", false,
+      val -> val == null ? 0L : (val ? 1 : 0), val -> val == 1L, h3DatagramValidator, EnumSet.of(HttpVersion.HTTP_3));
   }
 
   public Http3Settings() {
@@ -90,7 +102,7 @@ public class Http3Settings extends HttpSettings {
   }
 
   /**
-   * <p></p>Set the {@code QPACK_MAX_TABLE_CAPACITY} setting value.</p>
+   * <p>Set the {@code QPACK_MAX_TABLE_CAPACITY} setting value.</p>
    *
    * <p>Specifies the maximum value the QPACK encoder is permitted to set for the dynamic table capacity. The
    * default value is {@code 0}</p>
@@ -141,6 +153,28 @@ public class Http3Settings extends HttpSettings {
    */
   public Http3Settings setQPackBlockedStreams(long value) {
     return set(QPACK_BLOCKED_STREAMS, value);
+  }
+
+  /**
+   * @return the {@code H3_DATAGRAM} setting value
+   */
+  public boolean isH3Datagram() {
+    return getOrDefault(H3_DATAGRAM);
+  }
+
+  /**
+   * <p>Set the {@code H3_DATAGRAM} setting value.</p>
+   *
+   * <p>Specifies whether the endpoint supports HTTP/3 Datagrams as defined
+   * by RFC 9297. A value of {@code true} indicates support for HTTP/3
+   * Datagrams, while {@code false} indicates no support. The default value
+   * is {@code false}.</p>
+   *
+   * @param value the setting value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public Http3Settings setH3Datagram(boolean value) {
+    return set(H3_DATAGRAM, value);
   }
 
   @Override
