@@ -10,7 +10,10 @@
  */
 package io.vertx.core.http.impl.http2.multiplex;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2FrameCodec;
@@ -21,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
+import io.vertx.core.http.impl.tcp.HttpServerConnectionInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextManager;
@@ -31,6 +35,7 @@ import java.util.function.Supplier;
 
 public class Http2MultiplexServerChannelInitializer implements Http2ServerChannelInitializer {
 
+  private final HttpServerConnectionInitializer initializer;
   private final CompressionManager compressionManager;
   private final boolean decompressionSupported;
   private final Http2Settings initialSettings;
@@ -40,7 +45,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
   private final int maxSmallContinuationFrames;
   private final boolean logEnabled;
 
-  public Http2MultiplexServerChannelInitializer(ContextInternal context,
+  public Http2MultiplexServerChannelInitializer(HttpServerConnectionInitializer initializer,
+                                                ContextInternal context,
                                                 CompressionManager compressionManager,
                                                 boolean decompressionSupported,
                                                 HttpServerMetrics<?, ?> httpMetrics,
@@ -66,6 +72,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
       connection.metric(connectionMetric);
       return connection;
     };
+    this.initializer = initializer;
     this.initialSettings = initialSettings;
     this.connectionFactory = connectionFactory;
     this.compressionManager = compressionManager;
@@ -143,5 +150,17 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
     };
     // Make max buffered configurable
     pipeline.addBefore("handler", "h2c", new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory, 128 * 1024));
+    pipeline.addAfter("h2c", "h2c-fallback", new ChannelInboundHandlerAdapter() {
+      @Override
+      public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg instanceof HttpRequest) {
+          initializer.configureHttp1Handler(ctx.pipeline(), sslContextManager);
+          ctx.fireChannelRead(msg);
+          ctx.pipeline().remove(this);
+        } else {
+          super.channelRead(ctx, msg);
+        }
+      }
+    });
   }
 }
