@@ -33,6 +33,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private Function<Message<T>, Future<?>> processor;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
+  private Handler<Throwable> exceptionHandler;
   private final int maxBufferedMessages;
   private final InboundMessageQueue<Message<T>> pending;
   private Promise<Void> result;
@@ -135,8 +136,25 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
         }
       } catch (Exception e) {
         completion.fail(e);
+        handleException(e, context);
       }
     });
+  }
+
+  /*
+   * A thrown exception only fails the completion, which the tracer observes: hand it to the exception handler
+   * on the message's context, where the handler ran, or report it to the context when none is set.
+   */
+  private void handleException(Throwable cause, ContextInternal messageContext) {
+    Handler<Throwable> handler;
+    synchronized (this) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      messageContext.dispatch(cause, handler);
+    } else {
+      messageContext.reportException(cause);
+    }
   }
 
   /*
@@ -234,6 +252,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
+    this.exceptionHandler = handler;
     return this;
   }
 }

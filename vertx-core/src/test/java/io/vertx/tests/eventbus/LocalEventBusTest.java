@@ -1514,4 +1514,40 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testConsumerHandlerExceptionIsReported() {
+    IllegalStateException failure = new IllegalStateException("boom");
+    Context ctx = vertx.getOrCreateContext();
+    ctx.exceptionHandler(t -> {
+      Assert.assertSame(failure, t);
+      testComplete();
+    });
+    ctx.runOnContext(v -> {
+      vertx.eventBus().<String>consumer(ADDRESS1, msg -> {
+        throw failure;
+      }).completion().onComplete(TestUtils.onSuccess(v2 -> vertx.eventBus().send(ADDRESS1, "msg")));
+    });
+    await();
+  }
+
+  @Test
+  public void testConsumerExceptionHandlerReceivesHandlerException() {
+    IllegalStateException failure = new IllegalStateException("boom");
+    Context ctx = vertx.getOrCreateContext();
+    // No context exception handler: an exception reported to the context reaches the test failure handler
+    ctx.runOnContext(v -> {
+      MessageConsumer<String> consumer = vertx.eventBus().consumer(ADDRESS1);
+      consumer.exceptionHandler(t -> {
+        Assert.assertSame(failure, t);
+        Assert.assertSame(ctx, ((ContextInternal) Vertx.currentContext()).unwrap());
+        testComplete();
+      });
+      consumer.handler(msg -> {
+        throw failure;
+      });
+      consumer.completion().onComplete(TestUtils.onSuccess(v2 -> vertx.eventBus().send(ADDRESS1, "msg")));
+    });
+    await();
+  }
 }
