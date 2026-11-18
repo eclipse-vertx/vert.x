@@ -696,7 +696,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
               for (ProtocolFilter candidate : list) {
                 if (protocols.contains(candidate.protocol.id())) {
                   lookup = endpoint.selectServer(candidate);
-                  protocol = candidate.protocol;
+                  if (lookup != null) {
+                    protocol = candidate.protocol;
+                    break;
+                  }
                 }
               }
             } else {
