@@ -540,7 +540,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     )).toString();
     assertEquals("1", res);
     assertNotNull(registration2.state());
-    assertSame(registration1.state(), registration2.state());
+    assertNull(registration1.state());
   }
 
   @Test

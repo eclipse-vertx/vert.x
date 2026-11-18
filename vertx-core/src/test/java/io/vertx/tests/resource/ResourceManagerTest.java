@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -220,6 +221,124 @@ public class ResourceManagerTest extends VertxTestBase {
     waitUntil(() -> adder.get() != null);
     mgr.close();
     adder.get().run();
+  }
+
+  @Test
+  public void testDisposeAfterFunctionFailure() {
+    AtomicBoolean disposed = new AtomicBoolean();
+    Function<Object, AsyncResource> provider = key -> new AsyncResource() {
+      @Override
+      public Future<Resource> acquire(ContextInternal ctx, long timeout) {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      protected void cleanup() {
+        disposed.set(true);
+      }
+    };
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
+    RuntimeException failure = new RuntimeException();
+    try {
+      mgr.withResourceAsync(TEST_KEY, provider, (resource, created) -> {
+        throw failure;
+      });
+      fail();
+    } catch (RuntimeException e) {
+      assertSame(failure, e);
+    }
+    assertTrue(disposed.get());
+    assertEquals(0, mgr.size());
+  }
+
+  @Test
+  public void testAcquireAfterClose() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
+    mgr.close();
+    try {
+      getResource(ctx, mgr, key -> {
+        throw new AssertionError();
+      }, TEST_KEY);
+      fail();
+    } catch (IllegalStateException expected) {
+    }
+  }
+
+  @Test
+  public void testCloseDuringResourceCreation() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    CountDownLatch creating = new CountDownLatch(1);
+    CountDownLatch closed = new CountDownLatch(1);
+    AtomicBoolean handleClose = new AtomicBoolean();
+    Function<Object, AsyncResource> provider = key -> {
+      creating.countDown();
+      try {
+        closed.await(100, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      return new AsyncResource() {
+        @Override
+        public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
+          return ctx1.promise();
+        }
+        @Override
+        protected void handleClose() {
+          handleClose.set(true);
+        }
+      };
+    };
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
+    new Thread(() -> {
+      try {
+        creating.await();
+      } catch (InterruptedException e) {
+        return;
+      }
+      mgr.close();
+      closed.countDown();
+    }).start();
+    try {
+      getResource(ctx, mgr, provider, TEST_KEY);
+    } catch (IllegalStateException rejected) {
+      return;
+    }
+    awaitLatch(closed);
+    assertTrue(handleClose.get());
+  }
+
+  @Test
+  public void testCloseDuringShutdown() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    CountDownLatch shuttingDown = new CountDownLatch(1);
+    CountDownLatch closed = new CountDownLatch(1);
+    AtomicBoolean handleClose = new AtomicBoolean();
+    Function<Object, AsyncResource> provider = key -> new AsyncResource() {
+      @Override
+      public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
+        return ctx1.promise();
+      }
+      @Override
+      protected void handleShutdown() {
+        shuttingDown.countDown();
+        try {
+          closed.await(100, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      @Override
+      protected void handleClose() {
+        handleClose.set(true);
+      }
+    };
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
+    getResource(ctx, mgr, provider, TEST_KEY);
+    new Thread(mgr::shutdown).start();
+    awaitLatch(shuttingDown);
+    mgr.close();
+    closed.countDown();
+    assertTrue(handleClose.get());
   }
 
   @Repeat(times = 20)

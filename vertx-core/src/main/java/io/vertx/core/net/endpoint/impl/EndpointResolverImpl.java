@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -150,9 +151,13 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       if (endpoint.succeeded()
       && (((now - endpoint.result().creationTimestamp) >= maxKeepAlive.toMillis()) ||
         (now - endpoint.result().lastAccessed.get() >= keepAliveTimeout.toMillis()))) {
-        if (disposed.compareAndSet(false, true)) {
-          decRefCount();
-        }
+        evict();
+      }
+    }
+
+    void evict() {
+      if (disposed.compareAndSet(false, true)) {
+        decRefCount();
       }
     }
 
@@ -202,30 +207,32 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   };
 
   private ManagedEndpoint resolveAddress(A address) {
+    AtomicReference<ManagedEndpoint> replaced = new AtomicReference<>();
     Result sFuture = endpointManager.withResource(address, provider, managedEndpoint -> {
       Future<EndpointImpl> fut = managedEndpoint.endpoint;
       if (fut.succeeded()) {
         EndpointImpl endpoint = fut.result();
         if (!endpointResolver.isValid(endpoint.state)) {
+          replaced.set(managedEndpoint);
           Future<S> refresh = endpointResolver.refresh(address, endpoint.state);
           if (refresh != null) {
-            return new ManagedEndpoint(refresh.map(s -> new EndpointImpl(address, endpoint.lastAccessed, s)));
+            ManagedEndpoint refreshed = new ManagedEndpoint(refresh.map(s -> new EndpointImpl(address, endpoint.lastAccessed, s)));
+            refreshed.incRefCount();
+            return refreshed;
           } else {
-            // todo: should cleanup .... ????
             return null;
           }
         }
       }
       return managedEndpoint;
     }, fn);
+    // Evictions must happen outside the withResource method since they remove the resource from the map
+    ManagedEndpoint evicted = replaced.get();
+    if (evicted != null) {
+      evicted.evict();
+    }
     if (sFuture.created) {
-      sFuture.fut.onFailure(err -> {
-        if (sFuture.endpoint.disposed.compareAndSet(false, true)) {
-          // We need to call decRefCount outside the withEndpoint method, hence we need
-          // the Result class workaround
-          sFuture.endpoint.decRefCount();
-        }
-      });
+      sFuture.fut.onFailure(err -> sFuture.endpoint.evict());
     }
     return sFuture.endpoint;
   }
