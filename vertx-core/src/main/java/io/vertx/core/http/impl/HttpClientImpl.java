@@ -61,6 +61,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final long maxLifetime;
   private final HttpClientTransport tcpTransport;
   private final HttpClientTransport quicTransport;
+  private final HttpClientTransport defaultTransport;
   private final EndpointResolverInternal resolver;
   private final OriginResolver<Object> originEndpoints;
   private final EndpointResolverInternal originResolver;
@@ -110,6 +111,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
     this.tcpTransport = tcpTransport;
     this.quicTransport = quicTransport;
+    this.defaultTransport = tcpTransport != null ? tcpTransport : quicTransport;
     this.originEndpoints = new OriginResolver<>(vertx, resolveAll, this);
     this.resolver = (EndpointResolverInternal) resolver;
     this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, resolverKeepAliveTimeout, resolverMaxKeepAlive);
@@ -347,42 +349,22 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<io.vertx.core.http.HttpClientConnection> connect(HttpConnectOptions connect) {
-    HttpClientTransport transport = tcpTransport;
-    if (transport == null) {
-      transport = quicTransport;
-    }
-    return connect(transport, connect);
-  }
-
-  private Future<io.vertx.core.http.HttpClientConnection> connect(HttpClientTransport transport, HttpConnectOptions connect) {
     Address addr = connect.getServer();
     Integer port = connect.getPort();
     String host = connect.getHost();
     SocketAddress server;
     if (addr == null) {
-      if (port == null) {
-        port = defaultPort;
-      }
-      if (host == null) {
-        host = defaultHost;
-      }
-      server = SocketAddress.inetSocketAddress(port, host);
+      server = SocketAddress.inetSocketAddress(port != null ? port : defaultPort, host != null ? host : defaultHost);
     } else if (addr instanceof SocketAddress) {
       server = (SocketAddress) addr;
-      if (port == null) {
-        port = connect.getPort();
-      }
-      if (host == null) {
-        host = connect.getHost();
-      }
-      if (port == null) {
-        port = server.port();
-      }
-      if (host == null) {
-        host = server.host();
-      }
     } else {
       throw new IllegalArgumentException("Only socket address are currently supported");
+    }
+    if (port == null) {
+      port = server.port();
+    }
+    if (host == null) {
+      host = server.host();
     }
     HttpVersion protocol = connect.getProtocolVersion();
     List<HttpVersion> protocols;
@@ -399,7 +381,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
     HttpConnectParams params = new HttpConnectParams(protocols, sslOptions, proxyOptions, useSSL);
-    return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
+    return defaultTransport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
       .map(conn -> new UnpooledHttpClientConnection(conn, validateUri).init());
   }
 
@@ -456,54 +438,27 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return toStream(fut);
   }
 
+  private HttpClientTransport transport(HttpVersion version) {
+    return version == HttpVersion.HTTP_3 ? quicTransport : tcpTransport;
+  }
+
   private Future<ConnectionObtainedResult> doRequest(RequestOptions request) {
     HttpVersion version = request.getProtocolVersion();
-    HttpClientTransport transport;
-    if (version == null) {
-      if (tcpTransport != null) {
-        transport = tcpTransport;
-      } else {
-        transport = quicTransport;
-      }
-    } else {
-      if (!versions.contains(version)) {
-        return vertx.failedFuture("Requested HTTP version " + version + " unsupported by this client " + versions);
-      }
-      switch (version) {
-        case HTTP_1_0:
-        case HTTP_1_1:
-        case HTTP_2:
-          transport = tcpTransport;
-          break;
-        case HTTP_3:
-          transport = quicTransport;
-          break;
-        default:
-          throw new AssertionError();
-      }
-      if (transport == null) {
-        return vertx.getOrCreateContext().failedFuture("Handle me");
-      }
+    if (version != null && !versions.contains(version)) {
+      return vertx.failedFuture("Requested HTTP version " + version + " unsupported by this client " + versions);
     }
-    Address addr = request.getServer();
+    HttpClientTransport transport = version != null ? transport(version) : defaultTransport;
+    if (transport == null) {
+      return vertx.getOrCreateContext().failedFuture("Handle me");
+    }
+    Address server = request.getServer();
     Integer port = request.getPort();
     String host = request.getHost();
-    if (addr == null) {
-      if (port == null) {
-        port = defaultPort;
-      }
-      if (host == null) {
-        host = defaultHost;
-      }
-      addr = SocketAddress.inetSocketAddress(port, host);
-    } else if (addr instanceof SocketAddress) {
-      SocketAddress socketAddr = (SocketAddress) addr;
-      if (port == null) {
-        port = request.getPort();
-      }
-      if (host == null) {
-        host = request.getHost();
-      }
+    if (server == null) {
+      server = SocketAddress.inetSocketAddress(port != null ? port : defaultPort, host != null ? host : defaultHost);
+    }
+    if (server instanceof SocketAddress) {
+      SocketAddress socketAddr = (SocketAddress) server;
       if (port == null) {
         port = socketAddr.port();
       }
@@ -511,52 +466,39 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         host = socketAddr.host();
       }
     }
-    return doRequest(transport, addr, port, host, request);
-  }
-
-  private Future<ConnectionObtainedResult> doRequest(HttpClientTransport transport, Address server, Integer port, String host, RequestOptions request) {
-    if (server == null) {
-      throw new NullPointerException();
-    }
-    Boolean ssl = request.isSsl();
     checkClosed();
     HostAndPort authority;
     if (host != null && port != null) {
-      String peerHost = host;
-      if (peerHost.endsWith(".")) {
-        peerHost = peerHost.substring(0, peerHost.length() -  1);
+      if (host.endsWith(".")) {
+        host = host.substring(0, host.length() - 1);
       }
-      authority = HostAndPort.create(peerHost, port);
+      authority = HostAndPort.create(host, port);
     } else {
       authority = null;
     }
     ClientSSLOptions sslOptions = sslOptions(verifyHost, request, this.sslOptions);
+    Boolean ssl = request.isSsl();
+    boolean useSSL = ssl != null ? ssl : defaultSsl;
     if (server instanceof SocketAddress) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
       if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
-        boolean useSSL = ssl != null ? ssl : defaultSsl;
-        return doRequestDirectly(transport, request.getProtocolVersion(), proxyOptions, serverSocketAddress, useSSL,
+        return doRequestDirectly(transport, version, proxyOptions, serverSocketAddress, useSSL,
           sslOptions, authority, request.getConnectTimeout());
       }
     }
-    boolean useSSL;
     HttpProtocol protocol;
-    if (request.getProtocolVersion() == null) {
+    if (version == null) {
       protocol = null;
-      useSSL = ssl != null ? ssl : defaultSsl;
     } else {
-      switch (request.getProtocolVersion()) {
+      switch (version) {
         case HTTP_1_0:
-          useSSL = ssl != null ? ssl : defaultSsl;
           protocol = HttpProtocol.HTTP_1_0;
           break;
         case HTTP_1_1:
-          useSSL = ssl != null ? ssl : defaultSsl;
           protocol = HttpProtocol.HTTP_1_1;
           break;
         case HTTP_2:
-          useSSL = ssl != null ? ssl : defaultSsl;
           protocol = useSSL ? HttpProtocol.H2 : HttpProtocol.H2C;
           break;
         case HTTP_3:
@@ -655,24 +597,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         HostAndPort altUsed;
         if (followAlternativeServices && server instanceof Origin && ("https".equals((originServer = (Origin)server).scheme) && originServer.host.indexOf('.') > 0)) {
           if (protocol_ != null) {
-            ProtocolFilter filter;
-            switch (protocol_) {
-              case H3:
-                filter = ProtocolFilter.H3;
-                break;
-              case H2:
-                filter = ProtocolFilter.H2;
-                break;
-              case HTTP_1_1:
-                filter = ProtocolFilter.HTTP_1_1;
-                break;
-              case HTTP_1_0:
-                filter = ProtocolFilter.HTTP_1_0;
-                break;
-              default:
-                throw new AssertionError();
-            }
-            lookup = endpoint.selectServer(filter);
+            lookup = endpoint.selectServer(ProtocolFilter.of(protocol_));
             protocol = protocol_;
           } else {
             Set<String> protocols = endpoint.protocols();
@@ -772,13 +697,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       serverKey = SocketAddress.inetSocketAddress(server.port(), server.hostAddress());
     }
     EndpointKey key = new EndpointKey(useSSL, protocol != null ? protocol.version() : null, sslOptions, serverKey, authority);
-    HttpClientTransport transport;
-    if (protocol != null && protocol.version() == HttpVersion.HTTP_3) {
-      transport = quicTransport;
-    } else {
-      transport = tcpTransport;
-    }
-    Function<EndpointKey, SharedHttpClientConnectionGroup> provider = httpEndpointProvider(resolveOrigin, server, null, transport);
+    Function<EndpointKey, SharedHttpClientConnectionGroup> provider = httpEndpointProvider(resolveOrigin, server, null, protocol != null ? transport(protocol.version()) : defaultTransport);
     return resourceManager.withResourceAsync(key, provider, (group, created) -> function.apply(group));
   }
 
