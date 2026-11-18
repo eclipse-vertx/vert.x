@@ -96,8 +96,28 @@ public class EndpointResolverTest extends VertxTestBase {
     EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx,
       fakeResolver, LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
     Endpoint endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
-    registration = fakeResolver.registerAddress("example.com", List.of(addr1, addr2));
+    fakeResolver.registerAddress("example.com", List.of(addr1, addr2));
     endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
     assertEquals(2, endpoint.servers().size());
+    assertWaitUntil(() -> {
+      resolver.checkExpired();
+      return resolver.size() == 0;
+    }, 1000);
+    assertNull(registration.state());
+  }
+
+  @Test
+  public void testRefreshUnregistered() {
+    FakeRegistration registration = fakeResolver.registerAddress("example.com", List.of(addr1));
+    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx,
+      fakeResolver, LoadBalancer.ROUND_ROBIN, Duration.ofSeconds(5), Duration.ofMillis(10));
+    resolver.resolveEndpoint(new FakeAddress("example.com")).await();
+    fakeResolver.unregisterAddress("example.com");
+    try {
+      resolver.resolveEndpoint(new FakeAddress("example.com")).await();
+      fail();
+    } catch (Exception expected) {
+    }
+    assertNull(registration.state());
   }
 }

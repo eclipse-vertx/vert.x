@@ -23,6 +23,10 @@ public class FakeAddressResolver<B> implements AddressResolver<FakeAddress>, End
     return registration;
   }
 
+  public void unregisterAddress(String name) {
+    map.remove(name);
+  }
+
   public Set<String> addresses() {
     return map.keySet();
   }
@@ -71,7 +75,7 @@ public class FakeAddressResolver<B> implements AddressResolver<FakeAddress>, End
       return null;
     } else {
       FakeState<B> refreshedState = new FakeState<>(state.name, registration, state.builder);
-      registration.state = state;
+      registration.state = refreshedState;
       refreshedState.refresh();
       return Future.succeededFuture(refreshedState);
     }
