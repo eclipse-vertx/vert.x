@@ -13,7 +13,7 @@ package io.vertx.core.http.impl.http2.multiplex;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2FrameCodec;
@@ -149,17 +149,35 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
       }
     };
     // Make max buffered configurable
-    pipeline.addBefore("handler", "h2c", new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory, 128 * 1024));
+    pipeline.addBefore("handler", "h2c", new HttpServerUpgradeHandler(
+      sourceCodec,
+      upgradeCodecFactory,
+      128 * 1024,
+      DefaultHttpHeadersFactory.headersFactory(),
+      DefaultHttpHeadersFactory.trailersFactory(), true
+    ));
     pipeline.addAfter("h2c", "h2c-fallback", new ChannelInboundHandlerAdapter() {
+
+      private boolean removed = false;
+
       @Override
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof HttpRequest) {
+        if (!removed) {
+          removed = true;
           initializer.configureHttp1Handler(ctx.pipeline(), sslContextManager);
-          ctx.fireChannelRead(msg);
           ctx.pipeline().remove(this);
-        } else {
-          super.channelRead(ctx, msg);
         }
+        super.channelRead(ctx, msg);
+      }
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof HttpServerUpgradeHandler.UpgradeEvent) {
+          if (!removed) {
+            removed = true;
+            ctx.pipeline().remove(this);
+          }
+        }
+        super.userEventTriggered(ctx, evt);
       }
     });
   }

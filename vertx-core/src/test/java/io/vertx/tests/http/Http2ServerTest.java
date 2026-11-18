@@ -2812,21 +2812,18 @@ public class Http2ServerTest extends Http2TestBase {
       .setProtocolVersion(HttpVersion.HTTP_1_1)
       .setUseAlpn(false)
       .setSsl(false));
-    client.request(new RequestOptions()
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
-      .setURI("/test"))
-      .compose(HttpClientRequest::send)
-      .compose(resp -> {
-        Assert.assertEquals(200, resp.statusCode());
-        Assert.assertEquals(HttpVersion.HTTP_1_1, resp.version());
-        return resp.body();
-      })
-      .onComplete(TestUtils.onSuccess(body -> {
-        Assert.assertEquals("Yolo!", body.toString());
-        testComplete();
-      }));
-    await();
+    Buffer body = client.request(new RequestOptions()
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setURI("/test"))
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(resp -> {
+          Assert.assertEquals(HttpVersion.HTTP_1_1, resp.version());
+          return resp.body();
+        })).await();
+    Assert.assertEquals("Yolo!", body.toString());
   }
 
   @Test
