@@ -90,7 +90,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2961,7 +2960,6 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
-    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2979,7 +2977,6 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextMalformedSettings() throws Exception {
-    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2997,7 +2994,6 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidSettings() throws Exception {
-    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     Buffer buffer = Buffer.buffer();
     buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
     String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
@@ -3018,7 +3014,6 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextMissingSettings() throws Exception {
-    Assume.assumeFalse(serverOptions.getPerMessageWebSocketCompressionSupported());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -3035,7 +3030,6 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextWorkerContext() throws Exception {
-    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -3054,7 +3048,8 @@ public class Http2ServerTest extends Http2TestBase {
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
     server.requestHandler(req -> {
-      Assert.fail();
+      Assert.assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().setStatusCode(400).end();
     });
     startServer(context);
     client.close();
@@ -3069,18 +3064,15 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextPartialFailure() throws Exception {
-    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
-    CompletableFuture<Void> closeRequest = new CompletableFuture<>();
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setUseAlpn(false)
+      .setSsl(false)
+      .setIdleTimeout(250)
+      .setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
     server.requestHandler(req -> {
-      closeRequest.complete(null);
-      AtomicBoolean processed = new AtomicBoolean();
-      req.exceptionHandler(err -> {
-        if (processed.compareAndSet(false, true)) {
-          testComplete();
-        }
-      });
     });
     startServer(testAddress);
     client.close();
@@ -3092,9 +3084,7 @@ public class Http2ServerTest extends Http2TestBase {
         .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
         .setChunked(true);
       req.write("some-data");
-      closeRequest.thenAccept(v -> {
-        req.connection().close();
-      });
+      req.connection().closeHandler(v -> testComplete());
     }));
     await();
   }

@@ -14,6 +14,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2FrameCodec;
@@ -166,6 +169,14 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
           removed = true;
           initializer.configureHttp1Handler(ctx.pipeline(), sslContextManager);
           ctx.pipeline().remove(this);
+          if (msg instanceof FullHttpRequest) {
+            FullHttpRequest fullRequest = (FullHttpRequest) msg;
+            DefaultHttpRequest request = new DefaultHttpRequest(fullRequest.protocolVersion(), fullRequest.method(), fullRequest.uri(), fullRequest.headers());
+            request.setDecoderResult(fullRequest.decoderResult());
+            ctx.fireChannelRead(request);
+            ctx.fireChannelRead(new DefaultLastHttpContent(fullRequest.content(), fullRequest.trailingHeaders()));
+            return;
+          }
         }
         super.channelRead(ctx, msg);
       }
