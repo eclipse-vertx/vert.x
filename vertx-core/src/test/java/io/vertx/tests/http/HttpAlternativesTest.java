@@ -155,7 +155,6 @@ public class HttpAlternativesTest extends VertxTestBase {
       });
     startServer(4044, Cert.SNI_JKS, HttpVersion.HTTP_2, HttpVersion.HTTP_3)
       .handler(request -> request.response().end());
-    Set<HttpVersion> versions = Collections.synchronizedSet(new HashSet<>());
     client = vertx
       .httpClientBuilder()
       .with(new HttpClientConfig()
@@ -164,16 +163,14 @@ public class HttpAlternativesTest extends VertxTestBase {
         .setVerifyHost(false)
         .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, HttpVersion.HTTP_3))
       .with(new ClientSSLOptions().setTrustAll(true))
-      .withConnectHandler(conn -> {
-        versions.add(conn.protocolVersion());
-      })
       .build();
     client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
         .compose(HttpClientResponse::body)
       ).await();
-    assertWaitUntil(() -> versions.containsAll(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3)));
+    waitUntilAlternative("h2");
+    waitUntilAlternative("h3");
     HttpVersion version = client.request(new RequestOptions().setHost("host2.com").setPort(4043).setURI("/"))
       .compose(request -> request
         .send()
@@ -246,6 +243,16 @@ public class HttpAlternativesTest extends VertxTestBase {
     }
   }
 
+  private void waitUntilAlternative(String protocolId) {
+    EndpointResolverInternal resolver = ((HttpClientInternal) client).originResolver();
+    assertWaitUntil(() -> resolver
+      .resolveEndpoint(new Origin("https", "host2.com", 4043))
+      .await()
+      .servers()
+      .stream()
+      .anyMatch(server -> protocolId.equals(server.protocolId())));
+  }
+
   private void testFollowProtocol(HttpVersion initialProtocol, HttpVersion upgradedProtocol, String advertisement, String expectedAltUsed) {
     testFollowProtocol(initialProtocol, upgradedProtocol, () -> advertisement, expectedAltUsed);
   }
@@ -288,6 +295,7 @@ public class HttpAlternativesTest extends VertxTestBase {
       ).await();
     Assert.assertEquals("host2.com:4043", body.toString());
     assertWaitUntil(() -> versions.contains(upgradedProtocol));
+    waitUntilAlternative(upgradedProtocol == HttpVersion.HTTP_3 ? "h3" : "h2");
     body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(upgradedProtocol).setPort(4043).setURI("/"))
       .compose(request -> request
         .send()
