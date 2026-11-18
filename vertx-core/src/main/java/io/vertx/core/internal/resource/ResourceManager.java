@@ -116,8 +116,9 @@ public class ResourceManager<K, R extends ManagedResource> {
           throw e;
         }
         return fut.andThen(ar -> res.after());
+      } else {
+        return null;
       }
-      return null;
     });
   }
 
