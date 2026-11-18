@@ -21,7 +21,6 @@ public abstract class ManagedResource {
   private boolean shutdown;
   private boolean closed;
   private boolean disposed;
-  private long acquireInProgress;
   private long refCount;
 
   public ManagedResource() {
@@ -32,22 +31,15 @@ public abstract class ManagedResource {
       if (disposed) {
         return false;
       }
-      acquireInProgress++;
+      refCount++;
     }
     return true;
   }
 
   void after() {
-    boolean dispose;
-    synchronized (this) {
-      acquireInProgress--;
-      dispose = checkDispose();
-    }
     // Dispose before callback otherwise we can have the callback handler retrying the same
     // endpoint and never get the callback it expects to creating an infinite loop
-    if (dispose) {
-      disposeInternal();
-    }
+    decRefCount();
   }
 
   protected void checkExpired() {
@@ -81,7 +73,7 @@ public abstract class ManagedResource {
   }
 
   private boolean checkDispose() {
-    if (!disposed && refCount == 0 && acquireInProgress == 0) {
+    if (!disposed && refCount == 0) {
       disposed = true;
       return true;
     }
