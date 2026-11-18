@@ -20,7 +20,6 @@ public abstract class ManagedResource {
   Runnable cleaner;
   private boolean shutdown;
   private boolean closed;
-  private boolean disposed;
   private long refCount;
 
   public ManagedResource() {
@@ -28,7 +27,7 @@ public abstract class ManagedResource {
 
   boolean before() {
     synchronized (this) {
-      if (disposed) {
+      if (refCount < 0) {
         return false;
       }
       refCount++;
@@ -47,7 +46,7 @@ public abstract class ManagedResource {
 
   protected boolean incRefCount() {
     synchronized (this) {
-      if (disposed) {
+      if (refCount < 0) {
         return false;
       } else {
         refCount++;
@@ -56,28 +55,19 @@ public abstract class ManagedResource {
     }
   }
 
-  protected boolean decRefCount() {
+  protected void decRefCount() {
     synchronized (this) {
-      refCount--;
-      if (!checkDispose()) {
-        return false;
+      if (refCount <= 0 || --refCount > 0) {
+        return;
       }
+      refCount = -1;
     }
     disposeInternal();
-    return true;
   }
 
   private void disposeInternal() {
     cleaner.run();
     cleanup();
-  }
-
-  private boolean checkDispose() {
-    if (!disposed && refCount == 0) {
-      disposed = true;
-      return true;
-    }
-    return false;
   }
 
   /**

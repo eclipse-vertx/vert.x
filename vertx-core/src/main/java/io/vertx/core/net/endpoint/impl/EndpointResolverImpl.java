@@ -165,11 +165,6 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     public boolean incRefCount() {
       return super.incRefCount();
     }
-
-    @Override
-    public boolean decRefCount() {
-      return super.decRefCount();
-    }
   }
 
   /**
