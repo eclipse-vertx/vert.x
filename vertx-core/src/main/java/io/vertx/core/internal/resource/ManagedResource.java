@@ -20,8 +20,6 @@ public abstract class ManagedResource {
   Runnable cleaner;
   private boolean shutdown;
   private boolean closed;
-  private boolean disposed;
-  private long acquireInProgress;
   private long refCount;
 
   public ManagedResource() {
@@ -29,25 +27,18 @@ public abstract class ManagedResource {
 
   boolean before() {
     synchronized (this) {
-      if (disposed) {
+      if (refCount < 0) {
         return false;
       }
-      acquireInProgress++;
+      refCount++;
     }
     return true;
   }
 
   void after() {
-    boolean dispose;
-    synchronized (this) {
-      acquireInProgress--;
-      dispose = checkDispose();
-    }
     // Dispose before callback otherwise we can have the callback handler retrying the same
     // endpoint and never get the callback it expects to creating an infinite loop
-    if (dispose) {
-      disposeInternal();
-    }
+    decRefCount();
   }
 
   protected void checkExpired() {
@@ -55,33 +46,28 @@ public abstract class ManagedResource {
 
   protected boolean incRefCount() {
     synchronized (this) {
-      refCount++;
-      return !closed;
+      if (refCount < 0) {
+        return false;
+      } else {
+        refCount++;
+        return !closed;
+      }
     }
   }
 
-  protected boolean decRefCount() {
+  protected void decRefCount() {
     synchronized (this) {
-      refCount--;
-      if (!checkDispose()) {
-        return false;
+      if (refCount <= 0 || --refCount > 0) {
+        return;
       }
+      refCount = -1;
     }
     disposeInternal();
-    return true;
   }
 
   private void disposeInternal() {
     cleaner.run();
     cleanup();
-  }
-
-  private boolean checkDispose() {
-    if (!disposed && refCount == 0 && acquireInProgress == 0) {
-      disposed = true;
-      return true;
-    }
-    return false;
   }
 
   /**

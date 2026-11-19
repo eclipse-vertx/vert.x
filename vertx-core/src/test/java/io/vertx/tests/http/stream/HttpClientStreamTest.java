@@ -11,6 +11,7 @@
 package io.vertx.tests.http.stream;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -19,6 +20,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.FlowController;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
 
@@ -56,6 +59,13 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       }
     });
     client = (CleanableHttpClient)super.client;
+  }
+
+  @Test
+  public void testOpenStreamInvalidURI() {
+    Future<HttpClientStream> fut = client.openStream(new RequestOptions(requestOptions).setURI("/example/ path"));
+    assertTrue(fut.failed());
+    assertTrue(fut.cause() instanceof IllegalArgumentException);
   }
 
   @Test

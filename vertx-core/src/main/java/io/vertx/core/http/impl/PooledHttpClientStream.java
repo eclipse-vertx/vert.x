@@ -25,21 +25,37 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.streams.WriteResult;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.ContentEncoder;
+import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
 /**
- * Decorates an {@link HttpClientStream} that gathers usage statistics.
+ * Decorates an {@link HttpClientStream} obtained from a pooled connection: recycles the connection lease when the
+ * stream is closed and gathers usage statistics.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEncoder {
+class PooledHttpClientStream implements HttpClientStream, ContentEncoder {
 
   private final HttpClientStream delegate;
+  private final Lease<?> lease;
   private final ServerInteraction endpointRequest;
+  private Handler<Void> closeHandler;
 
-  StatisticsGatheringHttpClientStream(HttpClientStream delegate, ServerInteraction endpointRequest) {
+  PooledHttpClientStream(HttpClientStream delegate, Lease<?> lease, ServerInteraction endpointRequest) {
     this.delegate = delegate;
+    this.lease = lease;
     this.endpointRequest = endpointRequest;
+  }
+
+  PooledHttpClientStream init() {
+    delegate.closeHandler(v -> {
+      lease.recycle();
+      Handler<Void> handler = closeHandler;
+      if (handler != null) {
+        handler.handle(null);
+      }
+    });
+    return this;
   }
 
   @Override
@@ -79,7 +95,9 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
 
   @Override
   public HttpClientStream head(HttpRequestHead request) {
-    endpointRequest.reportRequestBegin();
+    if (endpointRequest != null) {
+      endpointRequest.reportRequestBegin();
+    }
     delegate.head(request);
     return this;
   }
@@ -96,19 +114,25 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
 
   @Override
   public WriteResult end(ByteBuf buf) {
-    endpointRequest.reportRequestEnd();
+    if (endpointRequest != null) {
+      endpointRequest.reportRequestEnd();
+    }
     return delegate.contentEncoder().end(buf);
   }
 
   @Override
   public WriteResult end() {
-    endpointRequest.reportRequestEnd();
+    if (endpointRequest != null) {
+      endpointRequest.reportRequestEnd();
+    }
     return delegate.contentEncoder().end();
   }
 
   @Override
   public WriteResult end(MultiMap trailers) {
-    endpointRequest.reportRequestEnd();
+    if (endpointRequest != null) {
+      endpointRequest.reportRequestEnd();
+    }
     return delegate.end(trailers);
   }
 
@@ -145,7 +169,9 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
   public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
       delegate.headHandler(multimap -> {
-        endpointRequest.reportResponseBegin();
+        if (endpointRequest != null) {
+          endpointRequest.reportResponseBegin();
+        }
         handler.handle(multimap);
       });
     } else {
@@ -163,7 +189,9 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
   public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
     if (handler != null) {
       delegate.trailersHandler(multimap -> {
-        endpointRequest.reportResponseEnd();
+        if (endpointRequest != null) {
+          endpointRequest.reportResponseEnd();
+        }
         handler.handle(multimap);
       });
     } else {
@@ -180,7 +208,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
 
   @Override
   public HttpClientStream closeHandler(Handler<Void> handler) {
-    delegate.closeHandler(handler);
+    closeHandler = handler;
     return this;
   }
 
@@ -215,7 +243,9 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream, ContentEn
   public HttpClientStream exceptionHandler(@Nullable Handler<Throwable> handler) {
     if (handler != null) {
       delegate.exceptionHandler(err -> {
-        endpointRequest.reportFailure(err);
+        if (endpointRequest != null) {
+          endpointRequest.reportFailure(err);
+        }
         handler.handle(err);
       });
     } else {

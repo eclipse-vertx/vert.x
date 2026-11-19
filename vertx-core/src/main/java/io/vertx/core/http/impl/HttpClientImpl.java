@@ -61,6 +61,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final long maxLifetime;
   private final HttpClientTransport tcpTransport;
   private final HttpClientTransport quicTransport;
+  private final HttpClientTransport defaultTransport;
   private final EndpointResolverInternal resolver;
   private final OriginResolver<Object> originEndpoints;
   private final EndpointResolverInternal originResolver;
@@ -110,6 +111,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
     this.tcpTransport = tcpTransport;
     this.quicTransport = quicTransport;
+    this.defaultTransport = tcpTransport != null ? tcpTransport : quicTransport;
     this.originEndpoints = new OriginResolver<>(vertx, resolveAll, this);
     this.resolver = (EndpointResolverInternal) resolver;
     this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, resolverKeepAliveTimeout, resolverMaxKeepAlive);
@@ -347,42 +349,22 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<io.vertx.core.http.HttpClientConnection> connect(HttpConnectOptions connect) {
-    HttpClientTransport transport = tcpTransport;
-    if (transport == null) {
-      transport = quicTransport;
-    }
-    return connect(transport, connect);
-  }
-
-  private Future<io.vertx.core.http.HttpClientConnection> connect(HttpClientTransport transport, HttpConnectOptions connect) {
     Address addr = connect.getServer();
     Integer port = connect.getPort();
     String host = connect.getHost();
     SocketAddress server;
     if (addr == null) {
-      if (port == null) {
-        port = defaultPort;
-      }
-      if (host == null) {
-        host = defaultHost;
-      }
-      server = SocketAddress.inetSocketAddress(port, host);
+      server = SocketAddress.inetSocketAddress(port != null ? port : defaultPort, host != null ? host : defaultHost);
     } else if (addr instanceof SocketAddress) {
       server = (SocketAddress) addr;
-      if (port == null) {
-        port = connect.getPort();
-      }
-      if (host == null) {
-        host = connect.getHost();
-      }
-      if (port == null) {
-        port = server.port();
-      }
-      if (host == null) {
-        host = server.host();
-      }
     } else {
       throw new IllegalArgumentException("Only socket address are currently supported");
+    }
+    if (port == null) {
+      port = server.port();
+    }
+    if (host == null) {
+      host = server.host();
     }
     HttpVersion protocol = connect.getProtocolVersion();
     List<HttpVersion> protocols;
@@ -399,7 +381,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
     HttpConnectParams params = new HttpConnectParams(protocols, sslOptions, proxyOptions, useSSL);
-    return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
+    return defaultTransport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
       .map(conn -> new UnpooledHttpClientConnection(conn, validateUri).init());
   }
 
@@ -438,72 +420,97 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
+    IllegalArgumentException invalidUri = validateUri(request);
+    if (invalidUri != null) {
+      return vertx.getOrCreateContext().failedFuture(invalidUri);
+    }
+    RequestOptions options = prepare(request);
+    ContextInternal ctx = vertx.getOrCreateContext();
+    return acquireConnection(options, ctx)
+      .compose(res -> res
+        .createStream()
+        .map(stream -> wrap(options, res, stream)));
+  }
+
+  public Future<HttpClientStream> openStream(RequestOptions request) {
+    IllegalArgumentException invalidUri = validateUri(request);
+    if (invalidUri != null) {
+      return vertx.getOrCreateContext().failedFuture(invalidUri);
+    }
+    ContextInternal ctx = vertx.getOrCreateContext();
+    return acquireConnection(prepare(request), ctx)
+      .compose(ConnectionRequest::createStream);
+  }
+
+  private IllegalArgumentException validateUri(RequestOptions request) {
     if (validateUri && request.getURI() != null) {
       try {
         HttpUtils.validateRequestURI(request.getURI());
       } catch (IllegalArgumentException e) {
-        return vertx.getOrCreateContext().failedFuture(e);
+        return e;
       }
     }
-    request = prepare(request);
-    Future<ConnectionObtainedResult> fut = doRequest(request);
-    return toRequest(request.getMethod(), request.getURI(), request.getHeaders(), request.getTraceOperation(), request.getIdleTimeout(), request.getFollowRedirects(), fut);
+    return null;
   }
 
-  public Future<HttpClientStream> openStream(RequestOptions request) {
-    request = prepare(request);
-    Future<ConnectionObtainedResult> fut = doRequest(request);
-    return toStream(fut);
+  private HttpClientTransport transport(HttpVersion version) {
+    return version == HttpVersion.HTTP_3 ? quicTransport : tcpTransport;
   }
 
-  private Future<ConnectionObtainedResult> doRequest(RequestOptions request) {
+  private Future<ConnectionRequest> acquireConnection(RequestOptions request, ContextInternal ctx) {
     HttpVersion version = request.getProtocolVersion();
-    HttpClientTransport transport;
-    if (version == null) {
-      if (tcpTransport != null) {
-        transport = tcpTransport;
-      } else {
-        transport = quicTransport;
-      }
-    } else {
-      if (!versions.contains(version)) {
-        return vertx.failedFuture("Requested HTTP version " + version + " unsupported by this client " + versions);
-      }
-      switch (version) {
-        case HTTP_1_0:
-        case HTTP_1_1:
-        case HTTP_2:
-          transport = tcpTransport;
-          break;
-        case HTTP_3:
-          transport = quicTransport;
-          break;
-        default:
-          throw new AssertionError();
-      }
-      if (transport == null) {
-        return vertx.getOrCreateContext().failedFuture("Handle me");
-      }
+    if (version != null && !versions.contains(version)) {
+      return vertx.failedFuture("Requested HTTP version " + version + " unsupported by this client " + versions);
     }
-    Address addr = request.getServer();
+    checkClosed();
+    ConnectionRequest connectionRequest = createConnectionRequest(request, ctx);
+    ClientSSLOptions sslOptions = connectionRequest.sslOptions;
+    if (connectionRequest.isProxyOrDomainSocket()) {
+      if (connectionRequest.version == HttpVersion.HTTP_3) {
+        return ctx.failedFuture("HTTP/3 is not supported through a proxy or a domain socket");
+      }
+      return fromPool(false,
+        connectionRequest.useSSL,
+        connectionRequest.version,
+        sslOptions,
+        (SocketAddress) connectionRequest.server,
+        connectionRequest.authority,
+        connectionRequest.proxyOptions,
+        group -> connectionRequest.acquire(group.requestConnection(connectionRequest.ctx, connectionRequest.connectTimeout), null, null));
+    } else {
+      PromiseInternal<Endpoint> promise = vertx.promise();
+      connectionRequest.endpointResolver.lookupEndpoint(connectionRequest.address, promise);
+      return promise
+        .compose(endpoint -> {
+          ServerSelection selection = selectServer(connectionRequest, endpoint);
+          SocketAddress serverAddress = selection.server.address();
+          boolean secure = connectionRequest.secure;
+          boolean resolveOrigin = followAlternativeServices && secure && selection.alternative == null;
+          HttpVersion selectedVersion = selection.protocol != null ? selection.protocol.version() : null;
+          HostAndPort authority = connectionRequest.authority != null ? connectionRequest.authority : HostAndPort.create(serverAddress.host(), serverAddress.port());
+          return fromPool(
+            resolveOrigin,
+            secure,
+            selectedVersion,
+            sslOptions,
+            serverAddress,
+            authority,
+            null,
+            group -> connectionRequest.acquire(group.requestConnection(connectionRequest.ctx, connectionRequest.connectTimeout), selection.server, selection.alternative));
+        });
+    }
+  }
+
+  private ConnectionRequest createConnectionRequest(RequestOptions request, ContextInternal ctx) {
+    HttpVersion version = request.getProtocolVersion();
+    Address server = request.getServer();
     Integer port = request.getPort();
     String host = request.getHost();
-    if (addr == null) {
-      if (port == null) {
-        port = defaultPort;
-      }
-      if (host == null) {
-        host = defaultHost;
-      }
-      addr = SocketAddress.inetSocketAddress(port, host);
-    } else if (addr instanceof SocketAddress) {
-      SocketAddress socketAddr = (SocketAddress) addr;
-      if (port == null) {
-        port = request.getPort();
-      }
-      if (host == null) {
-        host = request.getHost();
-      }
+    if (server == null) {
+      server = SocketAddress.inetSocketAddress(port != null ? port : defaultPort, host != null ? host : defaultHost);
+    }
+    if (server instanceof SocketAddress) {
+      SocketAddress socketAddr = (SocketAddress) server;
       if (port == null) {
         port = socketAddr.port();
       }
@@ -511,234 +518,194 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         host = socketAddr.host();
       }
     }
-    return doRequest(transport, addr, port, host, request);
-  }
-
-  private Future<ConnectionObtainedResult> doRequest(HttpClientTransport transport, Address server, Integer port, String host, RequestOptions request) {
-    if (server == null) {
-      throw new NullPointerException();
-    }
-    Boolean ssl = request.isSsl();
-    checkClosed();
     HostAndPort authority;
     if (host != null && port != null) {
-      String peerHost = host;
-      if (peerHost.endsWith(".")) {
-        peerHost = peerHost.substring(0, peerHost.length() -  1);
+      if (host.endsWith(".")) {
+        host = host.substring(0, host.length() - 1);
       }
-      authority = HostAndPort.create(peerHost, port);
+      authority = HostAndPort.create(host, port);
     } else {
       authority = null;
     }
-    ClientSSLOptions sslOptions = sslOptions(verifyHost, request, this.sslOptions);
+    Boolean ssl = request.isSsl();
+    boolean useSSL = ssl != null ? ssl : defaultSsl;
+    boolean secure = useSSL || version == HttpVersion.HTTP_3;
+    ProxyOptions proxyOptions;
+    EndpointResolverInternal endpointResolver;
+    Address address;
     if (server instanceof SocketAddress) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
-      ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
-      if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
-        boolean useSSL = ssl != null ? ssl : defaultSsl;
-        return doRequestDirectly(transport, request.getProtocolVersion(), proxyOptions, serverSocketAddress, useSSL,
-          sslOptions, authority, request.getConnectTimeout());
-      }
-    }
-    boolean useSSL;
-    HttpProtocol protocol;
-    if (request.getProtocolVersion() == null) {
-      protocol = null;
-      useSSL = ssl != null ? ssl : defaultSsl;
+      proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
     } else {
-      switch (request.getProtocolVersion()) {
-        case HTTP_1_0:
-          useSSL = ssl != null ? ssl : defaultSsl;
-          protocol = HttpProtocol.HTTP_1_0;
-          break;
-        case HTTP_1_1:
-          useSSL = ssl != null ? ssl : defaultSsl;
-          protocol = HttpProtocol.HTTP_1_1;
-          break;
-        case HTTP_2:
-          useSSL = ssl != null ? ssl : defaultSsl;
-          protocol = useSSL ? HttpProtocol.H2 : HttpProtocol.H2C;
-          break;
-        case HTTP_3:
-          useSSL = true;
-          protocol = HttpProtocol.H3;
-          break;
-        default:
-          throw new AssertionError();
-      }
+      proxyOptions = null;
     }
-    return doRequest(protocol, authority, server, useSSL, request.getRoutingKey(), request.getConnectTimeout(), sslOptions);
-  }
-
-  private Future<ConnectionObtainedResult> doRequestDirectly(
-    HttpClientTransport transport,
-    HttpVersion protocol,
-    ProxyOptions proxyOptions,
-    SocketAddress server,
-    boolean useSSL,
-    ClientSSLOptions sslOptions,
-    HostAndPort authority,
-    long connectTimeout) {
-    ContextInternal streamCtx = vertx.getOrCreateContext();
-    EndpointKey key;
-    if (proxyOptions != null) {
-      key = new EndpointKey(useSSL, protocol, sslOptions, proxyOptions, authority);
-    } else {
-      key = new EndpointKey(useSSL, protocol, sslOptions, server, authority);
-    }
-    return resourceManager.withResourceAsync(key, httpEndpointProvider(false, server, proxyOptions, transport), (endpoint, created) -> {
-      Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
-      return fut.compose(lease -> {
-        HttpClientConnection conn = lease.get();
-        return conn.createStream(streamCtx).map(stream -> {
-          stream.closeHandler(v -> {
-            lease.recycle();
-          });
-          return new ConnectionObtainedResult(stream, lease, authority, null, proxyOptions);
-        });
-      });
-    });
-  }
-
-  private Future<ConnectionObtainedResult> doRequest(
-    HttpProtocol protocol,
-    HostAndPort authority,
-    Address server,
-    boolean useSSL,
-    String routingKey,
-    long connectTimeout,
-    ClientSSLOptions sslOptions) {
     if (server instanceof SocketAddress && (resolver == null || !resolver.resolves(server))) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
-      return doRequest(
-        originResolver,
-        protocol,
-        authority,
-        new Origin(useSSL ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port()),
-        useSSL,
-        routingKey,
-        connectTimeout,
-        sslOptions
-      );
+      endpointResolver = originResolver;
+      address = new Origin(secure ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port());
     } else {
-      return doRequest(
-        resolver,
-        protocol,
-        authority,
-        server,
-        useSSL,
-        routingKey,
-        connectTimeout,
-        sslOptions
-      );
+      endpointResolver = resolver;
+      address = server;
+    }
+    return new ConnectionRequest(ctx, version, server, authority, sslOptions(verifyHost, request, this.sslOptions),
+      useSSL, secure, proxyOptions, endpointResolver, address, request.getRoutingKey(), request.getConnectTimeout());
+  }
+
+  private static HttpProtocol protocolOf(HttpVersion version, boolean ssl) {
+    if (version == null) {
+      return null;
+    } else if (version == HttpVersion.HTTP_1_0) {
+      return HttpProtocol.HTTP_1_0;
+    } else if (version == HttpVersion.HTTP_1_1) {
+      return HttpProtocol.HTTP_1_1;
+    } else if (version == HttpVersion.HTTP_2) {
+      return ssl ? HttpProtocol.H2 : HttpProtocol.H2C;
+    } else if (version == HttpVersion.HTTP_3) {
+      return HttpProtocol.H3;
+    } else {
+      throw new AssertionError();
     }
   }
 
-  private Future<ConnectionObtainedResult> doRequest(
-    EndpointResolverInternal resolver,
-    HttpProtocol protocol_,
-    HostAndPort authority,
-    Address server,
-    boolean useSSL,
-    String routingKey,
-    long connectTimeout,
-    ClientSSLOptions sslOptions) {
-    ContextInternal streamCtx = vertx.getOrCreateContext();
-    PromiseInternal<Endpoint> promise = vertx.promise();
-    resolver.lookupEndpoint(server, promise);
-    return promise.future()
-      .compose(endpoint -> {
-        ServerEndpoint lookup;
-        HttpProtocol protocol;
-        Origin originServer;
-        // For HTTPS we must handle SNI to consider an alternative
-        HostAndPort altUsed;
-        if (followAlternativeServices && server instanceof Origin && ("https".equals((originServer = (Origin)server).scheme) && originServer.host.indexOf('.') > 0)) {
-          if (protocol_ != null) {
-            ProtocolFilter filter;
-            switch (protocol_) {
-              case H3:
-                filter = ProtocolFilter.H3;
-                break;
-              case H2:
-                filter = ProtocolFilter.H2;
-                break;
-              case HTTP_1_1:
-                filter = ProtocolFilter.HTTP_1_1;
-                break;
-              case HTTP_1_0:
-                filter = ProtocolFilter.HTTP_1_0;
-                break;
-              default:
-                throw new AssertionError();
-            }
-            lookup = endpoint.selectServer(filter);
-            protocol = protocol_;
-          } else {
-            Set<String> protocols = endpoint.protocols();
-            if (!protocols.isEmpty()) {
-              List<ProtocolFilter> list = List.of(ProtocolFilter.H3, ProtocolFilter.H2, ProtocolFilter.HTTP_1_1, ProtocolFilter.HTTP_1_0);
-              lookup = null;
-              protocol = null;
-              for (ProtocolFilter candidate : list) {
-                if (protocols.contains(candidate.protocol.id())) {
-                  lookup = endpoint.selectServer(candidate);
-                  protocol = candidate.protocol;
-                }
-              }
-            } else {
-              lookup = null;
-              protocol = null;
-            }
+  private static class ServerSelection {
+
+    final ServerEndpoint server;
+    final HttpProtocol protocol;
+    final HostAndPort alternative;
+
+    ServerSelection(ServerEndpoint server, HttpProtocol protocol, HostAndPort alternative) {
+      this.server = server;
+      this.protocol = protocol;
+      this.alternative = alternative;
+    }
+  }
+
+  private static final List<ProtocolFilter> PREFERRED_PROTOCOLS = List.of(ProtocolFilter.H3, ProtocolFilter.H2, ProtocolFilter.HTTP_1_1, ProtocolFilter.HTTP_1_0);
+
+  private static class ConnectionRequest {
+
+    private final ContextInternal ctx;
+    private final HttpVersion version;
+    private final Address server;
+    private final HostAndPort authority;
+    private final ClientSSLOptions sslOptions;
+    private final boolean useSSL;
+    private final boolean secure;
+    private final HttpProtocol protocol;
+    private final ProxyOptions proxyOptions;
+    private final EndpointResolverInternal endpointResolver;
+    private final Address address;
+    private final String routingKey;
+    private final long connectTimeout;
+
+    private Lease<HttpClientConnection> lease;
+    private ServerInteraction interaction;
+    private HostAndPort alternative;
+
+    ConnectionRequest(ContextInternal ctx,
+                      HttpVersion version,
+                      Address server,
+                      HostAndPort authority,
+                      ClientSSLOptions sslOptions,
+                      boolean useSSL,
+                      boolean secure,
+                      ProxyOptions proxyOptions,
+                      EndpointResolverInternal endpointResolver,
+                      Address address,
+                      String routingKey,
+                      long connectTimeout) {
+      this.ctx = ctx;
+      this.version = version;
+      this.server = server;
+      this.authority = authority;
+      this.sslOptions = sslOptions;
+      this.useSSL = useSSL;
+      this.secure = secure;
+      this.protocol = protocolOf(version, secure);
+      this.proxyOptions = proxyOptions;
+      this.endpointResolver = endpointResolver;
+      this.address = address;
+      this.routingKey = routingKey;
+      this.connectTimeout = connectTimeout;
+    }
+
+    boolean isProxyOrDomainSocket() {
+      return proxyOptions != null || (server instanceof SocketAddress && ((SocketAddress) server).isDomainSocket());
+    }
+
+    Future<ConnectionRequest> acquire(Future<Lease<HttpClientConnection>> fut, ServerEndpoint selected, HostAndPort alternative) {
+      ServerInteraction interaction;
+      if (selected != null) {
+        interaction = selected.newInteraction();
+        fut = fut.andThen(ar -> {
+          if (ar.failed()) {
+            interaction.reportFailure(ar.cause());
           }
-          if (lookup == null) {
-            altUsed = null;
-            lookup = endpoint.selectServer();
-          } else {
-            OriginServer unwrap = (OriginServer) lookup.unwrap();
-            altUsed = unwrap.primary ? null : unwrap.authority;
-          }
-        } else {
-          protocol = protocol_;
-          lookup = endpoint.selectServer(routingKey);
-          altUsed = null;
-        }
-        ServerEndpoint lookup2 = lookup;
-        if (lookup2 == null) {
-          throw new IllegalStateException("No results for " + server);
-        }
-        SocketAddress address = lookup2.address();
-        return getPool(
-          followAlternativeServices && useSSL && altUsed == null,
-          useSSL,
-          protocol,
-          sslOptions,
-          address,
-          authority != null ? authority : HostAndPort.create(address.host(), address.port()),
-          new Function<SharedHttpClientConnectionGroup, Future<ConnectionObtainedResult>>() {
-            @Override
-            public Future<ConnectionObtainedResult> apply(SharedHttpClientConnectionGroup pool) {
-              Future<Lease<HttpClientConnection>> fut2 = pool.requestConnection(streamCtx, connectTimeout);
-              ServerInteraction endpointRequest = lookup2.newInteraction();
-              return fut2.andThen(ar -> {
-                if (ar.failed()) {
-                  endpointRequest.reportFailure(ar.cause());
-                }
-              }).compose(lease -> {
-                HttpClientConnection conn = lease.get();
-                return conn.createStream(streamCtx).map(stream -> {
-                  HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
-                  wrapped.closeHandler(v -> lease.recycle());
-                  return new ConnectionObtainedResult(wrapped, lease, authority, altUsed, null);
-                });
-              });
-            }
-          });
+        });
+      } else {
+        interaction = null;
+      }
+      return fut.map(lease -> {
+        this.lease = lease;
+        this.interaction = interaction;
+        this.alternative = alternative;
+        return this;
       });
+    }
+
+    Future<HttpClientStream> createStream() {
+      return lease.get()
+        .createStream(ctx)
+        .transform(ar -> {
+          if (ar.succeeded()) {
+            return ctx.succeededFuture(new PooledHttpClientStream(ar.result(), lease, interaction).init());
+          } else {
+            lease.recycle();
+            return ctx.failedFuture(ar.cause());
+          }
+        });
+    }
+  }
+
+  private ServerSelection selectServer(ConnectionRequest request, Endpoint endpoint) {
+    ServerEndpoint selected;
+    HttpProtocol protocol = request.protocol;
+    HostAndPort alternative = null;
+    Origin origin;
+    // For HTTPS we must handle SNI to consider an alternative
+    if (followAlternativeServices && request.address instanceof Origin && "https".equals((origin = (Origin) request.address).scheme) && origin.host.indexOf('.') > 0) {
+      if (protocol != null) {
+        selected = endpoint.selectServer(ProtocolFilter.of(protocol));
+      } else {
+        selected = null;
+        Set<String> protocols = endpoint.protocols();
+        for (ProtocolFilter candidate : PREFERRED_PROTOCOLS) {
+          if (protocols.contains(candidate.protocol.id())) {
+            selected = endpoint.selectServer(candidate);
+            if (selected != null) {
+              protocol = candidate.protocol;
+              break;
+            }
+          }
+        }
+      }
+      if (selected == null) {
+        selected = endpoint.selectServer();
+      } else {
+        OriginServer originServer = (OriginServer) selected.unwrap();
+        alternative = originServer.primary ? null : originServer.authority;
+      }
+    } else {
+      selected = endpoint.selectServer(request.routingKey);
+    }
+    if (selected == null) {
+      throw new IllegalStateException("No results for " + request.address);
+    }
+    return new ServerSelection(selected, protocol, alternative);
   }
 
   Future<?> checkConnect(OriginServer primary, OriginAlternative alternative, OriginServer server, ClientSSLOptions sslOptions) {
-    return getPool(false, true, alternative.protocol, sslOptions, server.address, primary.authority, new Function<SharedHttpClientConnectionGroup, Future<Boolean>>() {
+    return fromPool(false, true, alternative.protocol.version(), sslOptions, server.address, primary.authority, null, new Function<SharedHttpClientConnectionGroup, Future<Boolean>>() {
       @Override
       public Future<Boolean> apply(SharedHttpClientConnectionGroup group) {
         if (group.size() > 0) {
@@ -755,58 +722,53 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     });
   }
 
-  <T> Future<T> getPool(boolean resolveOrigin,
+  <T> Future<T> fromPool(boolean resolveOrigin,
                         boolean useSSL,
-                        HttpProtocol protocol,
+                        HttpVersion version,
                         ClientSSLOptions sslOptions,
                         SocketAddress server,
                         HostAndPort authority,
+                        ProxyOptions proxyOptions,
                         Function<SharedHttpClientConnectionGroup, Future<T>> function) {
-    SocketAddress serverKey = server;
-    if (serverKey.hostAddress() != null && Objects.equals(server.host(), authority.host())) {
-      // Ensure that two keys with same authority and distinct IP addresses are distinct
-      // such as DNS client side load balancing
-      serverKey = SocketAddress.inetSocketAddress(server.port(), server.hostAddress());
-    }
-    EndpointKey key = new EndpointKey(useSSL, protocol != null ? protocol.version() : null, sslOptions, serverKey, authority);
-    HttpClientTransport transport;
-    if (protocol != null && protocol.version() == HttpVersion.HTTP_3) {
-      transport = quicTransport;
+    EndpointKey key;
+    if (proxyOptions != null) {
+      key = new EndpointKey(useSSL, version, sslOptions, proxyOptions, authority);
     } else {
-      transport = tcpTransport;
+      SocketAddress serverKey = server;
+      if (serverKey.hostAddress() != null && Objects.equals(server.host(), authority.host())) {
+        // Ensure that two keys with same authority and distinct IP addresses are distinct
+        // such as DNS client side load balancing
+        serverKey = SocketAddress.inetSocketAddress(server.port(), server.hostAddress());
+      }
+      key = new EndpointKey(useSSL, version, sslOptions, serverKey, authority);
     }
-    Function<EndpointKey, SharedHttpClientConnectionGroup> provider = httpEndpointProvider(resolveOrigin, server, null, transport);
+    Function<EndpointKey, SharedHttpClientConnectionGroup> provider = httpEndpointProvider(resolveOrigin, server, proxyOptions, version != null ? transport(version) : defaultTransport);
     return resourceManager.withResourceAsync(key, provider, (group, created) -> function.apply(group));
   }
 
-  private Future<HttpClientStream> toStream(Future<ConnectionObtainedResult> future) {
-    return future.map(res -> {
-      HttpClientStream stream = res.stream;
-      stream.closeHandler(v -> {
-        res.lease.recycle();
-      });
-      return stream;
-    });
-  }
-
-  private Future<HttpClientRequest> toRequest(HttpMethod method,
-                                              String requestURI,
-                                              MultiMap headers,
-                                              String traceOperation,
-                                              long idleTimeout,
-                                              Boolean followRedirects,
-                                              Future<ConnectionObtainedResult> future) {
-    return future.map(res -> {
-      RequestOptions options = new RequestOptions();
-      options.setMethod(method);
-      options.setHeaders(headers);
-      options.setURI(requestURI);
+  private HttpClientRequest wrap(RequestOptions options, ConnectionRequest res, HttpClientStream stream) {
+    HttpClientRequestImpl request;
+    boolean created = false;
+    try {
       options.setProxyOptions(res.proxyOptions);
-      options.setIdleTimeout(idleTimeout);
-      options.setFollowRedirects(followRedirects);
-      options.setTraceOperation(traceOperation);
-      HttpClientStream stream = res.stream;
-      HttpClientRequestImpl request = createRequest(res.authority, stream.connection(), stream, options);
+      request = new HttpClientRequestImpl(res.authority, stream.connection(), stream, validateUri);
+      request.init(options);
+      request.maxRedirectBufferSize(maxRedirectBufferedSize);
+      Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
+      if (rHandler != null) {
+        request.setMaxRedirects(maxRedirects);
+        request.redirectHandler(resp -> {
+          Future<RequestOptions> fut_ = rHandler.apply(resp);
+          if (fut_ != null) {
+            return fut_.compose(o -> {
+              o.setProxyOptions(options.getProxyOptions());
+              return this.request(o);
+            });
+          } else {
+            return null;
+          }
+        });
+      }
       if (res.alternative != null) {
         String altUsedValue;
         int defaultPort = stream.connection().isSsl() ? 443 : 80;
@@ -817,48 +779,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         }
         request.putHeader(HttpHeaders.ALT_USED, altUsedValue);
       }
-      stream.closeHandler(v -> {
-        res.lease.recycle();
-        request.handleClosed();
-      });
-      return request;
-    });
-  }
-
-  private static class ConnectionObtainedResult {
-    private final HttpClientStream stream;
-    private final Lease<HttpClientConnection> lease;
-    private final HostAndPort authority;
-    private final HostAndPort alternative;
-    private final ProxyOptions proxyOptions;
-    public ConnectionObtainedResult(HttpClientStream stream, Lease<HttpClientConnection> lease, HostAndPort authority, HostAndPort alternative, ProxyOptions proxyOptions) {
-      this.stream = stream;
-      this.lease = lease;
-      this.authority = authority;
-      this.alternative = alternative;
-      this.proxyOptions = proxyOptions;
+      created = true;
+    } finally {
+      if (!created) {
+        stream.cancel();
+      }
     }
-  }
-
-  HttpClientRequestImpl createRequest(HostAndPort authority, HttpConnection connection, HttpClientStream stream, RequestOptions options) {
-    HttpClientRequestImpl request = new HttpClientRequestImpl(authority, connection, stream, validateUri);
-    request.init(options);
-    request.maxRedirectBufferSize(maxRedirectBufferedSize);
-    Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
-    if (rHandler != null) {
-      request.setMaxRedirects(maxRedirects);
-      request.redirectHandler(resp -> {
-        Future<RequestOptions> fut_ = rHandler.apply(resp);
-        if (fut_ != null) {
-          return fut_.compose(o -> {
-            o.setProxyOptions(options.getProxyOptions());
-            return this.request(o);
-          });
-        } else {
-          return null;
-        }
-      });
-    }
+    stream.closeHandler(v -> request.handleClosed());
     return request;
   }
 }

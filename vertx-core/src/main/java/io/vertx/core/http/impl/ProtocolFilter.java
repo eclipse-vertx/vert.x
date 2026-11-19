@@ -33,6 +33,15 @@ enum ProtocolFilter implements Predicate<ServerEndpoint> {
     this.protocol = protocol;
   }
 
+  static ProtocolFilter of(HttpProtocol protocol) {
+    for (ProtocolFilter filter : values()) {
+      if (filter.protocol == protocol) {
+        return filter;
+      }
+    }
+    throw new AssertionError();
+  }
+
   @Override
   public boolean test(ServerEndpoint serverEndpoint) {
     return protocol.id().equals(serverEndpoint.protocolId());

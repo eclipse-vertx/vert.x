@@ -103,6 +103,48 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
   }
 
   @Test
+  public void testConnectionCloseFailsQueuedRequests() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().close();
+    });
+    startServer(testAddress);
+    HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
+    HttpClientConnection conn = client.connect(connect).await();
+    int num = (int) conn.maxActiveStreams() + 2;
+    waitFor(num);
+    for (int i = 0;i < num;i++) {
+      conn.request()
+        .compose(req -> req
+          .send()
+          .compose(HttpClientResponse::body))
+        .onComplete(TestUtils.onFailure(err -> complete()));
+    }
+    await();
+  }
+
+  @Test
+  public void testIdleTimeoutCancelledOnStreamClose() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().close();
+    });
+    startServer(testAddress);
+    HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
+    HttpClientConnection conn = client.connect(connect).await();
+    HttpClientRequest request = conn.request(new RequestOptions(requestOptions).setIdleTimeout(100)).await();
+    try {
+      request.send().await();
+      Assert.fail();
+    } catch (Exception expected) {
+    }
+    Thread.sleep(300);
+    try {
+      request.reset().await();
+    } catch (Exception e) {
+      Assert.assertNotEquals("Already reset", e.getMessage());
+    }
+  }
+
+  @Test
   public void testRequestQueuing() throws Exception {
     int num = 1;
     server.requestHandler(req -> {

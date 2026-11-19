@@ -29,6 +29,7 @@ import java.util.function.Function;
 public class ResourceManager<K, R extends ManagedResource> {
 
   private static final Consumer<ManagedResource> EXPIRED_CHECKER = ManagedResource::checkExpired;
+  private static final int ST_OPEN = 0, ST_SHUTDOWN = 1, ST_CLOSED = 2;
 
   private final Map<K, R> resources = new ConcurrentHashMap<>();
   private final AtomicInteger status = new AtomicInteger();
@@ -82,6 +83,15 @@ public class ResourceManager<K, R extends ManagedResource> {
         ref[0] = res;
         return res;
       });
+      if (entry == ref[0]) {
+        // Resource inserted concurrently with shutdown/close might not have been visited
+        int st = status.get();
+        if (st == ST_CLOSED) {
+          entry.close();
+        } else if (st == ST_SHUTDOWN) {
+          entry.shutdown();
+        }
+      }
       T value = function.apply(entry, entry == ref[0]);
       if (value != null) {
         return value;
@@ -98,17 +108,25 @@ public class ResourceManager<K, R extends ManagedResource> {
   public <T> Future<T> withResourceAsync(K key, Function<K, R> provider, BiFunction<R, Boolean, Future<T>> function) {
     return withResource(key, provider, Function.identity(), (res, created) -> {
       if (res.before()) {
-        return function.apply(res, created).andThen(ar -> res.after());
+        Future<T> fut;
+        try {
+          fut = function.apply(res, created);
+        } catch (RuntimeException e) {
+          res.after();
+          throw e;
+        }
+        return fut.andThen(ar -> res.after());
+      } else {
+        return null;
       }
-      return null;
     });
   }
 
   private void checkStatus() {
     int st = status.get();
-    if (st == 1) {
+    if (st == ST_SHUTDOWN) {
       throw new IllegalStateException("Resource manager shutdown");
-    } else if (st == 2) {
+    } else if (st == ST_CLOSED) {
       throw new IllegalStateException("Resource manager closed");
     }
   }
@@ -117,11 +135,10 @@ public class ResourceManager<K, R extends ManagedResource> {
    * Shutdown the resource manager: any new request will be rejected.
    */
   public void shutdown() {
-    if (status.compareAndSet(0, 1)) {
+    if (status.compareAndSet(ST_OPEN, ST_SHUTDOWN)) {
       for (ManagedResource resource : resources.values()) {
         resource.shutdown();
       }
-      status.set(2);
     }
   }
 
@@ -129,12 +146,10 @@ public class ResourceManager<K, R extends ManagedResource> {
    * Close the resource manager, all resource are closed forcibly.
    */
   public void close() {
-    shutdown();
-    if (status.compareAndSet(2, 3)) {
+    if (status.getAndSet(ST_CLOSED) != ST_CLOSED) {
       for (ManagedResource resource : resources.values()) {
         resource.close();
       }
-      status.set(4);
     }
   }
 
