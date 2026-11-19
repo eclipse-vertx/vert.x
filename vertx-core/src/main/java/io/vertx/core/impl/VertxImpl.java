@@ -101,26 +101,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   // https://github.com/eclipse-vertx/vert.x/issues/4611
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
-  private static final VarHandle INTERNAL_TIMER_HANDLER_DISPOSED;
-
-  static {
-    try {
-      INTERNAL_TIMER_HANDLER_DISPOSED = MethodHandles.lookup()
-        .findVarHandle(InternalTimerHandler.class, "disposed", boolean.class);
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
 
   static final Object[] EMPTY_CONTEXT_LOCALS = new Object[0];
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
   private static final VarHandle LOCALS_UPDATER = MethodHandles.arrayElementVarHandle(EventLoop[].class);
-
-  private static boolean disposedCAS(InternalTimerHandler handler) {
-    return INTERNAL_TIMER_HANDLER_DISPOSED.compareAndSet(handler, false, true);
-  }
 
   static {
     // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
@@ -1012,7 +998,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final boolean periodic;
     private final long id;
     private final ContextInternal context;
-    private volatile boolean disposed;
     private volatile java.util.concurrent.Future<?> future;
 
     InternalTimerHandler(long id, Handler<Long> runnable, boolean periodic, ContextInternal context) {
@@ -1033,11 +1018,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     public void handle(Void v) {
       if (periodic) {
-        if (!disposed) {
+        if (timeouts.containsKey(id)) {
           handler.handle(id);
         }
-      } else if (disposedCAS(this)) {
-        timeouts.remove(id);
+      } else if (timeouts.remove(id, this)) {
         try {
           handler.handle(id);
         } finally {
@@ -1058,8 +1042,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     private boolean tryCancel() {
-      if  (disposedCAS(this)) {
-        timeouts.remove(id);
+      if (timeouts.remove(id, this)) {
         future.cancel(false);
         return true;
       } else {
