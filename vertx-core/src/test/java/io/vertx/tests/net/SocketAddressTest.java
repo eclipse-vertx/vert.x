@@ -95,6 +95,17 @@ public class SocketAddressTest {
   }
 
   @Test
+  public void testInetSocketAddressFromBracketedIpV6AddressHost() {
+    SocketAddress addr = SocketAddress.inetSocketAddress(8080, "[::1]");
+    assertEquals("[::1]", addr.host());
+    assertEquals(null, addr.hostName());
+    assertEquals("0:0:0:0:0:0:0:1", addr.hostAddress());
+    assertEquals(8080, addr.port());
+    assertFalse(addr.isDomainSocket());
+    assertTrue(addr.isInetSocket());
+  }
+
+  @Test
   public void testDomainSocketAddress() {
     SocketAddress addr = SocketAddress.domainSocketAddress("/foo");
     assertEquals("/foo", addr.path());

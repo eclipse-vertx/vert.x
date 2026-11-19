@@ -76,7 +76,8 @@ public class SocketAddressImpl implements SocketAddress{
       this.hostName = null;
       this.ipAddress = ip;
     } else if (NetUtil.isValidIpV6Address(host)) {
-      Inet6Address ip = NetUtil.getByName(host);
+      // isValidIpV6Address accepts a bracketed literal such as [::1], NetUtil.getByName does not
+      Inet6Address ip = NetUtil.getByName(host.charAt(0) == '[' ? host.substring(1, host.length() - 1) : host);
       this.host = host;
       this.hostName = null;
       this.ipAddress = ip;
