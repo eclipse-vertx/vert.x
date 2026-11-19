@@ -45,14 +45,17 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private final Http2Settings initialSettings;
   public boolean upgraded;
   private final Http2LocalFlowController defaultController;
+  private final Http2ConnectionEncoder uncompressedEncoder;
 
   public VertxHttp2ConnectionHandler(
       Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
       boolean useDecompressor,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
+      Http2ConnectionEncoder uncompressedEncoder,
       Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
+    this.uncompressedEncoder = uncompressedEncoder;
     this.defaultController = decoder.flowController();
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
@@ -222,9 +225,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   //
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
+  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, boolean encoded, boolean checkFlush, FutureListener<Void> listener) {
     ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
-    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, promise);
+    // The compressor compresses the data of the streams whose headers it wrote: the headers of a stream whose
+    // body is already encoded bypass it
+    Http2ConnectionEncoder headersEncoder = encoded ? uncompressedEncoder : encoder();
+    headersEncoder.writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, promise);
     if (checkFlush) {
       checkFlush();
     }

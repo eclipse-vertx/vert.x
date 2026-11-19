@@ -172,14 +172,15 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   @Override
   protected VertxHttp2ConnectionHandler<C> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
     if (server) {
+      Http2ConnectionEncoder uncompressedEncoder = encoder;
       if (compressionOptions != null) {
-        encoder = new VertxCompressorHttp2ConnectionEncoder(encoder, compressionOptions);
+        encoder = new CompressorHttp2ConnectionEncoder(encoder, compressionOptions);
       }
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, uncompressedEncoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     } else {
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     }
