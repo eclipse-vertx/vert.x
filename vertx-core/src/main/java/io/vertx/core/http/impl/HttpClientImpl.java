@@ -462,9 +462,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (version != null && !versions.contains(version)) {
       return vertx.failedFuture("Requested HTTP version " + version + " unsupported by this client " + versions);
     }
-    if ((version != null ? transport(version) : defaultTransport) == null) {
-      return vertx.getOrCreateContext().failedFuture("Handle me");
-    }
     checkClosed();
     ConnectionRequest connectionRequest = createConnectionRequest(request, ctx);
     ClientSSLOptions sslOptions = connectionRequest.sslOptions;
