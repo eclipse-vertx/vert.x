@@ -38,7 +38,6 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
   private final NetworkMetrics<?> streamMetrics;
   private final boolean bidirectional;
   private final boolean localCreated;
-  private boolean resetReceived;
   private Handler<Long> resetHandler;
   private Handler<IdleStateEvent> idleHandler;
 
@@ -114,14 +113,7 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
-        ChannelFuture shutdownPromise;
-        if (resetReceived) {
-          // Work-around to close the channel: Netty does not (yet) record track of the reset and will
-          // not close the channel, that is the channel state does not reflect the actual QUIC stream state
-          shutdownPromise = channel.close();
-        } else {
-          shutdownPromise = channel.shutdownOutput();
-        }
+        ChannelFuture shutdownPromise = channel.shutdownOutput();
         shutdownPromise.addListener(promise);
       }
       @Override
@@ -157,7 +149,6 @@ public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements
       QuicException quicException = (QuicException) t;
       if (quicException instanceof QuicStreamResetException) {
         QuicStreamResetException reset = (QuicStreamResetException)quicException;
-        resetReceived = true;
         Handler<Long> handler = resetHandler;
         if (handler != null) {
           context.emit(reset.applicationProtocolCode(), handler);
