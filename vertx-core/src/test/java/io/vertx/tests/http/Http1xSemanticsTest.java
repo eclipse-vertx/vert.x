@@ -41,6 +41,16 @@ public class Http1xSemanticsTest extends HttpSemanticsTest {
     assertEquals("keep-alive", respHeaders.get("proxy-connection"));
   }
 
+  @Override
+  protected void assertRequestConnectionHeadersSanitized(MultiMap reqHeaders) {
+    assertEquals(HttpHeaders.CLOSE.toString(), reqHeaders.get(HttpHeaders.CONNECTION));
+    assertEquals("timeout=5", reqHeaders.get(HttpHeaders.KEEP_ALIVE));
+    assertEquals("websocket", reqHeaders.get(HttpHeaders.UPGRADE));
+    assertEquals("keep-alive", reqHeaders.get("proxy-connection"));
+    assertEquals(HttpHeaders.CHUNKED.toString(), reqHeaders.get(HttpHeaders.TRANSFER_ENCODING));
+    assertEquals("trailers", reqHeaders.get(HttpHeaders.TE));
+  }
+
   // Use a raw socket to check the body response is effectively empty (it could be an empty chunk)
   protected MultiMap checkEmptyHttpResponse(HttpMethod method, int sc, MultiMap reqHeaders) throws Exception {
     server.requestHandler(req -> {
