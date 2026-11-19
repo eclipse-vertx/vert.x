@@ -27,6 +27,7 @@ import io.netty.handler.codec.http2.DefaultHttp2HeadersDecoder;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -266,5 +267,94 @@ public class Http2MYRServerTest extends Http2TestBase {
     }
 
     Assert.assertTrue(goAway.get(20, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void testSmallContinuationFloodMultiplex() throws Exception {
+    HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions()
+      .setHttp2MultiplexImplementation(true)
+      .setHttp2ClearTextEnabled(true)
+      .setHttp2MaxSmallContinuationFrames(1));
+
+    httpServer.requestHandler(req -> {});
+    httpServer.listen(8080, "localhost").await();
+
+    CompletableFuture<Long> goAwayErrorCode = new CompletableFuture<>();
+
+    Bootstrap bootstrap = new Bootstrap();
+    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    eventLoopGroups.add(eventLoopGroup);
+    bootstrap.channel(NioSocketChannel.class);
+    bootstrap.group(eventLoopGroup);
+    bootstrap.handler(new ChannelInitializer<>() {
+      @Override
+      protected void initChannel(Channel ch) {
+        ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+          private ByteBuf acc;
+          private boolean handshakeDone;
+
+          @Override
+          public void channelActive(ChannelHandlerContext ctx) {
+            acc = ctx.alloc().buffer();
+            ByteBuf buf = ctx.alloc().buffer();
+            buf.writeBytes(Http2CodecUtil.connectionPrefaceBuf());
+            buf.writeMedium(0).writeByte(0x04).writeByte(0).writeInt(0); // empty SETTINGS
+            ctx.writeAndFlush(buf);
+          }
+
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            acc.writeBytes((ByteBuf) msg);
+            ((ByteBuf) msg).release();
+            while (acc.readableBytes() >= 9) {
+              acc.markReaderIndex();
+              int length = acc.readMedium();
+              int type = acc.readUnsignedByte();
+              int flags = acc.readUnsignedByte();
+              acc.readInt();
+              if (acc.readableBytes() < length) {
+                acc.resetReaderIndex();
+                break;
+              }
+              if (type == 0x04 && (flags & 0x01) == 0 && !handshakeDone) {
+                acc.skipBytes(length);
+                handshakeDone = true;
+                ByteBuf buf = ctx.alloc().buffer();
+                buf.writeMedium(0).writeByte(0x04).writeByte(0x01).writeInt(0); // SETTINGS ACK
+                buf.writeMedium(10).writeByte(0x01).writeByte(0x00).writeInt(1).writeZero(10); // HEADERS, no END_HEADERS
+                buf.writeMedium(10).writeByte(0x09).writeByte(0x04).writeInt(1).writeZero(10); // CONTINUATION, END_HEADERS
+                ctx.writeAndFlush(buf);
+              } else if (type == 0x07 && length >= 8) {
+                acc.readInt();
+                goAwayErrorCode.complete(acc.readUnsignedInt());
+                acc.skipBytes(length - 8);
+              } else {
+                acc.skipBytes(length);
+              }
+            }
+            acc.discardReadBytes();
+          }
+
+          @Override
+          public void channelInactive(ChannelHandlerContext ctx) {
+            if (!goAwayErrorCode.isDone()) {
+              goAwayErrorCode.completeExceptionally(new IOException("Connection closed"));
+            }
+            acc.release();
+          }
+
+          @Override
+          public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            if (!goAwayErrorCode.isDone()) {
+              goAwayErrorCode.completeExceptionally(cause);
+            }
+          }
+        });
+      }
+    });
+    bootstrap.connect(new InetSocketAddress("localhost", 8080)).sync();
+
+    long errorCode = goAwayErrorCode.get(10, TimeUnit.SECONDS);
+    Assert.assertEquals(11, errorCode); // ENHANCE_YOUR_CALM
   }
 }
