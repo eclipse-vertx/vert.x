@@ -512,6 +512,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
       if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
+        if (protocolVersion == HttpVersion.HTTP_3) {
+          return vertx.getOrCreateContext().failedFuture("HTTP/3 is not supported through a proxy or a domain socket");
+        }
         boolean useSSL = ssl != null ? ssl : defaultSsl;
         return doRequestDirectly(transport, protocolVersion, method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
           sslOptions, authority, connectTimeout);
