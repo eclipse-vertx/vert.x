@@ -478,145 +478,109 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ClientSSLOptions sslOptions = sslOptions(verifyHost, request, this.sslOptions);
     Boolean ssl = request.isSsl();
     boolean useSSL = ssl != null ? ssl : defaultSsl;
+    ContextInternal streamCtx = vertx.getOrCreateContext();
+    long connectTimeout = request.getConnectTimeout();
     if (server instanceof SocketAddress) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
       if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
-        ContextInternal streamCtx = vertx.getOrCreateContext();
-        long connectTimeout = request.getConnectTimeout();
         return fromPool(false, useSSL, version, sslOptions, serverSocketAddress, authority, proxyOptions,
           group -> acquireStream(group, streamCtx, connectTimeout, null, authority, null, proxyOptions));
       }
     }
-    HttpProtocol protocol;
-    if (version == null) {
-      protocol = null;
-    } else {
-      switch (version) {
-        case HTTP_1_0:
-          protocol = HttpProtocol.HTTP_1_0;
-          break;
-        case HTTP_1_1:
-          protocol = HttpProtocol.HTTP_1_1;
-          break;
-        case HTTP_2:
-          protocol = useSSL ? HttpProtocol.H2 : HttpProtocol.H2C;
-          break;
-        case HTTP_3:
-          useSSL = true;
-          protocol = HttpProtocol.H3;
-          break;
-        default:
-          throw new AssertionError();
-      }
-    }
-    return doRequest(protocol, authority, server, useSSL, request.getRoutingKey(), request.getConnectTimeout(), sslOptions);
-  }
-
-  private Future<ConnectionObtainedResult> doRequest(
-    HttpProtocol protocol,
-    HostAndPort authority,
-    Address server,
-    boolean useSSL,
-    String routingKey,
-    long connectTimeout,
-    ClientSSLOptions sslOptions) {
+    boolean secure = useSSL || version == HttpVersion.HTTP_3;
+    HttpProtocol protocol = protocolOf(version, secure);
+    EndpointResolverInternal endpointResolver;
+    Address address;
     if (server instanceof SocketAddress && (resolver == null || !resolver.resolves(server))) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
-      return doRequest(
-        originResolver,
-        protocol,
-        authority,
-        new Origin(useSSL ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port()),
-        useSSL,
-        routingKey,
-        connectTimeout,
-        sslOptions
-      );
+      endpointResolver = originResolver;
+      address = new Origin(secure ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port());
     } else {
-      return doRequest(
-        resolver,
-        protocol,
-        authority,
-        server,
-        useSSL,
-        routingKey,
-        connectTimeout,
-        sslOptions
-      );
+      endpointResolver = resolver;
+      address = server;
+    }
+    String routingKey = request.getRoutingKey();
+    PromiseInternal<Endpoint> promise = vertx.promise();
+    endpointResolver.lookupEndpoint(address, promise);
+    return promise.future().compose(endpoint -> {
+      ServerSelection selection = selectServer(endpoint, address, protocol, routingKey);
+      SocketAddress serverAddress = selection.server.address();
+      return fromPool(
+        followAlternativeServices && secure && selection.alternative == null,
+        secure,
+        selection.protocol != null ? selection.protocol.version() : null,
+        sslOptions,
+        serverAddress,
+        authority != null ? authority : HostAndPort.create(serverAddress.host(), serverAddress.port()),
+        null,
+        group -> acquireStream(group, streamCtx, connectTimeout, selection.server, authority, selection.alternative, null));
+    });
+  }
+
+  private static HttpProtocol protocolOf(HttpVersion version, boolean ssl) {
+    if (version == null) {
+      return null;
+    } else if (version == HttpVersion.HTTP_1_0) {
+      return HttpProtocol.HTTP_1_0;
+    } else if (version == HttpVersion.HTTP_1_1) {
+      return HttpProtocol.HTTP_1_1;
+    } else if (version == HttpVersion.HTTP_2) {
+      return ssl ? HttpProtocol.H2 : HttpProtocol.H2C;
+    } else if (version == HttpVersion.HTTP_3) {
+      return HttpProtocol.H3;
+    } else {
+      throw new AssertionError();
     }
   }
 
-  private Future<ConnectionObtainedResult> doRequest(
-    EndpointResolverInternal resolver,
-    HttpProtocol protocol_,
-    HostAndPort authority,
-    Address server,
-    boolean useSSL,
-    String routingKey,
-    long connectTimeout,
-    ClientSSLOptions sslOptions) {
-    ContextInternal streamCtx = vertx.getOrCreateContext();
-    PromiseInternal<Endpoint> promise = vertx.promise();
-    resolver.lookupEndpoint(server, promise);
-    return promise.future()
-      .compose(endpoint -> {
-        ServerEndpoint lookup;
-        HttpProtocol protocol;
-        Origin originServer;
-        // For HTTPS we must handle SNI to consider an alternative
-        HostAndPort altUsed;
-        if (followAlternativeServices && server instanceof Origin && ("https".equals((originServer = (Origin)server).scheme) && originServer.host.indexOf('.') > 0)) {
-          if (protocol_ != null) {
-            lookup = endpoint.selectServer(ProtocolFilter.of(protocol_));
-            protocol = protocol_;
-          } else {
-            Set<String> protocols = endpoint.protocols();
-            if (!protocols.isEmpty()) {
-              List<ProtocolFilter> list = List.of(ProtocolFilter.H3, ProtocolFilter.H2, ProtocolFilter.HTTP_1_1, ProtocolFilter.HTTP_1_0);
-              lookup = null;
-              protocol = null;
-              for (ProtocolFilter candidate : list) {
-                if (protocols.contains(candidate.protocol.id())) {
-                  lookup = endpoint.selectServer(candidate);
-                  if (lookup != null) {
-                    protocol = candidate.protocol;
-                    break;
-                  }
-                }
-              }
-            } else {
-              lookup = null;
-              protocol = null;
+  private static class ServerSelection {
+    final ServerEndpoint server;
+    final HttpProtocol protocol;
+    final HostAndPort alternative;
+    ServerSelection(ServerEndpoint server, HttpProtocol protocol, HostAndPort alternative) {
+      this.server = server;
+      this.protocol = protocol;
+      this.alternative = alternative;
+    }
+  }
+
+  private static final List<ProtocolFilter> PREFERRED_PROTOCOLS = List.of(ProtocolFilter.H3, ProtocolFilter.H2, ProtocolFilter.HTTP_1_1, ProtocolFilter.HTTP_1_0);
+
+  private ServerSelection selectServer(Endpoint endpoint, Address address, HttpProtocol protocol, String routingKey) {
+    ServerEndpoint server;
+    HostAndPort alternative = null;
+    Origin origin;
+    // For HTTPS we must handle SNI to consider an alternative
+    if (followAlternativeServices && address instanceof Origin && "https".equals((origin = (Origin) address).scheme) && origin.host.indexOf('.') > 0) {
+      if (protocol != null) {
+        server = endpoint.selectServer(ProtocolFilter.of(protocol));
+      } else {
+        server = null;
+        Set<String> protocols = endpoint.protocols();
+        for (ProtocolFilter candidate : PREFERRED_PROTOCOLS) {
+          if (protocols.contains(candidate.protocol.id())) {
+            server = endpoint.selectServer(candidate);
+            if (server != null) {
+              protocol = candidate.protocol;
+              break;
             }
           }
-          if (lookup == null) {
-            altUsed = null;
-            lookup = endpoint.selectServer();
-          } else {
-            OriginServer unwrap = (OriginServer) lookup.unwrap();
-            altUsed = unwrap.primary ? null : unwrap.authority;
-          }
-        } else {
-          protocol = protocol_;
-          lookup = endpoint.selectServer(routingKey);
-          altUsed = null;
         }
-        if (lookup == null) {
-          throw new IllegalStateException("No results for " + server);
-        }
-        ServerEndpoint selected = lookup;
-        SocketAddress address = selected.address();
-        return fromPool(
-          followAlternativeServices && useSSL && altUsed == null,
-          useSSL,
-          protocol != null ? protocol.version() : null,
-          sslOptions,
-          address,
-          authority != null ? authority : HostAndPort.create(address.host(), address.port()),
-          null,
-          group -> acquireStream(group, streamCtx, connectTimeout, selected, authority, altUsed, null));
-      });
+      }
+      if (server == null) {
+        server = endpoint.selectServer();
+      } else {
+        OriginServer originServer = (OriginServer) server.unwrap();
+        alternative = originServer.primary ? null : originServer.authority;
+      }
+    } else {
+      server = endpoint.selectServer(routingKey);
+    }
+    if (server == null) {
+      throw new IllegalStateException("No results for " + address);
+    }
+    return new ServerSelection(server, protocol, alternative);
   }
 
   private Future<ConnectionObtainedResult> acquireStream(SharedHttpClientConnectionGroup group,
