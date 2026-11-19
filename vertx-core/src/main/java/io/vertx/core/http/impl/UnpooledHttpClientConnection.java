@@ -251,7 +251,10 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
     }
     return future.map(stream -> {
       HttpClientRequestImpl request = new HttpClientRequestImpl(authority, this, stream, validateUri);
-      stream.closeHandler(this::checkPending);
+      stream.closeHandler(v -> {
+        checkPending(v);
+        request.handleClosed();
+      });
       if (options != null) {
         request.init(options);
       }
