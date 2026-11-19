@@ -22,7 +22,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.ref.WeakReference;
+import java.util.Queue;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -245,6 +247,39 @@ public class TimerTest extends VertxTestBase2 {
       Assert.assertFalse(vertx.cancelTimer(timer.get()));
       checkpoint.succeed();
     }));
+  }
+
+  @Repeat(times = 20)
+  @Test
+  public void testUndeployRaceWithTimerCreation() throws Exception {
+    AtomicReference<ContextInternal> ctx = new AtomicReference<>();
+    String deployment = vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+        ctx.set((ContextInternal) context);
+      }
+    }).await();
+    AtomicBoolean stop = new AtomicBoolean();
+    Queue<Long> timers = new ConcurrentLinkedQueue<>();
+    Thread[] threads = new Thread[4];
+    for (int i = 0;i < threads.length;i++) {
+      threads[i] = new Thread(() -> {
+        while (!stop.get()) {
+          timers.add(((VertxImpl) vertx).scheduleTimeout(ctx.get(), false, 10_000, TimeUnit.MILLISECONDS, true, id -> {}));
+        }
+      });
+      threads[i].start();
+    }
+    Thread.sleep(5);
+    vertx.undeploy(deployment).await();
+    Thread.sleep(5);
+    stop.set(true);
+    for (Thread thread : threads) {
+      thread.join();
+    }
+    for (long timer : timers) {
+      Assert.assertFalse(vertx.cancelTimer(timer));
+    }
   }
 
   @Test

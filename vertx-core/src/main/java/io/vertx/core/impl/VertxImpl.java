@@ -624,6 +624,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    CloseFuture closeFuture,
                                    String deploymentID,
                                    ClassLoader tccl) {
+    if (deploymentID != null) {
+      closeFuture.add(new ContextTimerCleanupTask(closeFuture));
+    }
     return new ContextImpl(this,
       createContextLocals(),
       eventLoopExecutor,
@@ -674,16 +677,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalArgumentException("Cannot schedule a timer with initialDelay < 0");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
+    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context, addCloseHook);
     timeouts.put(timerId, task);
-    if (addCloseHook) {
-      context.addCloseHook(task);
-    }
     EventLoop el = context.nettyEventLoop();
     if (periodic) {
       task.future = el.scheduleAtFixedRate(task, initialDelay, delay, timeUnit);
     } else {
       task.future = el.schedule(task, delay, timeUnit);
+    }
+    // Recover from a race with the context timer cleanup task: it may have missed the timer or removed it before
+    // the future was assigned, in both cases the future is not cancelled
+    if (addCloseHook && context.closeFuture().isClosed()) {
+      timeouts.remove(timerId, task);
+      task.future.cancel(false);
     }
     return task.id;
   }
@@ -992,19 +998,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * This class does not rely on the internal {@link #future} for the termination to handle the worker case
    * since the actual timer {@link #handler} execution is scheduled when the {@link #future} executes.
    */
-  class InternalTimerHandler implements Handler<Void>, Closeable, Runnable {
+  class InternalTimerHandler implements Handler<Void>, Runnable {
 
     private final Handler<Long> handler;
     private final boolean periodic;
     private final long id;
     private final ContextInternal context;
+    private final boolean closeOnUndeploy;
     private volatile java.util.concurrent.Future<?> future;
 
-    InternalTimerHandler(long id, Handler<Long> runnable, boolean periodic, ContextInternal context) {
+    InternalTimerHandler(long id, Handler<Long> runnable, boolean periodic, ContextInternal context, boolean closeOnUndeploy) {
       this.context = context;
       this.id = id;
       this.handler = runnable;
       this.periodic = periodic;
+      this.closeOnUndeploy = closeOnUndeploy;
     }
 
     @Override
@@ -1022,38 +1030,49 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           handler.handle(id);
         }
       } else if (timeouts.remove(id, this)) {
-        try {
-          handler.handle(id);
-        } finally {
-          // Clean up after it's fired
-          context.removeCloseHook(this);
-        }
+        handler.handle(id);
       }
     }
 
     private boolean cancel() {
-      boolean cancelled = tryCancel();
-      if (cancelled) {
-        if (context.isDeployment()) {
-          context.removeCloseHook(this);
-        }
-      }
-      return cancelled;
-    }
-
-    private boolean tryCancel() {
       if (timeouts.remove(id, this)) {
-        future.cancel(false);
+        java.util.concurrent.Future<?> f = future;
+        if (f != null) {
+          f.cancel(false);
+        }
         return true;
       } else {
         return false;
       }
     }
+  }
 
-    // Called via Context close hook when Verticle is undeployed
+  private class ContextTimerCleanupTask implements Closeable {
+
+    private final CloseFuture closeFuture;
+
+    ContextTimerCleanupTask(CloseFuture closeFuture) {
+      this.closeFuture = closeFuture;
+    }
+
+    @Override
     public void close(Completable<Void> completion) {
-      tryCancel();
+      for (InternalTimerHandler task : timeouts.values()) {
+        if (task.closeOnUndeploy && task.context.closeFuture() == closeFuture) {
+          task.cancel();
+        }
+      }
       completion.succeed();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj instanceof ContextTimerCleanupTask && ((ContextTimerCleanupTask) obj).closeFuture == closeFuture;
+    }
+
+    @Override
+    public int hashCode() {
+      return System.identityHashCode(closeFuture);
     }
   }
 
