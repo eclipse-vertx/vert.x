@@ -18,6 +18,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.internal.net.QuicConnectionInternal;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
@@ -71,6 +73,26 @@ public class Http3ClientTest extends VertxTestBase {
     server.close().await();
     client.close().await();
     super.tearDown();
+  }
+
+  @Test
+  public void testRequestThroughProxyIsRejected() {
+    Future<HttpClientRequest> fut = client.request(new RequestOptions()
+      .setHost("localhost")
+      .setPort(8443)
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(1080)));
+    assertThatThrownBy(() -> fut.await(10, TimeUnit.SECONDS))
+      .hasMessageContaining("HTTP/3 is not supported through a proxy or a domain socket");
+  }
+
+  @Test
+  public void testRequestToDomainSocketIsRejected() {
+    Future<HttpClientRequest> fut = client.request(new RequestOptions()
+      .setServer(SocketAddress.domainSocketAddress("/tmp/vertx-h3.sock"))
+      .setHost("localhost")
+      .setPort(8443));
+    assertThatThrownBy(() -> fut.await(10, TimeUnit.SECONDS))
+      .hasMessageContaining("HTTP/3 is not supported through a proxy or a domain socket");
   }
 
   @Test
