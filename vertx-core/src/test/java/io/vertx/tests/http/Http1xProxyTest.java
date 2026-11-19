@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import static io.vertx.core.http.HttpMethod.GET;
 import static io.vertx.test.core.AssertExpectations.that;
@@ -620,6 +622,27 @@ public class Http1xProxyTest extends HttpTestBase2 {
           assertTrue(ar.succeeded());
         }
         checkpoint.succeed();
+      });
+  }
+
+  @WithProxy(kind = ProxyKind.SOCKS5)
+  @Test
+  public void testConnectionEstablishedAfterWaiterTimeoutIsClosed(Checkpoint checkpoint) throws Exception {
+    CountDownLatch latch = checkpoint.asLatch(2);
+    NetServer server = vertx.createNetServer();
+    server.connectHandler(socket -> socket.closeHandler(v -> latch.countDown()));
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    proxy.successDelayMillis(Duration.ofMillis(500));
+    client = vertx.createHttpClient(createBaseClientOptions()
+      .setProxyOptions(new ProxyOptions()
+        .setType(ProxyType.SOCKS5)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(proxy.port())
+        .setConnectTimeout(Duration.ofSeconds(5))));
+    client.request(new RequestOptions(requestOptions).setConnectTimeout(100))
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        latch.countDown();
       });
   }
 

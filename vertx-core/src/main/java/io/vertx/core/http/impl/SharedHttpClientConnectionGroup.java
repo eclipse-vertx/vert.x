@@ -174,10 +174,13 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
   }
 
   private void init(HttpClientConnection connection) {
-    incRefCount();
-    if (connectHandler != null) {
-      ContextInternal context = connection.context();
-      context.emit(connection, connectHandler);
+    if (incRefCount()) {
+      if (connectHandler != null) {
+        ContextInternal context = connection.context();
+        context.emit(connection, connectHandler);
+      }
+    } else {
+      connection.close();
     }
   }
 

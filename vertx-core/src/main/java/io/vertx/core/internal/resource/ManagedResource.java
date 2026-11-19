@@ -55,8 +55,12 @@ public abstract class ManagedResource {
 
   protected boolean incRefCount() {
     synchronized (this) {
-      refCount++;
-      return !closed;
+      if (disposed) {
+        return false;
+      } else {
+        refCount++;
+        return !closed;
+      }
     }
   }
 
