@@ -171,6 +171,11 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     request.response().handlerWritabilityChanged(writable);
   }
 
+  @Override
+  boolean isEncodedByApplication() {
+    return request.response().isEncodedByApplication();
+  }
+
   public HttpMethod method() {
     return method;
   }

@@ -211,7 +211,14 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, promise);
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), isEncodedByApplication(), checkFlush, promise);
+  }
+
+  /**
+   * @return whether the application already encoded the body, which must then not be compressed
+   */
+  boolean isEncodedByApplication() {
+    return false;
   }
 
   protected void endWritten() {
