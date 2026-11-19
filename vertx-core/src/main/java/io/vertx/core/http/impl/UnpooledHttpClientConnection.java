@@ -238,7 +238,7 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
         future = promise.future();
       } else {
         inflight++;
-        future = actual.createStream(context);
+        future = createStream(context);
       }
     }
     String host = options.getHost();
@@ -267,7 +267,15 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
       }
       inflight++;
     }
-    actual.createStream(promise.context()).onComplete(promise);
+    createStream(promise.context()).onComplete(promise);
+  }
+
+  private Future<HttpClientStream> createStream(ContextInternal context) {
+    return actual.createStream(context).andThen(ar -> {
+      if (ar.failed()) {
+        checkPending(null);
+      }
+    });
   }
 
   @Override
