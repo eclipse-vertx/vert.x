@@ -12,6 +12,7 @@ package io.vertx.tests.http;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -359,6 +360,49 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
     assertNull(respHeaders.get(HttpHeaders.KEEP_ALIVE));
     assertNull(respHeaders.get(HttpHeaders.UPGRADE));
     assertNull(respHeaders.get("proxy-connection"));
+  }
+
+  // https://www.rfc-editor.org/rfc/rfc9110#section-7.6.1
+  // https://www.rfc-editor.org/rfc/rfc9113#section-8.2.2
+  // https://www.rfc-editor.org/rfc/rfc9114#section-4.2
+  @Test
+  public void testRequestConnectionHeadersSanitized() throws Exception {
+    Promise<MultiMap> reqHeaders = Promise.promise();
+    server.requestHandler(req -> {
+      req.body().onComplete(onSuccess(body -> {
+        assertEquals("hello", body.toString());
+        reqHeaders.complete(MultiMap.caseInsensitiveMultiMap().addAll(req.headers()));
+        req.response().end();
+      }));
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
+      .compose(req -> {
+        req.putHeader(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
+        req.putHeader(HttpHeaders.KEEP_ALIVE, "timeout=5");
+        req.putHeader(HttpHeaders.UPGRADE, "websocket");
+        req.putHeader("proxy-connection", "keep-alive");
+        req.putHeader(HttpHeaders.TE, "trailers");
+        req.write("hello");
+        return req
+          .end()
+          .compose(v -> req.response())
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end);
+      })
+      .await(20, TimeUnit.SECONDS);
+    assertRequestConnectionHeadersSanitized(reqHeaders.future().await(20, TimeUnit.SECONDS));
+  }
+
+  // Connection-specific headers are forbidden on the wire for HTTP/2 and HTTP/3, except TE: trailers,
+  // overridden for HTTP/1.x where they are meaningful
+  protected void assertRequestConnectionHeadersSanitized(MultiMap reqHeaders) {
+    assertNull(reqHeaders.get(HttpHeaders.CONNECTION));
+    assertNull(reqHeaders.get(HttpHeaders.KEEP_ALIVE));
+    assertNull(reqHeaders.get(HttpHeaders.UPGRADE));
+    assertNull(reqHeaders.get("proxy-connection"));
+    assertNull(reqHeaders.get(HttpHeaders.TRANSFER_ENCODING));
+    assertEquals("trailers", reqHeaders.get(HttpHeaders.TE));
   }
 
   // https://www.rfc-editor.org/rfc/rfc9110#section-7.2
