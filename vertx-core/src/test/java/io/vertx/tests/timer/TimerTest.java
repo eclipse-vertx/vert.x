@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -149,12 +150,21 @@ public class TimerTest extends VertxTestBase2 {
 
   @Test
   public void testCancelTimerWhenScheduledOnWorker(Checkpoint checkpoint) {
+    testCancelWhenScheduledOnWorker(checkpoint, handler -> vertx.setTimer(100, handler));
+  }
+
+  @Test
+  public void testCancelPeriodicWhenScheduledOnWorker(Checkpoint checkpoint) {
+    testCancelWhenScheduledOnWorker(checkpoint, handler -> vertx.setPeriodic(100, handler));
+  }
+
+  private void testCancelWhenScheduledOnWorker(Checkpoint checkpoint, Function<Handler<Long>, Long> f) {
     AtomicBoolean executed = new AtomicBoolean();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
         vertx.runOnContext(v -> {
-          long id = vertx.setTimer(100, id_ -> {
+          long id = f.apply(id_ -> {
             executed.set(true);
           });
           try {
@@ -206,9 +216,10 @@ public class TimerTest extends VertxTestBase2 {
         fired.set(true);
       });
       Thread.sleep(5);
-      boolean res = vertx.cancelTimer(timerId);
-      if (res && fired.get()) {
-        throw new AssertionError("It failed " + i);
+      if (vertx.cancelTimer(timerId)) {
+        Assert.assertFalse("Iteration " + i, fired.get());
+      } else {
+        Assert.assertTrue("Iteration " + i, TestUtils.waitUntil(fired::get, 10_000));
       }
     }
   }
