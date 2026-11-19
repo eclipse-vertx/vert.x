@@ -420,12 +420,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
-    if (validateUri && request.getURI() != null) {
-      try {
-        HttpUtils.validateRequestURI(request.getURI());
-      } catch (IllegalArgumentException e) {
-        return vertx.getOrCreateContext().failedFuture(e);
-      }
+    IllegalArgumentException invalidUri = validateUri(request);
+    if (invalidUri != null) {
+      return vertx.getOrCreateContext().failedFuture(invalidUri);
     }
     RequestOptions options = prepare(request);
     ContextInternal ctx = vertx.getOrCreateContext();
@@ -436,9 +433,24 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   public Future<HttpClientStream> openStream(RequestOptions request) {
+    IllegalArgumentException invalidUri = validateUri(request);
+    if (invalidUri != null) {
+      return vertx.getOrCreateContext().failedFuture(invalidUri);
+    }
     ContextInternal ctx = vertx.getOrCreateContext();
     return acquireConnection(prepare(request), ctx)
       .compose(ConnectionRequest::createStream);
+  }
+
+  private IllegalArgumentException validateUri(RequestOptions request) {
+    if (validateUri && request.getURI() != null) {
+      try {
+        HttpUtils.validateRequestURI(request.getURI());
+      } catch (IllegalArgumentException e) {
+        return e;
+      }
+    }
+    return null;
   }
 
   private HttpClientTransport transport(HttpVersion version) {
