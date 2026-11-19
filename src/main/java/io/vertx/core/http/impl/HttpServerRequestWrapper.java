@@ -30,7 +30,9 @@ import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import java.security.cert.Certificate;
 import javax.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -172,6 +174,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   @GenIgnore
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return delegate.peerCertificateChain();
+  }
+
+  @Override
+  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
+    return delegate.peerCertificates();
   }
 
   @Override
