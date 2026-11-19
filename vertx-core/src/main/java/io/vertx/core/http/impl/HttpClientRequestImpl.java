@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.internal.http.ContentEncoder;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
@@ -645,6 +646,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             }
             if (chunked) {
               headers.set(TRANSFER_ENCODING, CHUNKED);
+            }
+          }
+          HttpVersion version = stream.version();
+          if (version == HttpVersion.HTTP_2 || version == HttpVersion.HTTP_3) {
+            headers.remove(CONNECTION);
+            headers.remove(KEEP_ALIVE);
+            headers.remove(PROXY_CONNECTION);
+            headers.remove(TRANSFER_ENCODING);
+            headers.remove(UPGRADE);
+            boolean teTrailers = headers.contains(TE, HttpHeaderValues.TRAILERS, true);
+            headers.remove(TE);
+            if (teTrailers) {
+              headers.set(TE, HttpHeaderValues.TRAILERS);
             }
           }
           headersSent = true;
