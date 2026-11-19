@@ -604,7 +604,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     return fut.compose(lease -> lease.get().createStream(streamCtx).map(stream -> {
       HttpClientStream s = interaction != null ? new StatisticsGatheringHttpClientStream(stream, interaction) : stream;
-      s.closeHandler(v -> lease.recycle());
       return new ConnectionObtainedResult(s, lease, authority, alternative, proxyOptions);
     }));
   }
