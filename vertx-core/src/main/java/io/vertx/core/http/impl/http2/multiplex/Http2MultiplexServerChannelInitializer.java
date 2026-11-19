@@ -96,7 +96,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
 
     Http2FrameCodec frameCodec = new Http2CustomFrameCodecBuilder(compressionManager, decompressionSupported)
       .server(true)
-      .decoderEnforceMaxSmallContinuationFrames(rstFloodWindowDuration)
+      .decoderEnforceMaxSmallContinuationFrames(maxSmallContinuationFrames)
       .decoderEnforceMaxRstFramesPerWindow(rstFloodMaxRstFramePerWindow, rstFloodWindowDuration)
       .encoderEnforceMaxRstFramesPerWindow(rstFloodMaxRstFramePerWindow, rstFloodWindowDuration)
       .initialSettings(initialSettings)
