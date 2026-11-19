@@ -36,8 +36,13 @@ import io.netty.handler.codec.http2.Http2FrameReader;
 import io.netty.handler.codec.http2.Http2FrameWriter;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -213,5 +218,53 @@ public class Http2MYRServerTest extends Http2TestBase {
     }
 
     Assert.assertTrue(maxInflightRequests.get() <= 2 * maxRstFramePerWindow );
+  }
+
+  @Test
+  public void testMYRMultiplexH2cUpgrade() throws Exception {
+    int maxRstFramePerWindow = 15;
+
+    HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions()
+      .setHttp2RstFloodMaxRstFramePerWindow(maxRstFramePerWindow)
+      .setHttp2MultiplexImplementation(true)
+      .setHttp2ClearTextEnabled(true));
+
+    httpServer.requestHandler(req -> {});
+    httpServer.listen(8080, "localhost").await();
+
+    CompletableFuture<Boolean> goAway = new CompletableFuture<>();
+
+    HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions()
+      .setProtocolVersion(HttpVersion.HTTP_2)
+      .setHttp2ClearTextUpgrade(true));
+
+    RequestOptions reqOptions = new RequestOptions()
+      .setHost("localhost")
+      .setPort(8080)
+      .setURI("/");
+
+    int num = maxRstFramePerWindow + 5;
+    for (int i = 0; i < num; i++) {
+      int val = i;
+      httpClient.request(reqOptions).onComplete(ar -> {
+        if (ar.succeeded()) {
+          HttpClientRequest req = ar.result();
+          if (val == 0) {
+            req.connection().goAwayHandler(ga -> {
+              if (ga.getErrorCode() == 11) {
+                goAway.complete(true);
+              }
+            });
+          }
+          req.end().onComplete(ar2 -> {
+            if (ar2.succeeded() && val > 0) {
+              req.reset();
+            }
+          });
+        }
+      });
+    }
+
+    Assert.assertTrue(goAway.get(20, TimeUnit.SECONDS));
   }
 }
