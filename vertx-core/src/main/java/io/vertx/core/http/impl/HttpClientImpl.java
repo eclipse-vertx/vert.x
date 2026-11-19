@@ -469,6 +469,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ConnectionRequest connectionRequest = createConnectionRequest(request, ctx);
     ClientSSLOptions sslOptions = connectionRequest.sslOptions;
     if (connectionRequest.isProxyOrDomainSocket()) {
+      if (connectionRequest.version == HttpVersion.HTTP_3) {
+        return ctx.failedFuture("HTTP/3 is not supported through a proxy or a domain socket");
+      }
       return fromPool(false,
         connectionRequest.useSSL,
         connectionRequest.version,
