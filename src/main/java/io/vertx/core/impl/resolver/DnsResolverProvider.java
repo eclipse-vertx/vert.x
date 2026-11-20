@@ -105,7 +105,8 @@ public class DnsResolverProvider implements ResolverProvider, HostsFileEntriesRe
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
     builder.hostsFileEntriesResolver(this);
     builder.channelFactory(() -> vertx.transport().datagramChannel());
-    builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
+    builder.socketChannelFactory(() ->
+        (SocketChannel) vertx.transport().channelFactory(false).newChannel(), options.isRetryWithTcpOnTimeout());
     builder.nameServerProvider(nameServerAddressProvider);
     builder.optResourceEnabled(options.isOptResourceEnabled());
     builder.resolveCache(resolveCache);
