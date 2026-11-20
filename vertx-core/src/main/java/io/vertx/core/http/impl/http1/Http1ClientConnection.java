@@ -112,6 +112,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   private long expirationTimestamp;
   private int seq = 1;
   private Deque<WebSocketFrame> pendingFrames;
+  private boolean webSocketHandshake;
 
   private long creationTimestamp;
   private long lastResponseReceivedTimestamp;
@@ -1261,6 +1262,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
       io.netty.util.concurrent.Promise<HttpHeaders> upgrade = chctx.executor().newPromise();
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, upgrade);
+      webSocketHandshake = true;
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
       upgrade.addListener((GenericFutureListener<io.netty.util.concurrent.Future<HttpHeaders>>) future -> {
         if (timer > -1L) {
@@ -1475,7 +1477,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
-      if (pending.isEmpty() && current == null && inflight.isEmpty()) {
+      if (!webSocketHandshake && pending.isEmpty() && current == null && inflight.isEmpty()) {
         return;
       }
     }
