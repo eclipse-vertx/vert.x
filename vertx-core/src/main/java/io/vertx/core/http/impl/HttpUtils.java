@@ -640,6 +640,10 @@ public final class HttpUtils {
 
   public static void validateHeader(CharSequence name, Iterable<? extends CharSequence> values) {
     validateHeaderName(name);
+    validateHeaderValues(values);
+  }
+
+  public static void validateHeaderValues(Iterable<? extends CharSequence> values) {
     values.forEach(value -> {
       if (value != null) {
         HEADER_VALUE_VALIDATOR.accept(value);

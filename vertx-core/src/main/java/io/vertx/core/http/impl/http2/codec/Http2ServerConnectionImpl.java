@@ -270,7 +270,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   public MultiMap newHeaders() {
-    return new HttpResponseHeaders(new DefaultHttp2Headers());
+    return new HttpResponseHeaders(HttpHeaders.newHttp2Headers());
   }
 
   @Override

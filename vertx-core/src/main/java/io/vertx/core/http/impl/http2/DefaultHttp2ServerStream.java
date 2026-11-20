@@ -12,7 +12,6 @@ package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -208,7 +207,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     connection.sendPush((int)id(), authority, method, headers, path, priority(), promise);
     return promise.future().map(pushStream -> {
       pushStream.priority(priority()); // Necessary ???
-      HttpResponseHeaders mmap = new HttpResponseHeaders(new DefaultHttp2Headers());
+      HttpResponseHeaders mmap = new HttpResponseHeaders(HttpHeaders.newHttp2Headers());
       if (headers != null) {
         mmap.addAll(headers);
       }

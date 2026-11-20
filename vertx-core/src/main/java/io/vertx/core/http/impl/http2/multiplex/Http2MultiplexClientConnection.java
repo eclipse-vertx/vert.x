@@ -24,6 +24,7 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.AltSvcEvent;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientStream;
@@ -74,7 +75,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public MultiMap newHttpRequestHeaders() {
-    return new HttpResponseHeaders(new DefaultHttp2Headers());
+    return new HttpResponseHeaders(HttpHeaders.newHttp2Headers());
   }
 
   @Override

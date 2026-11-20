@@ -13,7 +13,6 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
@@ -536,7 +535,7 @@ public interface HttpHeaders {
       case HTTP_1_1:
         return Http1xHeaders.httpHeaders();
       case HTTP_2:
-        return new io.vertx.core.http.impl.headers.HttpHeaders(new DefaultHttp2Headers());
+        return new io.vertx.core.http.impl.headers.HttpHeaders(io.vertx.core.http.impl.headers.HttpHeaders.newHttp2Headers());
       default:
         throw new AssertionError();
     }
