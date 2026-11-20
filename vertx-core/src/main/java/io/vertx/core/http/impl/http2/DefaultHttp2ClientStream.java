@@ -177,18 +177,16 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1ClientConnection.determineCompressionAcceptEncoding());
       }
-      try {
-        connection.createStream(DefaultHttp2ClientStream.this);
-      } catch (Exception ex) {
-        promise.fail(ex);
-        onException(ex);
-        return;
-      }
-      if (buf != null) {
-        writeHeaders0(headers, false, false, null);
-        writeData0(buf, e, promise);
+      Throwable failure = connection.createStream(DefaultHttp2ClientStream.this);
+      if (failure == null) {
+        if (buf != null) {
+          writeHeaders0(headers, false, false, null);
+          writeData0(buf, e, promise);
+        } else {
+          writeHeaders0(headers, e, true, promise);
+        }
       } else {
-        writeHeaders0(headers, e, true, promise);
+        promise.fail(failure);
       }
     }
 
