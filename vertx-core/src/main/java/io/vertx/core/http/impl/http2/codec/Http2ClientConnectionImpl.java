@@ -331,17 +331,24 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public void createStream(Http2ClientStream stream) throws Exception {
+  public Throwable createStream(Http2ClientStream stream) {
     int id = handler.encoder().connection().local().lastStreamCreated();
     if (id == 0) {
       id = 1;
     } else {
       id += 2;
     }
-    Http2Stream nettyStream = handler.encoder().connection().local().createStream(id, false);
+    Http2Stream nettyStream;
+    try {
+      nettyStream = handler.encoder().connection().local().createStream(id, false);
+    } catch (Http2Exception e) {
+      stream.onClose(goAwayStatus);
+      return e;
+    }
     nettyStream.setProperty(streamKey, stream);
     int nettyStreamId = nettyStream.id();
     stream.init(nettyStreamId, isWritable(nettyStream.id()));
+    return null;
   }
 
   @Override
