@@ -489,11 +489,18 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       });
     });
     server.listen(testAddress).await();
+    String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
     client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
-        .setURI("/form"))
-      .andThen(TestUtils.onSuccess(req -> req.send(ClientMultipartForm.multipartForm()
-        .textFileUpload("file", "tmp-0.txt", "text/plain", Buffer.buffer(TestUtils.randomAlphaString(1024 * 1024))))));
+        .setURI("/form")
+        .putHeader(HttpHeaders.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary))
+      .andThen(TestUtils.onSuccess(req -> req
+        .setChunked(true)
+        .write("--" + boundary + "\r\n" +
+          "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+          "Content-Type: text/plain\r\n" +
+          "\r\n" +
+          TestUtils.randomAlphaString(1024))));
     Assert.assertTrue(received.await(10, TimeUnit.SECONDS));
     connection.get().close();
     await();
