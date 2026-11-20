@@ -71,7 +71,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
-  private GoAway goAwayStatus;
+  GoAway goAwayStatus;
   private int windowSize;
   private long maxConcurrentStreams;
 
