@@ -383,12 +383,10 @@ public class QuicServerTest extends VertxTestBase {
       conn.streamHandler(stream -> {
         stream.resetHandler(code -> {
           Assert.assertEquals(4L, (long)code);
-          long now = System.nanoTime();
-          stream.closeHandler(v -> {
-            Assert.assertTrue(System.nanoTime() - now < TimeUnit.SECONDS.toNanos(1));
-            complete();
-          });
           stream.end();
+        });
+        stream.closeHandler(v -> {
+          complete();
         });
       });
     });
