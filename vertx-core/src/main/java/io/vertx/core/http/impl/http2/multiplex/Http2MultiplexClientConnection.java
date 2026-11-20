@@ -199,8 +199,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void createStream(Http2ClientStream stream) throws Exception {
-    handler.createClientStream(stream);
+  public Throwable createStream(Http2ClientStream stream) {
+    return handler.createClientStream(stream);
   }
 
   @Override

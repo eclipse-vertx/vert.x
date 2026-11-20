@@ -120,18 +120,18 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
     codec.decoder().flowController().incrementWindowSize(stream, windowSizeIncrement);
   }
 
-  void createClientStream(Http2ClientStream stream) throws Exception {
+  Throwable createClientStream(Http2ClientStream stream) {
     Http2StreamChannelBootstrap bootstrap = new Http2StreamChannelBootstrap(channel);
     bootstrap.handler(this);
-    Future<Http2StreamChannel> fut;
-    try {
-      fut = bootstrap.open();
-    } catch (Exception e) {
-      throw e;
+    Future<Http2StreamChannel> fut = bootstrap.open();
+    if (!fut.isSuccess()) {
+      stream.onClose(goAwayStatus);
+      return fut.cause();
     }
-    Http2StreamChannel streamChannel = fut.sync().get();
+    Http2StreamChannel streamChannel = fut.getNow();
     ChannelHandlerContext chctx = pendingChannels.remove(streamChannel);
     connection.registerChannel(stream, streamChannel.stream(), chctx);
+    return null;
   }
 
   Http2ClientStream upgradeClientStream(Http2StreamChannel channel, Object metric, Object trace,

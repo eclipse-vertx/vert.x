@@ -10,12 +10,19 @@
  */
 package io.vertx.tests.http.connection;
 
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpConnectOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.Origin;
+import io.vertx.test.core.TestUtils;
 import io.vertx.tests.http.Http2TestBase;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 public class Http2ClientConnectionTest extends HttpClientConnectionTest {
 
@@ -33,5 +40,25 @@ public class Http2ClientConnectionTest extends HttpClientConnectionTest {
   @Test
   public void testAlternateServiceHandlerConnectionStream() throws Exception {
     testAlternateServiceHandler(new Origin("https", "example.com", 334));
+  }
+
+  @Test
+  public void testGoAwayFailsQueuedRequests() throws Exception {
+    server.requestHandler(req -> req.connection().shutdown(1, TimeUnit.HOURS));
+    startServer(testAddress);
+    HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
+    HttpClientConnection conn = client.connect(connect).await();
+    Promise<Void> goAway = Promise.promise();
+    conn.goAwayHandler(v -> goAway.tryComplete());
+    conn.request().compose(req -> req.send());
+    goAway.future().await();
+    int num = (int) conn.maxActiveStreams();
+    waitFor(num);
+    for (int i = 0;i < num;i++) {
+      conn.request()
+        .compose(req -> req.send(Buffer.buffer("body")))
+        .onComplete(TestUtils.onFailure(err -> complete()));
+    }
+    await(10, TimeUnit.SECONDS);
   }
 }

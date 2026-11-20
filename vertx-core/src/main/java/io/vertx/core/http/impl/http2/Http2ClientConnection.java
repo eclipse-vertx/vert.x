@@ -14,6 +14,14 @@ import io.vertx.core.http.impl.HttpClientConnection;
 
 public interface Http2ClientConnection extends Http2Connection, HttpClientConnection {
 
-  void createStream(Http2ClientStream stream) throws Exception;
+  /**
+   * Create the stream on this connection, this must be called from the connection event loop.
+   *
+   * <p>When the stream cannot be created, the stream is closed before this method returns.</p>
+   *
+   * @param stream the stream to create
+   * @return {@code null} when the stream is created, otherwise the cause of the failure
+   */
+  Throwable createStream(Http2ClientStream stream);
 
 }
