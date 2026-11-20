@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
@@ -97,6 +98,46 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             testComplete();
           }));
+        }));
+      }));
+    await();
+  }
+
+  @Test
+  public void testSkipEncodingWithEmptyBody() throws Exception {
+    testSkipEncodingHeaderNotSent(HttpMethod.GET, resp -> resp.setStatusCode(302).putHeader(HttpHeaders.LOCATION, "/").end(), "");
+  }
+
+  @Test
+  public void testSkipEncodingWithNoContent() throws Exception {
+    testSkipEncodingHeaderNotSent(HttpMethod.GET, resp -> resp.setStatusCode(204).end(), "");
+  }
+
+  @Test
+  public void testSkipEncodingWithHead() throws Exception {
+    testSkipEncodingHeaderNotSent(HttpMethod.HEAD, resp -> resp.end(COMPRESS_TEST_STRING), "");
+  }
+
+  @Test
+  public void testSkipEncodingWithChunkedBody() throws Exception {
+    testSkipEncodingHeaderNotSent(HttpMethod.GET, resp -> resp
+      .setChunked(true)
+      .write(COMPRESS_TEST_STRING)
+      .compose(v -> resp.end()), COMPRESS_TEST_STRING);
+  }
+
+  private void testSkipEncodingHeaderNotSent(HttpMethod method, Consumer<HttpServerResponse> sender, String expectedBody) throws Exception {
+    server.close();
+    server = config.forServer().setCompression(serverCompressionConfig().get()).create(vertx);
+    server.requestHandler(req -> sender.accept(req.response().putHeader(HttpHeaders.CONTENT_ENCODING, HttpHeaders.IDENTITY)));
+    startServer();
+    client.request(new RequestOptions().setMethod(method).addHeader(HttpHeaders.ACCEPT_ENCODING, encoding()))
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertNull(resp.getHeader(HttpHeaders.CONTENT_ENCODING));
+        resp.body().onComplete(onSuccess(body -> {
+          assertEquals(expectedBody, body.toString(StandardCharsets.UTF_8));
+          testComplete();
         }));
       }));
     await();
