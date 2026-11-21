@@ -1410,6 +1410,7 @@ public class Http1xTest extends HttpTest {
       }
     };
     task[0].accept(0);
+    checkpoint.awaitSuccess();
   }
 
   @Test
