@@ -14,6 +14,9 @@ import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 
 import static io.vertx.core.http.HttpHeaders.CONTENT_ENCODING;
 import static io.vertx.core.http.HttpHeaders.IDENTITY;
@@ -45,7 +48,7 @@ public class CompressionManager {
    * @param requestHeaders
    * @param responseHeaders
    */
-  public void setContentEncoding(Headers<CharSequence, CharSequence, ?> requestHeaders, Headers<CharSequence, CharSequence, ?> responseHeaders) {
+  public void setContentEncoding(HttpRequestHeaders requestHeaders, Headers<CharSequence, CharSequence, ?> responseHeaders) {
     String contentEncodingToApply = determineContentEncodingToApply(requestHeaders, responseHeaders);
     if (contentEncodingToApply == null || contentEncodingToApply.equalsIgnoreCase(IDENTITY.toString())) {
       if (responseHeaders.contains(CONTENT_ENCODING, IDENTITY)) {
@@ -56,11 +59,17 @@ public class CompressionManager {
     }
   }
 
-  private String determineContentEncodingToApply(Headers<CharSequence, CharSequence, ?> requestHeaders, Headers<CharSequence, CharSequence, ?> responseHeaders) {
-    if (responseHeaders.contains(CONTENT_ENCODING)) {
+  public static boolean isContentAlwaysEmpty(HttpRequestHeaders requestHeaders, Headers<CharSequence, CharSequence, ?> responseHeaders) {
+    int statusCode = responseHeaders.getInt(Http2Headers.PseudoHeaderName.STATUS.value(), 200);
+    return statusCode < 200 || statusCode == 204 || statusCode == 205 || statusCode == 304 ||
+      requestHeaders.method() == HttpMethod.HEAD;
+  }
+
+  private String determineContentEncodingToApply(HttpRequestHeaders requestHeaders, Headers<CharSequence, CharSequence, ?> responseHeaders) {
+    if (responseHeaders.contains(CONTENT_ENCODING) || isContentAlwaysEmpty(requestHeaders, responseHeaders)) {
       return null;
     }
-    return determineContentEncoding(requestHeaders);
+    return determineContentEncoding(requestHeaders.unwrap());
   }
 
   private String determineContentEncoding(Headers<CharSequence, CharSequence, ?> headers) {
