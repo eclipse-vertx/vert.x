@@ -12,8 +12,10 @@ package io.vertx.tests.http;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.List;
 
 import static io.vertx.core.http.HttpVersion.*;
@@ -59,5 +61,13 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp3Config());
     assertFalse(config.isSsl());
     assertEquals(List.of(HTTP_1_0), config.getVersions());
+  }
+
+  @Test
+  public void testHttp2KeepAliveTimeoutValidation() {
+    Http2ClientConfig config = new Http2ClientConfig();
+    assertSame(config, config.setKeepAliveTimeout(Duration.ZERO));
+    assertEquals(Duration.ZERO, config.getKeepAliveTimeout());
+    assertThrows(IllegalArgumentException.class, () -> config.setKeepAliveTimeout(Duration.ofMillis(-1)));
   }
 }
