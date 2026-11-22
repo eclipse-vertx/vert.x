@@ -1036,6 +1036,40 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
+  public void testClientKeepAliveTimeoutNoStreamsNotExpiredEarly(Checkpoint checkpoint) throws Exception {
+    // A pooled connection that never carried a stream must be considered valid until the keep-alive timeout
+    // elapses: the pool cleaner must not evict it right after it is created
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    int keepAliveTimeoutSeconds = 3;
+    AtomicBoolean closed = new AtomicBoolean();
+    client = vertx
+      .httpClientBuilder()
+      .withConnectHandler(conn -> {
+        long now = System.currentTimeMillis();
+        conn.closeHandler(v -> {
+          if (closed.compareAndSet(false, true)) {
+            long elapsed = System.currentTimeMillis() - now;
+            long low = keepAliveTimeoutSeconds * 1000 - 500;
+            long high = keepAliveTimeoutSeconds * 1000 + 2000;
+            assertTrue("Expected connection to be closed after the keep-alive timeout, was closed after " + elapsed + "ms", low < elapsed);
+            assertTrue("Expected connection to be closed after the keep-alive timeout, was closed after " + elapsed + "ms", elapsed < high);
+            client.close().onComplete(v2 -> {
+              checkpoint.succeed();
+            });
+          }
+        });
+      })
+      .with(Http2TestBase.createHttp2ClientOptions().setHttp2KeepAliveTimeout(keepAliveTimeoutSeconds))
+      .with(new PoolOptions().setCleanerPeriod(1))
+      .build();
+    client.request(requestOptions);
+  }
+
+  @Test
   public void testClearTextDirect() throws Exception {
     server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setSsl(false).setHttp2ClearTextEnabled(true));
     server.requestHandler(req -> {
