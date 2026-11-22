@@ -251,7 +251,11 @@
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <!-- Netty resolver-dns assertion bug (DnsQueryContextManager), remove when fixed -->
-            <argLine>-da:io.netty.resolver.dns...</argLine>
+            <!--
+              add-modules ALL-MODULE-PATH is only for IDEs that import argLine (e.g. IntelliJ) so they resolve
+              optional modules (requires static) like Maven does, Maven execution itself does not need it
+            -->
+            <argLine>-da:io.netty.resolver.dns... --add-modules ALL-MODULE-PATH</argLine>
             <additionalClasspathElements>
               <!-- Can we remove this one ??? -->
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
