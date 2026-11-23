@@ -27,7 +27,6 @@ import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
-import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -41,8 +40,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import static io.vertx.core.http.HttpMethod.GET;
-import static io.vertx.test.core.AssertExpectations.that;
 import static org.junit.Assert.*;
+import static io.vertx.test.core.FutureAssert.assertThat;
 
 public class Http1xProxyTest extends HttpTestBase2 {
 
@@ -434,18 +433,21 @@ public class Http1xProxyTest extends HttpTestBase2 {
         .setPort(DEFAULT_HTTP_PORT)
         .setURI("/");
       List<String> responses = Collections.synchronizedList(new ArrayList<>());
+      List<Future<Buffer>> bodies = new ArrayList<>();
       for (int i = 0;i < 2;i++) {
-        HttpClientRequest request = client
-          .request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2)).await();
-        request.end().await();
-        request
-          .response()
-          .expecting(HttpResponseExpectation.SC_OK)
-          .compose(HttpClientResponse::body).onComplete(TestUtils.onSuccess(res -> {
-            synchronized (responses) {
-              responses.add(res.toString());
-            }
-          }));
+        bodies.add(client
+          .request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2))
+          .compose(request -> {
+            Future<Buffer> body = request
+              .response()
+              .expecting(HttpResponseExpectation.SC_OK)
+              .compose(HttpClientResponse::body)
+              .peek(res -> responses.add(res.toString()));
+            return request
+              .end()
+              .map(body);
+          })
+          .await());
       }
 
       TestUtils.assertWaitUntil(() -> requests.size() == 2);
@@ -455,6 +457,7 @@ public class Http1xProxyTest extends HttpTestBase2 {
         request.response().end("" + addr);
         TestUtils.assertWaitUntil(() -> responses.size() == size + 1);
       }
+      Future.all(bodies).await();
       return responses;
     } finally {
       for (ProxyBase<?> proxy : proxies) {
@@ -537,17 +540,19 @@ public class Http1xProxyTest extends HttpTestBase2 {
 
     ClientWebSocket ws = client.webSocket();
     ws.handler(buff -> {
-      ws.close().onComplete(TestUtils.onSuccess(v2 -> {
-        if (proxied) {
-          assertNotNull("request did not go through proxy", proxy.lastUri());
-          if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {
-            assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
+      ws
+        .close()
+        .peek(v2 -> {
+          if (proxied) {
+            assertNotNull("request did not go through proxy", proxy.lastUri());
+            if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {
+              assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
+            }
+          } else {
+            assertNull("request did go through proxy", proxy.lastUri());
           }
-        } else {
-          assertNull("request did go through proxy", proxy.lastUri());
-        }
-        checkpoint.succeed();
-      }));
+        })
+        .onComplete(checkpoint);
     });
     ws.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").await();
     ws.write(Buffer.buffer("Hello world")).await();
@@ -556,41 +561,41 @@ public class Http1xProxyTest extends HttpTestBase2 {
 
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
-  public void testNoConnectTimeoutHttpProxy(Checkpoint checkpoint) throws Exception {
-    testConnectTimeout(checkpoint, false);
+  public void testNoConnectTimeoutHttpProxy() throws Exception {
+    testConnectTimeout(false);
   }
 
   @WithProxy(kind = ProxyKind.SOCKS4)
   @Test
-  public void testNoConnectTimeoutSocksProxy(Checkpoint checkpoint) throws Exception {
-    testConnectTimeout(checkpoint, false);
+  public void testNoConnectTimeoutSocksProxy() throws Exception {
+    testConnectTimeout(false);
   }
 
   @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
-  public void testNoConnectTimeoutSocks5Proxy(Checkpoint checkpoint) throws Exception {
-    testConnectTimeout(checkpoint, false);
+  public void testNoConnectTimeoutSocks5Proxy() throws Exception {
+    testConnectTimeout(false);
   }
 
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
-  public void testConnectTimeoutHttpProxy(Checkpoint checkpoint) throws Exception {
-    testConnectTimeout(checkpoint, true);
+  public void testConnectTimeoutHttpProxy() throws Exception {
+    testConnectTimeout(true);
   }
 
   @WithProxy(kind = ProxyKind.SOCKS4)
   @Test
-  public void testConnectTimeoutSocksProxy(Checkpoint checkpoint) throws Exception {
-    testConnectTimeout(checkpoint, true);
+  public void testConnectTimeoutSocksProxy() throws Exception {
+    testConnectTimeout(true);
   }
 
   @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
-  public void testConnectTimeoutSocks5Proxy(Checkpoint checkpoint) throws Exception {
-    testConnectTimeout(checkpoint, true);
+  public void testConnectTimeoutSocks5Proxy() throws Exception {
+    testConnectTimeout(true);
   }
 
-  private void testConnectTimeout(Checkpoint checkpoint, boolean shouldTimeout) throws Exception {
+  private void testConnectTimeout(boolean shouldTimeout) throws Exception {
     HttpServerOptions serverOptions = createBaseServerOptions()
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get());
@@ -613,16 +618,19 @@ public class Http1xProxyTest extends HttpTestBase2 {
     RequestOptions requestOptions = new RequestOptions(this.requestOptions)
       .setPort(DEFAULT_HTTPS_PORT)
       .setConnectTimeout(delay.multipliedBy(3).toMillis());
-    client.request(requestOptions)
-      .compose(req -> req.send().compose(HttpClientResponse::body)).onComplete(ar -> {
-        if (shouldTimeout) {
-          assertTrue(ar.failed());
-          Assertions.assertThat(ar.cause()).isInstanceOf(ProxyConnectException.class);
-        } else {
-          assertTrue(ar.succeeded());
-        }
-        checkpoint.succeed();
-      });
+    Future<Buffer> body = client
+      .request(requestOptions)
+      .compose(req -> req
+        .send()
+        .compose(HttpClientResponse::body));
+    if (shouldTimeout) {
+      assertThat(body)
+        .isFailure()
+        .asInstanceOf(ProxyConnectException.class)
+        .await();
+    } else {
+      body.await();
+    }
   }
 
   @WithProxy(kind = ProxyKind.SOCKS5)
@@ -678,7 +686,7 @@ public class Http1xProxyTest extends HttpTestBase2 {
         .setFollowRedirects(true)
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
-        .expecting(that(response -> assertEquals(location, proxy.lastUri())))
+        .peek(response -> assertEquals(location, proxy.lastUri()))
         .compose(resp -> resp
           .body()
           .compose(body -> {
