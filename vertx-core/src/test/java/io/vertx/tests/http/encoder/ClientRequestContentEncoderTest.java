@@ -12,11 +12,11 @@ package io.vertx.tests.http.encoder;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.internal.http.ContentDecoder;
 import io.vertx.core.internal.http.ContentEncoder;
@@ -31,6 +31,7 @@ import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -50,13 +51,20 @@ public abstract class ClientRequestContentEncoderTest extends ContentEncoderTest
 
   @Test
   public void testWriteReleasesBuffers() throws Exception {
-    server.requestHandler(request -> request.body().onComplete(TestUtils.onSuccess(body -> request.response().end(String.valueOf(body.length())))));
+    server.requestHandler(request -> request
+      .body()
+      .compose(body -> request
+        .response()
+        .end(String.valueOf(body.length()))));
     startServer(testAddress);
     Buffer body = client
       .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
       .compose(request -> {
         request.setChunked(true);
-        Future<Buffer> response = request.response().compose(HttpClientResponse::body);
+        Future<Buffer> response = request
+          .response()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
         ContentEncoder encoder = encoder(request);
         for (int i = 0;i < 8;i++) {
           encoder.write(allocateBuffer(128));
@@ -78,8 +86,12 @@ public abstract class ClientRequestContentEncoderTest extends ContentEncoderTest
         Future<HttpClientResponse> response = request.response();
         ContentEncoder encoder = encoder(request);
         encoder.end();
-        encoder.write(allocateBuffer(128)).onFailure(err -> checkpoint1.succeed());
-        encoder.end(allocateBuffer(128)).onFailure(err -> checkpoint2.succeed());
+        assertThat(encoder.write(allocateBuffer(128)))
+          .isFailure()
+          .verify(checkpoint1);
+        assertThat(encoder.end(allocateBuffer(128)))
+          .isFailure()
+          .verify(checkpoint2);
         return response.compose(HttpClientResponse::end);
       })
       .await();
@@ -117,10 +129,9 @@ public abstract class ClientRequestContentEncoderTest extends ContentEncoderTest
       .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
       .compose(request -> {
         request.setChunked(true);
-        Promise<Buffer> result = Promise.promise();
-        request.response().onComplete(TestUtils.onSuccess(response -> ((HttpClientResponseInternal) response)
-          .contentDecoder(new BufferDecoder())
-          .onComplete(result)));
+        Future<Buffer> result = request
+          .response()
+          .compose(response -> ((HttpClientResponseInternal) response).contentDecoder(new BufferDecoder()));
         ContentEncoder encoder = encoder(request);
         int chunk = 16 * 1024;
         for (int pos = 0;pos < body.length();pos += chunk) {
@@ -129,7 +140,7 @@ public abstract class ClientRequestContentEncoderTest extends ContentEncoderTest
           encoder.write(buf);
         }
         encoder.end();
-        return result.future();
+        return result;
       })
       .await(20, TimeUnit.SECONDS);
     assertEquals(body.length(), received.length());
