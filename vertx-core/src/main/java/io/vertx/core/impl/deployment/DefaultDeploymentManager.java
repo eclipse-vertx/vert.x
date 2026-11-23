@@ -230,15 +230,15 @@ public class DefaultDeploymentManager implements DeploymentManager {
           .undeploy()
           .andThen(ar -> deployments.remove(deploymentID))
           .eventually(deployment::cleanup);
-        return undeployingContext.future(p -> {
-          undeployFutures.onComplete(ar -> {
-            if (ar.succeeded()) {
-              p.succeed();
-            } else {
-              p.fail(ar.cause());
-            }
-          });
+        Promise<Void> promise = undeployingContext.promise();
+        undeployFutures.onComplete(ar -> {
+          if (ar.succeeded()) {
+            promise.succeed();
+          } else {
+            promise.fail(ar.cause());
+          }
         });
+        return promise.future();
       }
     }
 

@@ -95,20 +95,22 @@ public interface ContextInternal extends Context {
   }
 
   /**
-   * Create a promise and pass it to the {@code handler}, and then returns this future's promise. The {@code handler}
-   * is responsible for completing the promise, if the {@code handler} throws an exception, the promise is attempted
-   * to be failed with this exception.
+   * Create a promise and pass it to the {@code handler} executed on this context (immediately when the current thread is
+   * the thread of this context), and then returns this future's promise. The {@code handler} is responsible for completing the promise, if the {@code handler} throws an exception,
+   * the promise is attempted to be failed with this exception.
    *
    * @param handler the handler completing the promise
    * @return the future of the created promise
    */
   default <T> Future<T> future(Handler<Promise<T>> handler) {
     Promise<T> promise = promise();
-    try {
-      handler.handle(promise);
-    } catch (Throwable t) {
-      promise.tryFail(t);
-    }
+    emit(v -> {
+      try {
+        handler.handle(promise);
+      } catch (Throwable t) {
+        promise.tryFail(t);
+      }
+    });
     return promise.future();
   }
 

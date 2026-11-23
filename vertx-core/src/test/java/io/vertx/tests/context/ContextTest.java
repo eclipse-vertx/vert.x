@@ -663,6 +663,31 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testFutureRunsHandlerOnContext() {
+    ContextInternal context = ((VertxInternal) vertx).createWorkerContext();
+    Future<Context> future = context.future(p -> p.complete(Vertx.currentContext()));
+    assertSame(context, future.await());
+    Future<Boolean> inline = context.future(p -> {
+      AtomicBoolean executed = new AtomicBoolean();
+      context.future(p2 -> {
+        executed.set(true);
+        p2.complete();
+      });
+      p.complete(executed.get());
+    });
+    assertTrue(inline.await());
+    RuntimeException failure = new RuntimeException();
+    try {
+      context.future(p -> {
+        throw failure;
+      }).await();
+      fail();
+    } catch (RuntimeException e) {
+      assertSame(failure, e);
+    }
+  }
+
+  @Test
   public void testEventLoopContextPromiseReentrantSuccess() {
     testEventLoopContextPromiseReentrantCompletion(p -> p.complete("the-value"));
   }
