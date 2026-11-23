@@ -623,6 +623,22 @@ public interface Future<T> extends AsyncResult<T> {
   Future<T> expecting(Expectation<? super T> expectation);
 
   /**
+   * Like {@link #andThen(Handler)}, the {@code handler} is only called with the result of this future when it succeeds:
+   * when the {@code handler} throws, the returned future is failed with the thrown exception, otherwise the future is
+   * completed with the same result. A failure of this future is propagated without calling the {@code handler}.
+   *
+   * @param handler the handler called with the result
+   * @return a future succeeded with the result or failed with the exception thrown by the {@code handler}
+   */
+  default Future<T> peek(Handler<? super T> handler) {
+    return andThen((value, err) -> {
+      if (err == null) {
+        handler.handle(value);
+      }
+    });
+  }
+
+  /**
    * Returns a future succeeded or failed with the outcome of this future when it happens before the timeout fires. When
    * the timeout fires before, the future is failed with a {@link java.util.concurrent.TimeoutException}, guaranteeing
    * the returned future to complete within the specified {@code delay}.

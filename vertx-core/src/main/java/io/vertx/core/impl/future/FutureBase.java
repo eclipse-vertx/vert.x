@@ -194,6 +194,14 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
   }
 
   @Override
+  public Future<T> peek(Handler<? super T> handler) {
+    Objects.requireNonNull(handler, "No null handler accepted");
+    Peek<T> peek = new Peek<>(context, handler);
+    addListener(peek);
+    return peek;
+  }
+
+  @Override
   public Future<T> timeout(long delay, TimeUnit unit) {
     if (isComplete()) {
       return this;
