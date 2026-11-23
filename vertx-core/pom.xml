@@ -784,6 +784,21 @@
             </configuration>
           </execution>
           <execution>
+            <id>netty-io-ratio</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/netty/IoRatioTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.eventLoop.ioRatio>50</io.netty.eventLoop.ioRatio>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
             <id>network-logging</id>
             <goals>
               <goal>integration-test</goal>
