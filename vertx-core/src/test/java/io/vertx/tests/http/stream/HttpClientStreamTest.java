@@ -11,7 +11,6 @@
 package io.vertx.tests.http.stream;
 
 import io.netty.buffer.ByteBuf;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -37,8 +36,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
 
 public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
 
@@ -63,9 +63,10 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
 
   @Test
   public void testOpenStreamInvalidURI() {
-    Future<HttpClientStream> fut = client.openStream(new RequestOptions(requestOptions).setURI("/example/ path"));
-    assertTrue(fut.failed());
-    assertTrue(fut.cause() instanceof IllegalArgumentException);
+    assertThat(client.openStream(new RequestOptions(requestOptions).setURI("/example/ path")))
+      .isFailure()
+      .asInstanceOf(IllegalArgumentException.class)
+      .await();
   }
 
   @Test
@@ -91,19 +92,19 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
       null);
-    stream.head(head).end();
+    stream.head(head).end().await();
   }
 
   @Test
   public void testWriteTrailers(Checkpoint checkpoint) throws Exception {
-    handler = request -> request.body().onComplete(ar -> {
-      if (ar.succeeded() && "the-body".equals(ar.result().toString()) && "trailer_value".equals(request.getTrailer("trailer_key"))) {
-        checkpoint.succeed();
-      } else {
-        checkpoint.fail(new AssertionError("Unexpected request " + ar + " " + request.trailers()));
-      }
-      request.response().end();
-    });
+    handler = request -> request
+      .body()
+      .peek(body -> {
+        assertEquals("the-body", body.toString());
+        assertEquals("trailer_value", request.getTrailer("trailer_key"));
+      })
+      .andThen(ar -> request.response().end())
+      .onComplete(checkpoint);
     startServer(testAddress);
     HttpClientStream stream = client.openStream(requestOptions).await();
     HttpClientConnection connection = stream.connection();
@@ -121,7 +122,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
     MultiMap trailers = connection.newHttpRequestHeaders();
     trailers.set("trailer_key", "trailer_value");
     stream.head(head).write(Buffer.buffer("the-body"));
-    stream.end(trailers);
+    stream.end(trailers).await();
   }
 
   @Test
@@ -129,14 +130,11 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
     Promise<Void> received = Promise.promise();
     handler = request -> {
       received.complete();
-      request.body().onComplete(ar -> {
-        if (ar.succeeded() && "the-body".equals(ar.result().toString())) {
-          checkpoint.succeed();
-        } else {
-          checkpoint.fail(new AssertionError("Unexpected request " + ar));
-        }
-        request.response().end();
-      });
+      request
+        .body()
+        .peek(body -> assertEquals("the-body", body.toString()))
+        .andThen(ar -> request.response().end())
+        .onComplete(checkpoint);
     };
     startServer(testAddress);
     HttpClientStream stream = client.openStream(requestOptions).await();
@@ -154,7 +152,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       null);
     stream.head(head).write(Buffer.buffer());
     received.future().await();
-    stream.end(Buffer.buffer("the-body"));
+    stream.end(Buffer.buffer("the-body")).await();
   }
 
   @Test
@@ -202,7 +200,7 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
       null);
-    stream.head(head).end();
+    stream.head(head).end().await();
   }
 
   @Test
@@ -298,6 +296,6 @@ public abstract class HttpClientStreamTest extends SimpleHttpTest2 {
       connection.newHttpRequestHeaders(),
       HostAndPort.authority("localhost", testAddress.port()),
       null);
-    stream.head(head).end();
+    stream.head(head).end().await();
   }
 }
