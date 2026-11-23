@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.test.core.FutureAssert;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.FileDescriptorLeakDetectorRule;
@@ -40,7 +41,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static io.vertx.test.core.AssertExpectations.that;
 import static org.junit.Assert.*;
 
 public abstract class HttpSendFileTest extends HttpTestBase2 {
@@ -78,15 +78,17 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
       }
     });
     startServer(testAddress);
-    requestFact.get().compose(req -> req
+    requestFact
+      .get()
+      .compose(req -> req
         .send()
-        .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(resp -> {
           assertEquals("text/html", resp.headers().get("Content-Type"));
           assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
           resp.exceptionHandler(err -> Assert.fail(err.getMessage()));
+          return resp.body();
         }))
-        .compose(HttpClientResponse::body))
       .await();
   }
 
@@ -103,13 +105,14 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
     });
 
     startServer(testAddress);
-    client.request(requestOptions)
+    Buffer buff = client
+      .request(requestOptions)
       .compose(req -> req
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::body)
-        .expecting(that(buff -> assertEquals("failed", buff.toString()))))
+        .compose(HttpClientResponse::body))
       .await();
+    assertEquals("failed", buff.toString());
   }
 
   @Test
@@ -123,40 +126,36 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
     });
 
     startServer(testAddress);
-    client.request(requestOptions)
+    Buffer buff = client
+      .request(requestOptions)
       .compose(req -> req
         .send()
-        .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(resp -> {
           assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
           assertEquals("wibble", resp.headers().get("content-type"));
+          return resp.body();
         }))
-        .compose(HttpClientResponse::body)
-        .expecting(that(buff -> assertEquals(content, buff.toString()))))
       .await();
+    assertEquals(content, buff.toString());
   }
 
   @Test
   public void testSendFileNotFound(Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
-      req.response()
-        .putHeader("Content-Type", "wibble")
-        .sendFile("nosuchfile.html")
-        .onComplete(TestUtils.onFailure(v -> checkpoint.succeed()));
+      req.response().putHeader("Content-Type", "wibble");
+      FutureAssert.assertThat(req.response().sendFile("nosuchfile.html"))
+        .isFailure()
+        .verify(checkpoint);
     });
 
     startServer(testAddress);
-    try {
-      client
-        .request(requestOptions)
-        .compose(HttpClientRequest::send)
-        .timeout(Duration.ofMillis(100))
-        .await();
-      Assert.fail();
-    } catch (Exception e) {
-        assertThat(e)
-        .isInstanceOf(TimeoutException.class);
-    }
+    FutureAssert.assertThat(client.request(requestOptions))
+      .compose(HttpClientRequest::send)
+      .timeout(Duration.ofMillis(100))
+      .isFailure()
+      .asInstanceOf(TimeoutException.class)
+      .await();
   }
 
   @Test
@@ -166,23 +165,19 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
 
     server.requestHandler(req -> {
       req.response().putHeader("Content-Type", "wibble");
-      req.response().sendFile(dir.getAbsolutePath())
-        .onComplete(TestUtils.onFailure(t -> {
-            assertThat(t).isInstanceOf(FileNotFoundException.class);
-          checkpoint.succeed();
-        }));
+      FutureAssert.assertThat(req.response().sendFile(dir.getAbsolutePath()))
+        .isFailure()
+        .asInstanceOf(FileNotFoundException.class)
+        .verify(checkpoint);
     });
 
     startServer(testAddress);
-    try {
-      client
-        .request(requestOptions)
-        .compose(HttpClientRequest::send)
-        .timeout(Duration.ofMillis(100))
-        .await();
-      Assert.fail();
-    } catch (Exception ignore) {
-    }
+    FutureAssert.assertThat(client.request(requestOptions))
+      .compose(HttpClientRequest::send)
+      .timeout(Duration.ofMillis(100))
+      .isFailure()
+      .asInstanceOf(TimeoutException.class)
+      .await();
   }
 
   @Test
@@ -191,10 +186,12 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
       res.response().sendFile("hosts_config.txt", 13);
     });
     startServer(testAddress);
-    Buffer body = client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
-      .compose(HttpClientResponse::body)
+    Buffer body = client
+      .request(requestOptions)
+      .compose(req -> req
+        .send()
+        .peek(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length")))
+        .compose(HttpClientResponse::body))
       .await();
     assertThat(body.toString())
       .startsWith("server.net")
@@ -207,11 +204,14 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
       res.response().sendFile("hosts_config.txt", 13, 10);
     });
     startServer(testAddress);
-    Buffer body = client.request(requestOptions)
+    Buffer body = client
+      .request(requestOptions)
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
-        .compose(HttpClientResponse::body))
+        .compose(resp -> {
+          assertEquals(String.valueOf(10), resp.headers().get("Content-Length"));
+          return resp.body();
+        }))
       .await();
     assertEquals("server.net", body.toString());
     assertEquals(10, body.toString().length());
@@ -222,46 +222,49 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> res.response().sendFile(f.getAbsolutePath(), 23, 0));
     startServer(testAddress);
-    Buffer body = client.request(requestOptions)
+    Buffer body = client
+      .request(requestOptions)
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
-        .compose(HttpClientResponse::body))
+        .compose(resp -> {
+          assertEquals(String.valueOf(0), resp.headers().get("Content-Length"));
+          return resp.body();
+        }))
       .await();
     assertEquals("", body.toString());
   }
 
   @Test
-  public void testSendFileOffsetIsHigherThanFileLength() throws Exception {
+  public void testSendFileOffsetIsHigherThanFileLength(Checkpoint checkpoint) throws Exception {
     testSendFileWithFailure(
+      checkpoint,
       (resp, f) -> resp.sendFile(f.getAbsolutePath(), 33, 10),
       err -> assertEquals("offset : 33 is larger than the requested file length : 23", err.getMessage()));
   }
 
   @Test
-  public void testSendFileWithNegativeLength() throws Exception {
-    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), 0, -100), err -> {
+  public void testSendFileWithNegativeLength(Checkpoint checkpoint) throws Exception {
+    testSendFileWithFailure(checkpoint, (resp, f) -> resp.sendFile(f.getAbsolutePath(), 0, -100), err -> {
       assertEquals("length : -100 (expected: >= 0)", err.getMessage());
     });
   }
 
   @Test
-  public void testSendFileWithNegativeOffset() throws Exception {
-    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), -100, 23), err -> {
+  public void testSendFileWithNegativeOffset(Checkpoint checkpoint) throws Exception {
+    testSendFileWithFailure(checkpoint, (resp, f) -> resp.sendFile(f.getAbsolutePath(), -100, 23), err -> {
       assertEquals("offset : -100 (expected: >= 0)", err.getMessage());
     });
   }
 
-  private void testSendFileWithFailure(BiFunction<HttpServerResponse, File, Future<Void>> sendFile, Consumer<Throwable> checker) throws Exception {
+  private void testSendFileWithFailure(Checkpoint checkpoint, BiFunction<HttpServerResponse, File, Future<Void>> sendFile, Consumer<Throwable> checker) throws Exception {
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       // Expected
-      sendFile
-        .apply(res.response(), f)
-        .andThen(TestUtils.onFailure(checker::accept))
-        .recover(v -> res.response().setStatusCode(500).end())
-        .onComplete(TestUtils.onSuccess(v -> {
-        }));
+      FutureAssert.assertThat(sendFile.apply(res.response(), f))
+        .isFailure()
+        .peek(checker::accept)
+        .eventually(() -> res.response().setStatusCode(500).end())
+        .verify(checkpoint);
     });
     startServer(testAddress);
     client.request(requestOptions)
@@ -272,83 +275,85 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
   }
 
   @Test
-  public void testSendFileWithFileChannel() throws Exception {
+  public void testSendFileWithFileChannel(Checkpoint checkpoint) throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file.getChannel());
-    try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+    try (RandomAccessFile raf = testSendFileWithFileChannel(checkpoint, fileLength, sender, "application/octet-stream", fileLength)) {
       assertTrue(raf.getChannel().isOpen());
     }
   }
 
   @Test
-  public void testSendFileWithFileChannelAndExtension() throws Exception {
+  public void testSendFileWithFileChannelAndExtension(Checkpoint checkpoint) throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file.getChannel());
-    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(checkpoint, fileLength, sender, "video/mp4", fileLength)) {
       assertTrue(raf.getChannel().isOpen());
     }
   }
 
   @Test
-  public void testSendFileWithFileChannelRange() throws Exception {
+  public void testSendFileWithFileChannelRange(Checkpoint checkpoint) throws Exception {
     int fileLength = 16 * 1024 * 1024;
     int offset = 1024 * 4;
     int expectedRange = fileLength - offset;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file.getChannel(), offset, expectedRange);
-    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(checkpoint, fileLength, sender, "video/mp4", expectedRange)) {
       assertTrue(raf.getChannel().isOpen());
     }
   }
 
   @Test
-  public void testSendFileWithRandomAccessFile() throws Exception {
+  public void testSendFileWithRandomAccessFile(Checkpoint checkpoint) throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file);
-    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(checkpoint, fileLength, sender, "application/octet-stream", fileLength)) {
       raf.getFilePointer();
     }
   }
 
   @Test
-  public void testSendFileWithRandomAccessFileAndExtension() throws Exception {
+  public void testSendFileWithRandomAccessFileAndExtension(Checkpoint checkpoint) throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file);
-    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(checkpoint, fileLength, sender, "video/mp4", fileLength)) {
       raf.getFilePointer();
     }
   }
 
   @Test
-  public void testSendFileWithRandomAccessFileRange() throws Exception {
+  public void testSendFileWithRandomAccessFileRange(Checkpoint checkpoint) throws Exception {
     int fileLength = 16 * 1024 * 1024;
     int offset = 1024 * 4;
     int expectedRange = fileLength - offset;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file, offset, expectedRange);
-    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(checkpoint, fileLength, sender, "video/mp4", expectedRange)) {
       raf.getFilePointer();
     }
   }
 
-  private RandomAccessFile testSendFileWithFileChannel(int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender,
+  private RandomAccessFile testSendFileWithFileChannel(Checkpoint checkpoint, int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender,
                                                        String expectedContentType, long expectedLength) throws Exception {
     Assume.assumeTrue(createBaseClientOptions().getProtocolVersion() == HttpVersion.HTTP_1_1 || createBaseServerOptions().getHttp2MultiplexImplementation());
     File file = TestUtils.tmpFile(".dat", flen);
     RandomAccessFile raf = new RandomAccessFile(file, "r");
-    server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(TestUtils.onSuccess(v -> {
-    })));
+    server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(checkpoint));
     startServer(testAddress);
-    Buffer body = client.request(requestOptions)
-      .compose(req -> req.send()
+    Buffer body = client
+      .request(requestOptions)
+      .compose(req -> req
+        .send()
         .expecting(HttpResponseExpectation.contentType(expectedContentType))
-        .compose(HttpClientResponse::body)).await();
+        .compose(HttpClientResponse::body))
+      .await();
     assertEquals(body.length(), expectedLength);
     return raf;
   }

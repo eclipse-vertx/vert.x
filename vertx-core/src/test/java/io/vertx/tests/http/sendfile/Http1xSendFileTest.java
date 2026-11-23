@@ -10,6 +10,8 @@
  */
 package io.vertx.tests.http.sendfile;
 
+import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
@@ -18,6 +20,7 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.test.core.FutureAssert;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
@@ -25,7 +28,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.concurrent.CountDownLatch;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
@@ -49,10 +53,10 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     server.requestHandler(req -> {
       try {
         barrier.await(10, TimeUnit.SECONDS);
-        req.response().sendFile(f.getAbsolutePath()).onComplete(TestUtils.onFailure(err -> {
-          // Broken pipe
-          checkpoint.succeed();
-        }));
+        // Broken pipe
+        FutureAssert.assertThat(req.response().sendFile(f.getAbsolutePath()))
+          .isFailure()
+          .verify(checkpoint);
       } catch (Exception e) {
         // this was the bug reported with issues/issue-80
         Assert.fail(e.getMessage());
@@ -76,7 +80,7 @@ public class Http1xSendFileTest extends HttpSendFileTest {
   }
 
   @Test
-  public void testSendFilePipelined(Checkpoint checkpoint) throws Exception {
+  public void testSendFilePipelined() throws Exception {
     int n = 2;
     File sent = TestUtils.tmpFile(".dat", 16 * 1024);
     server.requestHandler(
@@ -85,14 +89,15 @@ public class Http1xSendFileTest extends HttpSendFileTest {
       });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
-    CountDownLatch latch = checkpoint.asLatch(n);
+    List<Future<Buffer>> bodies = new ArrayList<>();
     for (int i = 0;i < n;i++) {
-      client.request(requestOptions)
-        .compose(req -> req.send().compose(HttpClientResponse::body))
-        .onComplete(TestUtils.onSuccess(body -> {
-          latch.countDown();
-        }));
+      bodies.add(client
+        .request(requestOptions)
+        .compose(req -> req
+          .send()
+          .compose(HttpClientResponse::body)));
     }
+    Future.all(bodies).await();
   }
 
   @Test
@@ -119,8 +124,10 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     startServer(testAddress);
     long now = System.currentTimeMillis();
     int[] length = {0};
-    Integer len = client.request(requestOptions)
-      .compose(req -> req.send()
+    Integer len = client
+      .request(requestOptions)
+      .compose(req -> req
+        .send()
         .compose(resp -> {
           resp.handler(buff -> {
             length[0] += buff.length();
@@ -132,7 +139,8 @@ public class Http1xSendFileTest extends HttpSendFileTest {
           resp.exceptionHandler(err -> Assert.fail(err.getMessage()));
           return resp.end();
         }))
-      .map(v -> length[0]).await();
+      .map(v -> length[0])
+      .await();
     assertEquals((int)len, file.length());
     return (int) (System.currentTimeMillis() - now);
   }
