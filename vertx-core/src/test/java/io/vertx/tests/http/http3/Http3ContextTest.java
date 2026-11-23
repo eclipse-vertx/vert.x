@@ -19,7 +19,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase2;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -68,13 +67,16 @@ public class Http3ContextTest extends VertxTestBase2 {
       Context ctx = Vertx.currentContext();
       assertEquals(threadingModel, ctx.threadingModel());
       assertIsDuplicate(req, ctx);
-      req.body().onComplete(TestUtils.onSuccess(body -> {
-        req.response().end(body);
-      }));
+      req
+        .body()
+        .compose(body -> req.response().end(body));
     });
 
     ContextInternal serverCtx = ((VertxInternal) vertx).createContext(threadingModel);
-    Future.future(p -> serverCtx.runOnContext(vertx -> server.listen(8443, "localhost").onComplete(p))).await();
+    serverCtx.<HttpServer>future(p -> server
+      .listen(8443, "localhost")
+      .onComplete(p))
+      .await();
 
     Buffer response = client.request(HttpMethod.POST, 8443, "localhost", "/")
       .compose(request -> request
@@ -107,22 +109,24 @@ public class Http3ContextTest extends VertxTestBase2 {
     ContextInternal connectionCtx = ((VertxInternal) vertx).createContext(threadingModel);
     ContextInternal streamCtx = ((VertxInternal) vertx).createContext(threadingModel);
 
-    HttpClientRequest request1 = Future.<HttpClientRequest>future(p -> connectionCtx.runOnContext(v -> client.request(HttpMethod.POST, 8443, "localhost", "/").onComplete(p))).await();
+    HttpConnection connection1 = requestOnContext(connectionCtx);
+    HttpConnection connection2 = requestOnContext(streamCtx);
 
-    Buffer body = request1.send().compose(response -> {
-      assertSame(connectionCtx, Vertx.currentContext());
-      return response.body();
-    }).await();
-    assertEquals("Hello World", body.toString());
+    assertSame(connection1, connection2);
+  }
 
-    HttpClientRequest request2 = Future.<HttpClientRequest>future(p -> streamCtx.runOnContext(v -> client.request(HttpMethod.POST, 8443, "localhost", "/").onComplete(p))).await();
-    body = request2.send().compose(response -> {
-      assertSame(streamCtx, Vertx.currentContext());
-      return response.body();
-    }).await();
-    assertEquals("Hello World", body.toString());
-
-    assertSame(request1.connection(), request2.connection());
+  private HttpConnection requestOnContext(ContextInternal ctx) {
+    return ctx.<HttpConnection>future(p -> client
+      .request(HttpMethod.POST, 8443, "localhost", "/")
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .peek(response -> assertSame(ctx, Vertx.currentContext()))
+        .compose(HttpClientResponse::body)
+        .peek(body -> assertEquals("Hello World", body.toString()))
+        .map(body -> request.connection()))
+      .onComplete(p))
+      .await();
   }
 
   private void assertIsDuplicate(HttpServerRequest request, Context context) {
