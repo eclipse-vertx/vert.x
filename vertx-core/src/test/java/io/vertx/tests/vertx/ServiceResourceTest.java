@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static org.junit.Assert.*;
 
 public class ServiceResourceTest extends VertxTestBase2 {
@@ -47,7 +48,7 @@ public class ServiceResourceTest extends VertxTestBase2 {
   }
 
   @Test
-  public void testStartSuccess(Checkpoint checkpoint) {
+  public void testStartSuccess() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     TestResource resource = new TestResource() {
       @Override
@@ -56,13 +57,11 @@ public class ServiceResourceTest extends VertxTestBase2 {
         return super.startImpl(ctx, args);
       }
     };
-    resource.start(context, null).onComplete(TestUtils.onSuccess(v -> {
-      checkpoint.succeed();
-    }));
+    resource.start(context, null).await();
   }
 
   @Test
-  public void testStartFailure(Checkpoint checkpoint) {
+  public void testStartFailure() {
     Throwable expected = new Throwable();
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     TestResource resource = new TestResource() {
@@ -71,10 +70,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
         return context.failedFuture(expected);
       }
     };
-    resource.start(context, null).onComplete(TestUtils.onFailure2(failure -> {
-      assertSame(expected, failure);
-      checkpoint.succeed();
-    }));
+    Throwable failure = assertThat(resource.start(context, null))
+      .isFailure()
+      .await();
+    assertSame(expected, failure);
   }
 
   @Test
@@ -83,11 +82,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
     TestResource resource = new TestResource() {
     };
     resource.start(context, null).await();
-    try {
-      resource.start(context, null).await();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThat(resource.start(context, null))
+      .isFailure()
+      .asInstanceOf(IllegalStateException.class)
+      .await();
   }
 
   @Test
@@ -104,11 +102,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
     Future<Void> start2 = resource.start(context, null);
     assertFalse(start2.isComplete());
     continuation.succeed();
-    try {
-      start2.await();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThat(start2)
+      .isFailure()
+      .asInstanceOf(IllegalStateException.class)
+      .await();
   }
 
   @Test
@@ -148,11 +145,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
     vertx.undeploy(context.deploymentID()).await();
     assertEquals(0, stop.get());
     continuation.succeed();
-    try {
-      start.await();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThat(start)
+      .isFailure()
+      .asInstanceOf(IllegalStateException.class)
+      .await();
     assertEquals(1, stop.get());
     TestUtils.assertWaitUntil(() -> resource.isDone());
   }
@@ -249,11 +245,10 @@ public class ServiceResourceTest extends VertxTestBase2 {
     Future<Void> started = resource.start((ContextInternal) vertx.getOrCreateContext(), null);
     Future<?> stopped = resource.stop((ContextInternal) vertx.getOrCreateContext());
     continuation.fail(failure);
-    try {
-      started.await();
-      fail();
-    } catch (VertxException expected) {
-    }
+    assertThat(started)
+      .isFailure()
+      .asInstanceOf(VertxException.class)
+      .await();
     stopped.await();
     assertEquals(0, stop.get());
     TestUtils.assertWaitUntil(() -> resource.isDone());
