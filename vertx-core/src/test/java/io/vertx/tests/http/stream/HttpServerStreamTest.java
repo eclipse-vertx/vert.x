@@ -31,7 +31,6 @@ import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -44,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static org.junit.Assert.*;
 
 public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
@@ -60,7 +60,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   public void setUp() throws Exception {
     super.setUp();
     server.requestHandler(request -> {
-      Assert.fail();
+      fail();
     });
     server.connectionHandler(connection -> {
       HttpServerConnection serverConnection = (HttpServerConnection)connection;
@@ -120,7 +120,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     for (int i = 0;i < numChunks;i++) {
       request.write(expectedChunk).await();
     }
-    request.end();
+    request.end().await();
   }
 
   @Test
@@ -267,18 +267,20 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
           checkpoint1.fail(new AssertionError("content delivered to the replaced decoder"));
         }
       };
-      stream.contentDecoder(replaced).onComplete(ar -> {
-        assertSame(HttpUtils.STREAM_CLOSED_EXCEPTION, ar.cause());
-        checkpoint1.succeed();
-      });
+      assertThat(stream.contentDecoder(replaced))
+        .isFailure()
+        .peek(err -> assertSame(HttpUtils.STREAM_CLOSED_EXCEPTION, err))
+        .verify(checkpoint1);
       ContentDecoderBase decoder = new ContentDecoderBase() {
       };
-      stream.contentDecoder(decoder).onComplete(ar -> {
-        assertEquals(RESULT, ar.result());
-        assertEquals(List.of("handleClose(" + HttpUtils.STREAM_CLOSED_EXCEPTION + ")"), replaced.events);
-        assertEquals(List.of("handle", "handleEnd"), decoder.events);
-        checkpoint2.succeed();
-      });
+      stream
+        .contentDecoder(decoder)
+        .peek(result -> {
+          assertEquals(RESULT, result);
+          assertEquals(List.of("handleClose(" + HttpUtils.STREAM_CLOSED_EXCEPTION + ")"), replaced.events);
+          assertEquals(List.of("handle", "handleEnd"), decoder.events);
+        })
+        .onComplete(checkpoint2);
     };
     startServer(testAddress);
     client
@@ -374,7 +376,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     HttpClientRequest request = client
       .request(requestOptions).await();
     request.setChunked(true).write("chunk-1").await();
-    request.end(lastChunk);
+    request.end(lastChunk).await();
   }
 
   @Test
@@ -407,7 +409,7 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
     handler = stream -> {
       AtomicBoolean sent = new AtomicBoolean();
       stream.closeHandler(head -> {
-        Assert.assertTrue(sent.get());
+        assertTrue(sent.get());
         checkpoint.succeed();
       });
       stream.trailersHandler(trailers -> {
@@ -458,14 +460,13 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       h.accept(stream);
     };
     startServer(testAddress);
-    HttpClientRequest request = client
+    client
       .request(requestOptions)
-      .compose(r -> r
+      .compose(request -> request
         .writeHead()
-        .compose(v -> r.response())
-        .map(v -> r))
+        .compose(v -> request.response())
+        .compose(response -> request.end()))
       .await();
-    request.end();
   }
 
   @Test
@@ -474,7 +475,6 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       stream.closeHandler(head -> checkpoint1.succeed());
       stream.exceptionHandler(err -> {
         if (err instanceof HttpClosedException) {
-          Assert.assertNotNull(err);
           checkpoint2.succeed();
         }
       });
@@ -498,7 +498,6 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
       stream.closeHandler(head -> checkpoint2.succeed());
       stream.exceptionHandler(err -> {
         if (err instanceof HttpClosedException) {
-          Assert.assertNotNull(err);
           checkpoint3.succeed();
         }
       });
@@ -661,10 +660,8 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
         null,
         stream.connection().newHeaders());
       stream.writeHead(head);
-      int count = 0;
       while (stream.isWritable()) {
         stream.write(chunk);
-        count++;
       }
       stream.drainHandler(v -> {
         stream.end(EMPTY_BUFFER);
@@ -689,20 +686,18 @@ public abstract class HttpServerStreamTest extends SimpleHttpTest2 {
   @Test
   public void testWriteInvalidChunk(Checkpoint checkpoint) throws Exception {
     testInvalidMessage(stream -> {
-      stream.write(Buffer.buffer("Hello World")).onComplete(ar -> {
-        Assert.assertTrue(ar.failed());
-        checkpoint.succeed();
-      });
+      assertThat(stream.write(Buffer.buffer("Hello World")))
+        .isFailure()
+        .verify(checkpoint);
     });
   }
 
   @Test
   public void testWriteInvalidTrailers(Checkpoint checkpoint) throws Exception {
     testInvalidMessage(stream -> {
-      stream.end(EMPTY_BUFFER).onComplete(ar -> {
-        Assert.assertTrue(ar.failed());
-        checkpoint.succeed();
-      });
+      assertThat(stream.end(EMPTY_BUFFER))
+        .isFailure()
+        .verify(checkpoint);
     });
   }
 
