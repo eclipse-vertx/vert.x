@@ -35,13 +35,13 @@ public class Http2MultiplexTest extends Http2Test {
   @Test
   @Ignore
   @Override
-  public void testServerStreamPriorityNoChange(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testServerStreamPriorityNoChange(Checkpoint checkpoint) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testClientStreamPriorityNoChange(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testClientStreamPriorityNoChange(Checkpoint checkpoint) throws Exception {
   }
 
   @Test
@@ -59,18 +59,18 @@ public class Http2MultiplexTest extends Http2Test {
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyPushPromise(Checkpoint checkpoint) throws Exception {
+  public void testStreamWeightAndDependencyPushPromise(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyInheritancePushPromise(Checkpoint checkpoint) throws Exception {
+  public void testStreamWeightAndDependencyInheritancePushPromise(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed(Checkpoint checkpoint) throws Exception {
+  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
   }
 }

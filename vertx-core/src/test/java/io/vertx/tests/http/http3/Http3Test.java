@@ -18,6 +18,7 @@ import io.netty.handler.codec.http3.Http3DataFrame;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpServerRequestImpl;
 import io.vertx.core.http.impl.http3.Http3ServerStream;
@@ -148,31 +149,38 @@ public class Http3Test extends HttpTest {
   }
 
   @Test
-  public void testChunkedRequestDoesNotSendTransferEncoding() throws Exception {
-    testRequestDoesNotSendTransferEncoding(req -> req.setChunked(true));
+  public void testChunkedRequestDoesNotSendTransferEncoding(Checkpoint checkpoint) throws Exception {
+    testRequestDoesNotSendTransferEncoding(checkpoint, req -> req.setChunked(true));
   }
 
   @Test
-  public void testStreamedRequestDoesNotSendTransferEncoding() throws Exception {
-    testRequestDoesNotSendTransferEncoding(req -> {});
+  public void testStreamedRequestDoesNotSendTransferEncoding(Checkpoint checkpoint) throws Exception {
+    testRequestDoesNotSendTransferEncoding(checkpoint, req -> {});
   }
 
-  private void testRequestDoesNotSendTransferEncoding(Consumer<HttpClientRequest> configurator) throws Exception {
-    server.requestHandler(req -> req.body().onComplete(TestUtils.onSuccess(body -> req
-      .response()
-      .putHeader("x-transfer-encoding", String.valueOf(req.getHeader(HttpHeaders.TRANSFER_ENCODING)))
-      .end(body))));
+  private void testRequestDoesNotSendTransferEncoding(Checkpoint checkpoint, Consumer<HttpClientRequest> configurator) throws Exception {
+    server.requestHandler(req -> req
+      .body()
+      .compose(body -> req
+        .response()
+        .putHeader("x-transfer-encoding", String.valueOf(req.getHeader(HttpHeaders.TRANSFER_ENCODING)))
+        .end(body))
+      .onComplete(checkpoint));
     startServer(testAddress);
-    HttpClientRequest request = client.request(requestOptions).await();
-    configurator.accept(request);
-    request.writeHead().await();
-    Future<Buffer> result = request.response()
-      .compose(response -> {
-        Assert.assertEquals("null", response.getHeader("x-transfer-encoding"));
-        return response.body();
-      });
-    request.end("hello");
-    Buffer body = result.await();
+    Buffer body = client
+      .request(requestOptions)
+      .compose(request -> {
+        configurator.accept(request);
+        Future<Buffer> response = request
+          .response()
+          .peek(resp -> Assert.assertEquals("null", resp.getHeader("x-transfer-encoding")))
+          .compose(HttpClientResponse::body);
+        return request
+          .writeHead()
+          .compose(v -> request.end("hello"))
+          .compose(v -> response);
+      })
+      .await();
     Assert.assertEquals("hello", body.toString());
   }
 }

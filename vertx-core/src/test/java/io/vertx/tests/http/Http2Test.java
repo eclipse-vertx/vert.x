@@ -40,8 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.test.core.AssertExpectations.that;
-import static io.vertx.test.core.TestUtils.onSuccess;
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.*;
 
@@ -59,9 +58,8 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testFlowControlReentrancyWithLargeWindows(Checkpoint checkpoint) throws Exception {
+  public void testFlowControlReentrancyWithLargeWindows() throws Exception {
     int numReq = 16;
-    CountDownLatch latch = checkpoint.asLatch(numReq);
     Buffer body = Buffer.buffer(TestUtils.randomAlphaString(512 * 1024));
     server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions());
     server.requestHandler(req -> req.response().end(body));
@@ -69,25 +67,27 @@ public class Http2Test extends HttpTest {
     HttpClientOptions clientOptions = Http2TestBase.createHttp2ClientOptions()
       .setInitialSettings(new Http2Settings().setInitialWindowSize(1024 * 1024))
       .setHttp2ConnectionWindowSize(16 * 1024 * 1024);
+    List<Future<?>> futures = new ArrayList<>();
     vertx.deployVerticle(new VerticleBase() {
       HttpClientAgent client;
       @Override
       public Future<?> start() throws Exception {
         client = vertx.httpClientBuilder().with(clientOptions).build();
         for (int i = 0; i < numReq; i++) {
-          client.request(requestOptions)
+          futures.add(client
+            .request(requestOptions)
             .compose(req -> req
               .send()
               .compose(resp -> {
                 resp.pause();
                 vertx.setTimer(250, id -> resp.resume());
                 return resp.end();
-              }))
-            .onComplete(TestUtils.onSuccess(v -> latch.countDown()));
+              })));
         }
         return super.start();
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).await();
+    Future.all(futures).await();
   }
 
   // Extra test
@@ -131,36 +131,40 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
-    client.request(requestOptions).compose(req -> req
+    MultiMap trailers = client
+      .request(requestOptions)
+      .compose(req -> req
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
-        .compose(resp -> resp.end().expecting(that(v -> {
-          assertEquals(1, resp.trailers().size());
-          assertEquals("trailer", resp.trailers().get("some"));
-        }))))
+        .compose(response -> response
+          .end()
+          .map(v -> response.trailers())))
       .await();
+    assertEquals(1, trailers.size());
+    assertEquals("trailer", trailers.get("some"));
   }
 
   @Test
-  public void testServerResponseResetFromOtherThread(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testServerResponseResetFromOtherThread(Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
       runAsync(() -> {
         req.response().reset(0);
       });
     });
     startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .response().onComplete(TestUtils.onFailure(err -> {
-          assertTrue(err instanceof StreamResetException);
-          checkpoint1.succeed();
-        }));
-      req.exceptionHandler(err -> {
-          assertTrue(err instanceof StreamResetException);
-          checkpoint2.succeed();
-        })
-        .writeHead();
-    }));
+    HttpClientRequest req = client
+      .request(requestOptions)
+      .await();
+    Future<HttpClientResponse> response = req.response();
+    req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        checkpoint.succeed();
+      })
+      .writeHead();
+    assertThat(response)
+      .isFailure()
+      .asInstanceOf(StreamResetException.class)
+      .await();
   }
 
   void runAsync(Runnable runnable) {
@@ -174,7 +178,7 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testClientRequestWriteFromOtherThread(Checkpoint checkpoint) throws Exception {
+  public void testClientRequestWriteFromOtherThread() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       latch.countDown();
@@ -183,25 +187,27 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
-    client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.response()
-          .expecting(HttpResponseExpectation.SC_OK)
-          .onComplete(checkpoint);
-        req
-          .setChunked(true)
-          .writeHead();
-        new Thread(() -> {
-          try {
-            latch.await(10, TimeUnit.SECONDS);
-          } catch (InterruptedException e) {
-            Assert.fail(e.getMessage());
-            return;
-          }
-          req.write("hello ");
-          req.end("world");
-        }).start();
-      }));
+    HttpClientRequest req = client
+      .request(requestOptions)
+      .await();
+    Future<HttpClientResponse> response = req
+      .response()
+      .expecting(HttpResponseExpectation.SC_OK);
+    req
+      .setChunked(true)
+      .writeHead()
+      .await();
+    new Thread(() -> {
+      try {
+        latch.await(10, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        Assert.fail(e.getMessage());
+        return;
+      }
+      req.write("hello ");
+      req.end("world");
+    }).start();
+    response.await();
   }
 
   @Test
@@ -224,21 +230,22 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testResetClientRequestNotYetSent(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testResetClientRequestNotYetSent() throws Exception {
     server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
     server.requestHandler(req -> {
       Assert.fail();
     });
     startServer(testAddress);
-    client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req
-          .response()
-          .onComplete(TestUtils.onFailure(err -> checkpoint1.succeed()));
-        req
-          .reset()
-          .onComplete(checkpoint2);
-      }));
+    HttpClientRequest req = client
+      .request(requestOptions)
+      .await();
+    Future<HttpClientResponse> response = req.response();
+    req
+      .reset()
+      .await();
+    assertThat(response)
+      .isFailure()
+      .await();
   }
 
   @Test
@@ -257,9 +264,10 @@ public class Http2Test extends HttpTest {
       .with(Http2TestBase.createHttp2ClientOptions())
       .withConnectHandler(conn -> conn.closeHandler(v -> closed.incrementAndGet()))
       .build();
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(TestUtils.onFailure(err -> {}));
-    }));
+    assertThat(client.request(requestOptions))
+      .compose(HttpClientRequest::send)
+      .isFailure()
+      .await();
     AsyncTestBase.assertWaitUntil(() -> closed.get() == 1);
     client.request(requestOptions)
       .compose(request -> request
@@ -313,9 +321,8 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testServePendingRequests(Checkpoint checkpoint) throws Exception {
+  public void testServePendingRequests() throws Exception {
     int n = 10;
-    CountDownLatch latch = checkpoint.asLatch(n);
     LinkedList<HttpServerRequest> requests = new LinkedList<>();
     Set<HttpConnection> connections = new HashSet<>();
     server.requestHandler(req -> {
@@ -329,11 +336,13 @@ public class Http2Test extends HttpTest {
       }
     });
     startServer(testAddress);
+    List<Future<?>> futures = new ArrayList<>();
     for (int i = 0;i < n;i++) {
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> latch.countDown()));
-      }));
+      futures.add(client
+        .request(requestOptions)
+        .compose(HttpClientRequest::send));
     }
+    Future.all(futures).await();
   }
 
   @Test
@@ -478,7 +487,7 @@ public class Http2Test extends HttpTest {
           .setWeight(requestStreamWeight)
           .setExclusive(false))
         .response()
-        .onComplete(onSuccess(resp -> {
+        .peek(resp -> {
           assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
           assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
           resp.streamPriorityHandler(sp -> {
@@ -488,8 +497,8 @@ public class Http2Test extends HttpTest {
             assertEquals(responseStreamDependency2, resp.request().getStreamPriority().getDependency());
             checkpoint3.succeed();
           });
-          checkpoint4.succeed();
-        }));
+        })
+        .onComplete(checkpoint4);
       return req
         .writeHead()
         .compose(v -> req
@@ -502,7 +511,7 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testServerStreamPriorityNoChange(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testServerStreamPriorityNoChange(Checkpoint checkpoint) throws Exception {
     int dependency = 56;
     short weight = 43;
     boolean exclusive = true;
@@ -515,34 +524,37 @@ public class Http2Test extends HttpTest {
       assertEquals(exclusive, req.streamPriority().isExclusive());
       req.response().end();
       req.endHandler(v -> {
-        checkpoint1.succeed();
+        checkpoint.succeed();
       });
     });
     startServer(testAddress);
     client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .response().onComplete(onSuccess(resp -> {
-          resp.endHandler(v -> checkpoint2.succeed());
-        }));
-      req.setStreamPriority(new StreamPriority()
-        .setDependency(dependency)
-        .setWeight(weight)
-        .setExclusive(exclusive));
-      req
-        .writeHead()
-        .onComplete(h -> {
+    client
+      .request(requestOptions)
+      .compose(req -> {
+        Future<Void> end = req
+          .response()
+          .compose(HttpClientResponse::end);
         req.setStreamPriority(new StreamPriority()
           .setDependency(dependency)
           .setWeight(weight)
           .setExclusive(exclusive));
-        req.end();
-      });
-    }));
+        return req
+          .writeHead()
+          .compose(v -> {
+            req.setStreamPriority(new StreamPriority()
+              .setDependency(dependency)
+              .setWeight(weight)
+              .setExclusive(exclusive));
+            return req.end();
+          })
+          .compose(v -> end);
+      })
+      .await();
   }
 
   @Test
-  public void testClientStreamPriorityNoChange(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testClientStreamPriorityNoChange(Checkpoint checkpoint) throws Exception {
     int dependency = 98;
     short weight = 55;
     boolean exclusive = false;
@@ -557,23 +569,24 @@ public class Http2Test extends HttpTest {
         .setWeight(weight)
         .setExclusive(exclusive));
       req.response().end("world");
-      req.endHandler(v -> checkpoint1.succeed());
+      req.endHandler(v -> checkpoint.succeed());
     });
     startServer(testAddress);
     client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
+    client
+      .request(requestOptions)
+      .compose(req -> req
         .send()
-        .onComplete(onSuccess(resp -> {
+        .peek(resp -> {
           assertEquals(weight, resp.request().getStreamPriority().getWeight());
           assertEquals(dependency, resp.request().getStreamPriority().getDependency());
           assertEquals(exclusive, resp.request().getStreamPriority().isExclusive());
           resp.streamPriorityHandler(sp -> {
             Assert.fail("Stream priority handler should not be called");
           });
-          resp.endHandler(v -> checkpoint2.succeed());
-        }));
-    }));
+        })
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
   @Test
@@ -624,17 +637,20 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyPushPromise(Checkpoint checkpoint) throws Exception {
+  public void testStreamWeightAndDependencyPushPromise(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     int pushStreamDependency = 456;
     short pushStreamWeight = 14;
     server.requestHandler(req -> {
-      req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(pushedResp -> {
-        pushedResp.setStreamPriority(new StreamPriority()
-          .setDependency(pushStreamDependency)
-          .setWeight(pushStreamWeight)
-          .setExclusive(false));
-        pushedResp.end();
-      }));
+      req
+        .response()
+        .push(HttpMethod.GET, "/pushpath")
+        .compose(pushedResp -> pushedResp
+          .setStreamPriority(new StreamPriority()
+            .setDependency(pushStreamDependency)
+            .setWeight(pushStreamWeight)
+            .setExclusive(false))
+          .end())
+        .onComplete(checkpoint1);
       req.response().end();
     });
     startServer(testAddress);
@@ -644,11 +660,11 @@ public class Http2Test extends HttpTest {
         .pushHandler(pushReq -> {
           pushReq
             .response()
-            .onComplete(onSuccess(pushResp -> {
+            .peek(pushResp -> {
               assertEquals(pushStreamDependency, pushResp.request().getStreamPriority().getDependency());
               assertEquals(pushStreamWeight, pushResp.request().getStreamPriority().getWeight());
-              checkpoint.succeed();
-            }));
+            })
+            .onComplete(checkpoint2);
         })
         .send()
         .compose(HttpClientResponse::end)
@@ -656,12 +672,15 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyInheritancePushPromise(Checkpoint checkpoint) throws Exception {
+  public void testStreamWeightAndDependencyInheritancePushPromise(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     int reqStreamDependency = 556;
     short reqStreamWeight = 84;
     server.requestHandler(req -> {
       HttpServerResponse response = req.response();
-      response.push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(HttpServerResponse::end));
+      response
+        .push(HttpMethod.GET, "/pushpath")
+        .compose(HttpServerResponse::end)
+        .onComplete(checkpoint1);
       response.end();
     });
     startServer(testAddress);
@@ -673,11 +692,11 @@ public class Http2Test extends HttpTest {
           .pushHandler(pushReq -> {
             pushReq
               .response()
-              .onComplete(onSuccess(pushResp -> {
-              assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
-              assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
-              checkpoint.succeed();
-            }));
+              .peek(pushResp -> {
+                assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
+                assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
+              })
+              .onComplete(checkpoint2);
           }).setStreamPriority(
             new StreamPriority()
               .setDependency(reqStreamDependency)
@@ -804,7 +823,7 @@ public class Http2Test extends HttpTest {
    * the pool.
    */
   @Test
-  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed(Checkpoint checkpoint) throws Exception {
+  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
     Set<HttpConnection> serverConnections = new HashSet<>();
     server.requestHandler(req -> {
       serverConnections.add(req.connection());
@@ -826,20 +845,23 @@ public class Http2Test extends HttpTest {
       }
     });
     startServer(testAddress);
-    Future<Buffer> f1 = client.request(new RequestOptions(requestOptions).setURI("/1"))
-      .compose(req -> req.send()
-        .compose(HttpClientResponse::body));
-    f1.onComplete(onSuccess(v -> {
-      Future<Buffer> f2 = client.request(new RequestOptions(requestOptions).setURI("/2"))
-        .compose(req -> req.send()
-          .compose(HttpClientResponse::body));
-      f2.onComplete(TestUtils.onFailure(v2 -> {
-        Future<Buffer> f3 = client.request(new RequestOptions(requestOptions).setURI("/3"))
-          .compose(req -> req.send()
-            .compose(HttpClientResponse::body));
-        f3.onComplete(checkpoint);
-      }));
-    }));
+    client
+      .request(new RequestOptions(requestOptions).setURI("/1"))
+      .compose(req -> req
+        .send()
+        .compose(HttpClientResponse::body))
+      .compose(v -> assertThat(client
+          .request(new RequestOptions(requestOptions).setURI("/2"))
+          .compose(req -> req
+            .send()
+            .compose(HttpClientResponse::body)))
+        .isFailure())
+      .compose(err -> client
+        .request(new RequestOptions(requestOptions).setURI("/3"))
+        .compose(req -> req
+          .send()
+          .compose(HttpClientResponse::body)))
+      .await();
   }
 
   @Test
@@ -848,22 +870,26 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     int num = HttpServerOptions.DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW + 1;
+    List<Future<?>> futures = new ArrayList<>();
     for (int i = 0;i < num;i++) {
       int val = i;
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        if (val == 0) {
-          req
-            .connection()
-            .goAwayHandler(ga -> {
-              assertEquals(11, ga.getErrorCode()); // Enhance your calm
-              checkpoint.succeed();
-            });
-        }
-        req.end().onComplete(onSuccess(v -> {
-          req.reset();
+      futures.add(client
+        .request(requestOptions)
+        .compose(req -> {
+          if (val == 0) {
+            req
+              .connection()
+              .goAwayHandler(ga -> {
+                assertEquals(11, ga.getErrorCode()); // Enhance your calm
+                checkpoint.succeed();
+              });
+          }
+          return req
+            .end()
+            .peek(v -> req.reset());
         }));
-      }));
     }
+    Future.all(futures).await();
   }
 
   @Test
@@ -871,19 +897,20 @@ public class Http2Test extends HttpTest {
     server.requestHandler(req -> {
     });
     startServer(testAddress);
-    client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.exceptionHandler(err -> {
-          assertTrue(err instanceof StreamResetException);
-          StreamResetException sre = (StreamResetException) err;
-          assertEquals(10, sre.getCode());
-          checkpoint.succeed();
-        });
-        // Force stream allocation
-        req.writeHead().onComplete(onSuccess(v -> {
-          req.reset(10);
-        }));
-      }));
+    HttpClientRequest req = client
+      .request(requestOptions)
+      .await();
+    req.exceptionHandler(err -> {
+      assertTrue(err instanceof StreamResetException);
+      StreamResetException sre = (StreamResetException) err;
+      assertEquals(10, sre.getCode());
+      checkpoint.succeed();
+    });
+    // Force stream allocation
+    req
+      .writeHead()
+      .await();
+    req.reset(10);
   }
 
   @Test
@@ -906,16 +933,13 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1));
-    try {
-      client.request(requestOptions).compose(request -> request.send()
+    assertThat(client.request(requestOptions))
+      .compose(request -> request
+        .send()
         .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::end)
-        .map(request.version()))
-        .await();
-      Assert.fail();
-    } catch (Exception ignore) {
-      // Expected
-    }
+        .compose(HttpClientResponse::end))
+      .isFailure()
+      .await();
   }
 
   @Test
@@ -932,13 +956,12 @@ public class Http2Test extends HttpTest {
     });
 
     server.requestHandler(request -> {
-      request
+      assertThat(request
         .response()
-        .sendFile(res.getAbsolutePath())
-        .onComplete(TestUtils.onFailure(ar -> {
-          assertEquals(0, errors.get());
-          checkpoint.succeed();
-        }));
+        .sendFile(res.getAbsolutePath()))
+        .isFailure()
+        .peek(err -> assertEquals(0, errors.get()))
+        .verify(checkpoint);
     });
 
     startServer();
