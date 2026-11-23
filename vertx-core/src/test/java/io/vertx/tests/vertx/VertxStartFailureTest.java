@@ -108,8 +108,8 @@ public class VertxStartFailureTest extends AsyncTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     Transport transport = new NioTransport() {
       @Override
-      public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
-        EventLoopGroup eventLoop = super.eventLoopGroup(type, nThreads, threadFactory, ioRatio);
+      public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory) {
+        EventLoopGroup eventLoop = super.eventLoopGroup(type, nThreads, threadFactory);
         loops.add(eventLoop);
         return eventLoop;
       }
