@@ -55,7 +55,7 @@ public class Http3Test extends HttpTest {
   @Ignore("Requires fixe of stream cancellation")
   @Test
   @Override
-  public void testFollowRedirectPropagatesTimeout(Checkpoint checkpoint) {
+  public void testFollowRedirectPropagatesTimeout() {
   }
 
   @Ignore()

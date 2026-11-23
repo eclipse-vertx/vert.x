@@ -5081,8 +5081,8 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHttpUpgrade(Checkpoint checkpoint) {
-    testHttpConnect(checkpoint, new RequestOptions(requestOptions).setMethod(HttpMethod.GET).addHeader(HttpHeaders.CONNECTION, "UpGrAdE"), 101);
+  public void testHttpUpgrade(Checkpoint checkpoint1, Checkpoint checkpoint2) {
+    testHttpConnect(checkpoint1, checkpoint2, new RequestOptions(requestOptions).setMethod(HttpMethod.GET).addHeader(HttpHeaders.CONNECTION, "UpGrAdE"), 101);
   }
 
   @Test
