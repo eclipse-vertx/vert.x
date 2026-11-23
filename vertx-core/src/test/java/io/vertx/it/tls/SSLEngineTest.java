@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLSessionContext;
 
-import static io.vertx.test.core.AssertExpectations.that;
 import static org.junit.Assert.*;
 
 /**
@@ -104,10 +103,11 @@ public class SSLEngineTest extends HttpTestBase2 {
       .setTrustAll(true)
       .setVerifyHost(false)
       .setProtocolVersion(version));
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+    client
+      .request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
       .await();
   }
