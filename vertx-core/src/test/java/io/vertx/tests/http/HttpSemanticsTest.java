@@ -30,8 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static io.vertx.core.http.HttpMethod.HEAD;
-import static io.vertx.test.core.AssertExpectations.that;
-import static io.vertx.test.core.TestUtils.onSuccess;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -200,11 +198,14 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
     });
 
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+    client
+      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
-        .compose(HttpClientResponse::end))
+        .compose(resp -> {
+          assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH));
+          return resp.end();
+        }))
       .await();
   }
 
@@ -219,11 +220,14 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
     });
 
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+    client
+      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
-        .compose(HttpClientResponse::end))
+        .compose(resp -> {
+          assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH));
+          return resp.end();
+        }))
       .await();
   }
 
@@ -256,8 +260,8 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
   @Test
   public void testHeadResponseBodyWriteAcknowledged(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     server.requestHandler(req -> {
-      req.response().write("HEL").onComplete(onSuccess(v -> checkpoint1.succeed()));
-      req.response().end("LO").onComplete(onSuccess(v -> checkpoint2.succeed()));
+      req.response().write("HEL").onComplete(checkpoint1);
+      req.response().end("LO").onComplete(checkpoint2);
     });
     startServer(testAddress);
     checkSuppressedResponseBody(HEAD, 200);
@@ -299,7 +303,7 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
     File file = setupFile("head-sendfile.txt", "HELLO HTTP SEMANTICS");
     server.requestHandler(req -> req.response()
       .sendFile(file.getAbsolutePath())
-      .onComplete(onSuccess(v -> checkpoint.succeed())));
+      .onComplete(checkpoint));
     startServer(testAddress);
     checkSuppressedResponseBody(HEAD, 200);
   }
@@ -318,14 +322,15 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
   }
 
   private HttpClientResponse checkSuppressedResponseBody(HttpMethod method, int sc) throws Exception {
-    return client.request(new RequestOptions(requestOptions).setMethod(method))
+    return client
+      .request(new RequestOptions(requestOptions).setMethod(method))
       .compose(req -> req
         .setFollowRedirects(false)
         .send()
-        .expecting(that(resp -> assertEquals(sc, resp.statusCode())))
+        .expecting(HttpResponseExpectation.status(sc))
         .compose(resp -> resp
           .body()
-          .expecting(that(body -> assertEquals(0, body.length())))
+          .peek(body -> assertEquals(0, body.length()))
           .map(body -> resp)))
       .await(20, TimeUnit.SECONDS);
   }
@@ -344,13 +349,14 @@ public abstract class HttpSemanticsTest extends SimpleHttpTest2 {
       resp.end("hello");
     });
     startServer(testAddress);
-    MultiMap respHeaders = client.request(new RequestOptions(requestOptions))
+    MultiMap respHeaders = client
+      .request(new RequestOptions(requestOptions))
       .compose(req -> req
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(resp -> resp
           .body()
-          .expecting(that(body -> assertEquals("hello", body.toString())))
+          .peek(body -> assertEquals("hello", body.toString()))
           .map(body -> resp.headers())))
       .await(20, TimeUnit.SECONDS);
     assertConnectionHeadersSanitized(respHeaders);
