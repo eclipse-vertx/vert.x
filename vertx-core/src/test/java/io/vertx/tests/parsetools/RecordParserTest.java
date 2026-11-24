@@ -11,8 +11,10 @@
 
 package io.vertx.tests.parsetools;
 
+import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakestream.FakeStream;
@@ -489,6 +491,15 @@ public class RecordParserTest {
     for (int i = 0; i < 20; i++) {
       assertEquals(12, inputBuffers.get(i).length());
     }
+  }
+
+  @Test
+  public void shouldNotGrowInitialBuffer() {
+    List<String> records = new ArrayList<>();
+    RecordParser parser = RecordParser.newDelimited("\n", buff -> records.add(buff.toString()));
+    parser.handle(BufferInternal.buffer(Unpooled.wrappedBuffer("foo".getBytes())));
+    parser.handle(BufferInternal.buffer(Unpooled.wrappedBuffer("bar\n".getBytes())));
+    assertEquals(List.of("foobar"), records);
   }
 
   // Not sure what this tests

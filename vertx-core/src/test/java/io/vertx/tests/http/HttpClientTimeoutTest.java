@@ -12,6 +12,8 @@ package io.vertx.tests.http;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -25,15 +27,13 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.test.core.TestUtils.onFailure;
-import static io.vertx.test.core.TestUtils.onSuccess;
 import static org.junit.Assert.*;
+import static io.vertx.test.core.FutureAssert.assertThat;
 
 public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
 
@@ -87,7 +87,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
   }
 
   @Test
-  public void testTimedOutWaiterDoesNotConnect(Checkpoint checkpoint) throws Exception {
+  public void testTimedOutWaiterDoesNotConnect() throws Exception {
     Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
     Assume.assumeTrue("HTTP/2 don't pass this test", createBaseClientOptions().getProtocolVersion() == HttpVersion.HTTP_1_1);
     long responseDelay = 300;
@@ -115,82 +115,77 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     });
     server.listen(testAddress).await();
 
-    CountDownLatch latch = checkpoint.asLatch(requests);
+    List<Future<?>> futures = new ArrayList<>();
     for(int count = 0; count < requests; count++) {
       if (count % 2 == 0) {
-        client.request(requestOptions)
+        futures.add(assertThat(client.request(requestOptions))
           .compose(req -> req
             .send()
             .expecting(HttpResponseExpectation.SC_OK)
             .compose(HttpClientResponse::body))
-          .onComplete(onSuccess(buff -> {
-            assertEquals("OK", buff.toString());
-            latch.countDown();
-          }));
+          .peek(buff -> assertEquals("OK", buff.toString())));
       } else {
         // Odd requests get a timeout less than the responseDelay, since we have a pool size of one and a delay all but
         // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
         // (requests + 1 / 2) connect attempts
-        client
-          .request(new RequestOptions(requestOptions).setConnectTimeout(responseDelay / 2))
-          .onComplete(onFailure(err -> {
-            latch.countDown();
-          }));
+        futures.add(assertThat(client
+          .request(new RequestOptions(requestOptions).setConnectTimeout(responseDelay / 2)))
+          .isFailure());
       }
     }
-
-    checkpoint.awaitSuccess();
+    Future.all(futures).await();
 
     assertEquals("Incorrect number of connect attempts.", (requests + 1) / 2, requestCount.get());
   }
 
   @Test
-  public void testRequestTimeoutIsNotDelayedAfterResponseIsReceived(Checkpoint checkpoint) throws Exception {
+  public void testRequestTimeoutIsNotDelayedAfterResponseIsReceived() throws Exception {
     int n = 6;
-    CountDownLatch latch = checkpoint.asLatch(n);
     server.requestHandler(req -> {
       req.response().end();
     });
     startServer(testAddress);
+    List<Future<?>> futures = new ArrayList<>();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
         client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0;i < n;i++) {
-          client.request(requestOptions).onComplete(onSuccess(req -> {
-            req.idleTimeout(500);
-            req.send().onComplete(onSuccess(resp -> {
+          futures.add(client.request(requestOptions)
+            .compose(req -> {
+              req.idleTimeout(500);
+              return req.send();
+            })
+            .compose(resp -> {
               try {
                 Thread.sleep(150);
               } catch (InterruptedException e) {
-                fail(e.getMessage());
+                return Future.failedFuture(e);
               }
               // Complete later, if some timeout tasks have been queued, this will be executed after
-              vertx.runOnContext(v -> latch.countDown());
+              Promise<Void> later = Promise.promise();
+              vertx.runOnContext(v -> later.complete());
+              return later.future();
             }));
-          }));
         }
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).await();
+    Future.all(futures).await();
   }
 
   @Test
-  public void testRequestTimeoutCanceledWhenRequestEndsNormally(Checkpoint checkpoint) throws Exception {
+  public void testRequestTimeoutCanceledWhenRequestEndsNormally() throws Exception {
     server.requestHandler(req -> req.response().end());
     startServer(testAddress);
     AtomicReference<Throwable> exception = new AtomicReference<>();
-    vertx.setTimer(1000, id -> {
-      assertNull("Did not expect any exception", exception.get());
-      checkpoint.succeed();
-    });
-    client
-      .request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req
-          .exceptionHandler(exception::set)
-          .idleTimeout(500)
-          .end();
-    }));
+    HttpClientRequest req = client.request(requestOptions).await();
+    req
+      .exceptionHandler(exception::set)
+      .idleTimeout(500)
+      .end()
+      .await();
+    vertx.timer(1000).await();
+    assertNull("Did not expect any exception", exception.get());
   }
 
   @Test
@@ -219,7 +214,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
   }
 
   @Test
-  public void testHttpClientRequestTimeoutResetsTheConnection(Checkpoint cp1, Checkpoint cp2, Checkpoint cp3) throws Exception {
+  public void testHttpClientRequestTimeoutResetsTheConnection(Checkpoint cp1, Checkpoint cp2) throws Exception {
     server.requestHandler(req -> {
       AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
@@ -233,18 +228,25 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
       });
     });
     startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.response().onComplete(onFailure(rr -> {
-        cp2.succeed();
-      }));
-      req.setChunked(true).writeHead().onComplete(onSuccess(version -> req.idleTimeout(500)));
-      AtomicBoolean errored = new AtomicBoolean();
-      req.exceptionHandler(err -> {
-        if (errored.compareAndSet(false, true)) {
-          cp3.succeed();
-        }
-      });
-    }));
+    assertThat(client.request(requestOptions))
+      .compose(req -> {
+        AtomicBoolean errored = new AtomicBoolean();
+        req.exceptionHandler(err -> {
+          if (errored.compareAndSet(false, true)) {
+            cp2.succeed();
+          }
+        });
+        return req
+          .setChunked(true)
+          .writeHead()
+          .compose(version -> {
+            req.idleTimeout(500);
+            return req.response();
+          });
+      })
+      .isFailure()
+      .asInstanceOf(TimeoutException.class)
+      .await();
   }
 
   @Test
@@ -255,53 +257,55 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     });
     startServer(testAddress);
     Buffer received = Buffer.buffer();
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.response().onComplete(onSuccess(resp -> {
+    client
+      .request(requestOptions)
+      .compose(req -> {
+        Future<HttpClientResponse> response = req
+          .response()
+          .peek(resp -> {
+            AtomicInteger count = new AtomicInteger();
+            resp.exceptionHandler(t -> {
+              if (count.getAndIncrement() == 0) {
+                assertTrue(t instanceof TimeoutException);
+                assertEquals(expected, received);
+                cp1.succeed();
+              }
+            });
+            resp.request().idleTimeout(500);
+            resp.handler(buff -> {
+              received.appendBuffer(buff);
+              // Force the internal timer to be rescheduled with the remaining amount of time
+              // e.g around 100 ms
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              }
+            });
+          });
         AtomicInteger count = new AtomicInteger();
-        resp.exceptionHandler(t -> {
+        req.exceptionHandler(t -> {
           if (count.getAndIncrement() == 0) {
             assertTrue(t instanceof TimeoutException);
             assertEquals(expected, received);
-            cp1.succeed();
+            cp2.succeed();
           }
         });
-        resp.request().idleTimeout(500);
-        resp.handler(buff -> {
-          received.appendBuffer(buff);
-          // Force the internal timer to be rescheduled with the remaining amount of time
-          // e.g around 100 ms
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-        });
-      }));
-      AtomicInteger count = new AtomicInteger();
-      req.exceptionHandler(t -> {
-        if (count.getAndIncrement() == 0) {
-          assertTrue(t instanceof TimeoutException);
-          assertEquals(expected, received);
-          cp2.succeed();
-        }
-      });
-      req.writeHead();
-    }));
+        return req
+          .writeHead()
+          .compose(v -> response);
+      })
+      .await();
   }
 
   @Test
-  public void testRequestTimesOutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer(Checkpoint checkpoint) throws Exception {
+  public void testRequestTimesOutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() throws Exception {
     server.requestHandler(req -> {}); // No response handler so timeout triggers
-    AtomicBoolean failed = new AtomicBoolean();
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setIdleTimeout(1000))
-      .compose(HttpClientRequest::send).onComplete(onFailure(t -> {
-        // Catch the first, the second is going to be a connection closed exception when the
-        // server is shutdown on testComplete
-        if (failed.compareAndSet(false, true)) {
-          checkpoint.succeed();
-        }
-      }));
+    assertThat(client.request(new RequestOptions(requestOptions).setIdleTimeout(1000)))
+      .compose(HttpClientRequest::send)
+      .isFailure()
+      .await();
   }
 
   @Test
@@ -333,7 +337,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
   }
 
   @Test
-  public void testRequestsTimeoutInQueue(Checkpoint checkpoint) throws Exception {
+  public void testRequestsTimeoutInQueue() throws Exception {
 
     server.requestHandler(req -> {
       vertx.setTimer(1000, id -> {
@@ -350,14 +354,12 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     startServer(testAddress);
 
     // Add a few requests that should all timeout
-    CountDownLatch latch = checkpoint.asLatch(5);
+    List<Future<?>> timeouts = new ArrayList<>();
     for (int i = 0; i < 5; i++) {
-      client.request(new RequestOptions(requestOptions).setIdleTimeout(500))
+      timeouts.add(assertThat(client.request(new RequestOptions(requestOptions).setIdleTimeout(500)))
         .compose(HttpClientRequest::send)
-        .onComplete(onFailure(t -> {
-          assertTrue(t instanceof TimeoutException);
-          latch.countDown();
-        }));
+        .isFailure()
+        .asInstanceOf(TimeoutException.class));
     }
     // Now another request that should not timeout
     client.request(new RequestOptions(requestOptions).setIdleTimeout(3000))
@@ -366,5 +368,6 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(resp -> resp.end()))
       .await();
+    Future.all(timeouts).await();
   }
 }

@@ -12,6 +12,7 @@ package io.vertx.core.net.endpoint.impl;
 
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.endpoint.*;
 import io.vertx.core.internal.VertxInternal;
@@ -80,7 +81,13 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
   @Override
   public Future<io.vertx.core.net.endpoint.Endpoint> resolveEndpoint(Address address) {
-    return vertx.future(promise -> lookupEndpoint(address, promise));
+    Promise<io.vertx.core.net.endpoint.Endpoint> promise = vertx.promise();
+    try {
+      lookupEndpoint(address, promise);
+    } catch (Throwable t) {
+      promise.tryFail(t);
+    }
+    return promise.future();
   }
 
   public void lookupEndpoint(Address address, Completable<Endpoint> promise) {

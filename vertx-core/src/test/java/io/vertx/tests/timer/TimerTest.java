@@ -227,26 +227,27 @@ public class TimerTest extends VertxTestBase2 {
   }
 
   @Test
-  public void testUndeployCancelTimer(Checkpoint checkpoint) {
-    testUndeployCancellation(checkpoint, () -> vertx.setTimer(1000, id -> {}));
+  public void testUndeployCancelTimer() {
+    testUndeployCancellation(() -> vertx.setTimer(1000, id -> {}));
   }
 
   @Test
-  public void testUndeployCancelPeriodic(Checkpoint checkpoint) {
-    testUndeployCancellation(checkpoint, () -> vertx.setPeriodic(1000, id -> {}));
+  public void testUndeployCancelPeriodic() {
+    testUndeployCancellation(() -> vertx.setPeriodic(1000, id -> {}));
   }
 
-  private void testUndeployCancellation(Checkpoint checkpoint, Supplier<Long> f) {
+  private void testUndeployCancellation(Supplier<Long> f) {
     AtomicLong timer = new AtomicLong();
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() {
-        timer.set(f.get());
-      }
-    }).compose(deployment -> vertx.undeploy(deployment)).onComplete(TestUtils.onSuccess(v -> {
-      Assert.assertFalse(vertx.cancelTimer(timer.get()));
-      checkpoint.succeed();
-    }));
+    vertx
+      .deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start() {
+          timer.set(f.get());
+        }
+      })
+      .compose(deployment -> vertx.undeploy(deployment))
+      .await();
+    Assert.assertFalse(vertx.cancelTimer(timer.get()));
   }
 
   @Repeat(times = 20)
@@ -376,25 +377,20 @@ public class TimerTest extends VertxTestBase2 {
         ((ContextInternal)context).setTimer(1000, id -> {
           checkpoint1.succeed();
         });
-        context.runOnContext(v -> {
-          vertx.undeploy(context.deploymentID()).onComplete(TestUtils.onSuccess(ar -> {
-            ((ContextInternal)context).setTimer(1, id -> {
-              checkpoint2.succeed();
-            });
-          }));
-        });
+        context.runOnContext(v -> vertx
+          .undeploy(context.deploymentID())
+          .compose(ar -> ((ContextInternal)context).timer(1))
+          .onComplete(checkpoint2));
       }
     });
   }
 
   @Test
-  public void testTimerFire(Checkpoint checkpoint) {
+  public void testTimerFire() {
     long now = System.nanoTime();
     Timer timer = vertx.timer(1, TimeUnit.SECONDS);
-    timer.onComplete(TestUtils.onSuccess(v -> {
-      Assert.assertTrue(System.nanoTime() - now >= TimeUnit.SECONDS.toNanos(1));
-      checkpoint.succeed();
-    }));
+    timer.await();
+    Assert.assertTrue(System.nanoTime() - now >= TimeUnit.SECONDS.toNanos(1));
   }
 
   @Test
@@ -405,10 +401,9 @@ public class TimerTest extends VertxTestBase2 {
       ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
       ref2.set(ctx);
       Timer timer = vertx.timer(10, TimeUnit.MILLISECONDS);
-      timer.onComplete(TestUtils.onSuccess(v -> {
-        ref1.set((ContextInternal)Vertx.currentContext());
-        checkpoint.succeed();
-      }));
+      timer
+        .peek(v -> ref1.set((ContextInternal)Vertx.currentContext()))
+        .onComplete(checkpoint);
     }).start();
     checkpoint.awaitSuccess();
     Assert.assertNotNull(ref1.get());
@@ -422,10 +417,9 @@ public class TimerTest extends VertxTestBase2 {
       ContextInternal context = ((VertxInternal) vertx).createEventLoopContext();
       Assert.assertNotSame(context, current);
       Timer timer = context.timer(10, TimeUnit.MILLISECONDS);
-      timer.onComplete(TestUtils.onSuccess(v2 -> {
-        Assert.assertSame(context, Vertx.currentContext());
-        checkpoint.succeed();
-      }));
+      timer
+        .peek(v2 -> Assert.assertSame(context, Vertx.currentContext()))
+        .onComplete(checkpoint);
     });
   }
 

@@ -54,9 +54,10 @@ public interface VertxInternal extends Vertx {
   }
 
   /**
-   * Create a promise and pass it to the {@code handler}, and then returns this future's promise. The {@code handler}
-   * is responsible for completing the promise, if the {@code handler} throws an exception, the promise is attempted
-   * to be failed with this exception.
+   * Create a promise and pass it to the {@code handler} executed on the current or a new context (see
+   * {@link ContextInternal#future(Handler)}), and then returns this future's promise. The {@code handler} is responsible
+   * for completing the promise, if the {@code handler} throws an exception, the promise is attempted to be failed with
+   * this exception.
    *
    * @param handler the handler completing the promise
    * @return the future of the created promise

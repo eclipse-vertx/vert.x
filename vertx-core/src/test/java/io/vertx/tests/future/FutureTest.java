@@ -830,6 +830,44 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
+  public void testPeekSuccess() {
+    AtomicReference<String> called = new AtomicReference<>();
+    Promise<String> p = Promise.promise();
+    io.vertx.core.Future<String> r = p.future().peek(called::set);
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.complete("yeah");
+    checker.assertSucceeded("yeah");
+    assertEquals("yeah", called.get());
+  }
+
+  @Test
+  public void testPeekThrowing() {
+    Promise<String> p = Promise.promise();
+    AssertionError err = new AssertionError();
+    io.vertx.core.Future<String> r = p.future().peek(value -> {
+      throw err;
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.complete("yeah");
+    checker.assertFailed(err);
+  }
+
+  @Test
+  public void testPeekFailure() {
+    AtomicBoolean called = new AtomicBoolean();
+    Promise<String> p = Promise.promise();
+    io.vertx.core.Future<String> r = p.future().peek(value -> called.set(true));
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    Throwable err = new Throwable();
+    p.fail(err);
+    checker.assertFailed(err);
+    assertFalse(called.get());
+  }
+
+  @Test
   public void testOtherwiseSuccessWithSuccess() {
     AtomicBoolean called = new AtomicBoolean();
     Promise<String> p = Promise.promise();

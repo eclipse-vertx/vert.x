@@ -10,6 +10,8 @@
  */
 package io.vertx.tests.http;
 
+import io.netty.handler.codec.haproxy.HAProxyProtocolException;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -21,17 +23,16 @@ import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.HAProxy;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.assertj.core.api.Assertions;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
@@ -50,10 +51,10 @@ public abstract class HAProxyTest extends HttpTestBase2 {
       server.requestHandler(req -> fail("Should not be called"));
       startServer(testAddress);
       NetClient client = vertx.createNetClient();
-      client.connect(proxy.getPort(), proxy.getHost())
-        .onComplete(res -> {
-        res.result().closeHandler(event -> checkpoint.succeed());
-      });
+      client
+        .connect(proxy.getPort(), proxy.getHost())
+        .peek(so -> so.closeHandler(event -> checkpoint.succeed()))
+        .await();
 
       checkpoint.awaitSuccess();
     } finally {
@@ -216,27 +217,25 @@ public abstract class HAProxyTest extends HttpTestBase2 {
     HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
-    AtomicBoolean unsupportedProtocolExceptionCaught = new AtomicBoolean();
+    Promise<Throwable> serverFailure = Promise.promise();
 
     try {
       server = vertx.createHttpServer(createBaseServerOptions()
           .setUseProxyProtocol(true))
-        .exceptionHandler(ex -> {
-          unsupportedProtocolExceptionCaught.set(ex.equals(HAProxyMessageCompletionHandler.UNSUPPORTED_PROTOCOL_EXCEPTION));
-        })
+        .exceptionHandler(serverFailure::tryComplete)
         .requestHandler(req -> fail());
 
       startServer(testAddress);
 
-      client.request(new RequestOptions()
+      assertThat(client
+        .request(new RequestOptions()
           .setPort(proxy.getPort())
           .setHost(proxy.getHost())
           .setURI(DEFAULT_TEST_URI))
-        .compose(HttpClientRequest::send)
+        .compose(HttpClientRequest::send))
+        .isFailure()
         .await();
-      fail();
-    } catch(Exception expected) {
-      assertTrue(unsupportedProtocolExceptionCaught.get());
+      assertSame(HAProxyMessageCompletionHandler.UNSUPPORTED_PROTOCOL_EXCEPTION, serverFailure.future().await());
     } finally {
       proxy.stop();
     }
@@ -261,27 +260,27 @@ public abstract class HAProxyTest extends HttpTestBase2 {
     proxy.start(vertx);
     server.close();
 
-    AtomicBoolean haProtocolExceptionCaught = new AtomicBoolean();
+    Promise<Throwable> serverFailure = Promise.promise();
 
     try {
       server = vertx.createHttpServer(createBaseServerOptions()
           .setUseProxyProtocol(true))
-        .exceptionHandler(ex -> {
-          haProtocolExceptionCaught.set(ex instanceof io.netty.handler.codec.haproxy.HAProxyProtocolException);
-        })
+        .exceptionHandler(serverFailure::tryComplete)
         .requestHandler(req -> fail());
 
       startServer(testAddress);
 
-      client.request(new RequestOptions()
+      assertThat(client
+        .request(new RequestOptions()
           .setPort(proxy.getPort())
           .setHost(proxy.getHost())
           .setURI(DEFAULT_TEST_URI))
-        .compose(HttpClientRequest::send)
+        .compose(HttpClientRequest::send))
+        .isFailure()
         .await();
-      fail();
-    } catch (Exception expected) {
-      Assert.assertTrue(haProtocolExceptionCaught.get());
+      assertThat(serverFailure.future())
+        .asInstanceOf(HAProxyProtocolException.class)
+        .await();
     } finally {
       proxy.stop();
     }

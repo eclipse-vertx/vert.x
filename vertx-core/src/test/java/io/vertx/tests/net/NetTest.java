@@ -78,6 +78,7 @@ import java.util.function.Function;
 import java.util.function.LongPredicate;
 import java.util.function.Supplier;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static io.vertx.test.core.TestUtils.*;
 import static io.vertx.test.core.VertxTestBase.ENABLED_CIPHER_SUITES;
 import static io.vertx.test.core.VertxTestBase.TRANSPORT;
@@ -167,17 +168,16 @@ public class NetTest {
   public void testEndHandlerCalledAfterAllEmissions() {
     Assume.assumeFalse("Intermittent failure with io_uring, see https://github.com/netty/netty/issues/17049", TRANSPORT == Transport.IO_URING);
     Buffer  buffer = TestUtils.randomBuffer(1024 * 1024);
-    server = vertx.createNetServer().connectHandler(so -> {
+    server = vertx.createNetServer().connectHandler(so -> so.handler(trigger -> {
       so.end(buffer);
       so.close();
-    });
+    }));
     server.listen(1234).await();
     NetClient client = vertx.createNetClient();
     AtomicInteger received = new AtomicInteger();
     AtomicInteger ended = new AtomicInteger();
-    client.connect(1234, "localhost").onComplete(ar -> {
-      if (ar.succeeded()) {
-        NetSocket socket = ar.result();
+    client.connect(1234, "localhost")
+      .compose(socket -> {
         socket.handler(buf -> {
           int amount = received.addAndGet(buf.length());
           assertEquals(0, ended.get());
@@ -189,8 +189,9 @@ public class NetTest {
         socket.endHandler(v -> {
           assertEquals(0, ended.getAndIncrement());
         });
-      }
-    });
+        return socket.write("ping");
+      })
+      .await();
     assertWaitUntil(() -> received.get() == buffer.length(), 20_000);
     assertWaitUntil(() -> ended.get() > 0, 20_000);
   }
@@ -900,14 +901,10 @@ public class NetTest {
 
   @Test
   public void testWriteHandlerSuccess() throws Exception {
-    CompletableFuture<Void> close = new CompletableFuture<>();
     AtomicReference<NetSocket> serverSocket = new AtomicReference<>();
     server.connectHandler(socket -> {
       serverSocket.set(socket);
       socket.pause();
-      close.thenAccept(v -> {
-        socket.resume();
-      });
     });
     startServer();
     NetSocket so = client.connect(testAddress).await();
@@ -929,11 +926,7 @@ public class NetTest {
     writeUntilFull(so);
     Future<Void> res = so.write(Buffer.buffer("lost buffer"));
     serverSocket.get().close();
-    try {
-      res.await();
-      fail();
-    } catch (Exception expected) {
-    }
+    assertThat(res).isFailure().await();
   }
 
   private void writeUntilFull(NetSocket so) throws Exception {
@@ -972,7 +965,7 @@ public class NetTest {
     testEcho(checkpoint, sock -> sock.write(sent, encoding), buff -> assertEquals(buffSent, buff), buffSent.length());
   }
 
-  void testEcho(Checkpoint checkpoint, Consumer<NetSocket> writer, Consumer<Buffer> dataChecker, int length) {
+  void testEcho(Checkpoint checkpoint, Function<NetSocket, Future<Void>> writer, Consumer<Buffer> dataChecker, int length) {
     startEchoServer(testAddress);
     NetSocket sock = client.connect(testAddress).await();
     Buffer buff = Buffer.buffer();
@@ -986,7 +979,7 @@ public class NetTest {
         fail("Too many bytes received");
       }
     });
-    writer.accept(sock);
+    writer.apply(sock).await();
   }
 
   void startEchoServer(SocketAddress address) {
@@ -1012,21 +1005,13 @@ public class NetTest {
   public void testConnectInvalidPort() {
     assertIllegalArgumentException(() -> client.connect(-1, "localhost"));
     assertIllegalArgumentException(() -> client.connect(65536, "localhost"));
-    try {
-      client.connect(9998, "localhost").await();
-      fail();
-    } catch (Exception ignore) {
-    }
+    assertThat(client.connect(9998, "localhost")).isFailure().await();
   }
 
   @Test
   public void testConnectInvalidHost() {
     assertNullPointerException(() -> client.connect(80, null));
-    try {
-      client.connect(1234, "127.0.0.2").await();
-      fail();
-    } catch (Exception ignore) {
-    }
+    assertThat(client.connect(1234, "127.0.0.2")).isFailure().await();
   }
 
 //  @Ignore("Now they share the same TCP server port")
@@ -1052,15 +1037,11 @@ public class NetTest {
   @Test
   public void testListenInvalidHost() {
     server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost("uhqwduhqwudhqwuidhqwiudhqwudqwiuhd"));
-    try {
-      server
-        .connectHandler(netSocket -> {
-      })
-        .listen()
-        .await();
-      fail();
-    } catch (Exception ignore) {
-    }
+    server.connectHandler(netSocket -> {
+    });
+    assertThat(server.listen())
+      .isFailure()
+      .await();
   }
 
   @Test
@@ -1184,7 +1165,7 @@ public class NetTest {
       assertEquals("Hello World", buff.toString());
       checkpoint.succeed();
     });
-    so.write("Hello World");
+    so.write("Hello World").await();
   }
 
   @Test
@@ -1253,7 +1234,7 @@ public class NetTest {
       .consumer("client_resume", m -> sock.resume());
     sock.closeHandler(v -> reg.unregister());
     sock.handler(buf -> {});
-    sock.write("go");
+    sock.write("go").await();
   }
 
   @Test
@@ -1288,11 +1269,7 @@ public class NetTest {
     Assume.assumeFalse(Utils.isWindows());
     client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(100).setReconnectInterval(10));
 
-    try {
-      client.connect(testAddress).await();
-      fail();
-    } catch (Exception ignore) {
-    }
+    assertThat(client.connect(testAddress)).isFailure().await();
   }
 
   @Test
@@ -1403,8 +1380,11 @@ public class NetTest {
     server.connectHandler(serverHandler);
     startServer(testAddress);
 
-    NetSocket sock = client.connect(testAddress).await();
-    clientHandler.handle(sock);
+    client.connect(testAddress)
+      .peek(sock -> {
+        clientHandler.handle(sock);
+      })
+      .await();
   }
 
   @Test
@@ -1932,11 +1912,18 @@ public class NetTest {
 
     void run(boolean shouldPass) {
       int passes = 1;
-      if (!shouldPass) {
+      if (!shouldPass || startTLS) {
         passes += 1;
       }
       CountDownLatch latch = checkpoint.asLatch(passes);
-      Future<String> bind = vertx.deployVerticle(new AbstractVerticle() {
+      Completable<Object> pass = (value, err) -> {
+        if (err == null) {
+          latch.countDown();
+        } else {
+          checkpoint.fail(err);
+        }
+      };
+      vertx.deployVerticle(new AbstractVerticle() {
         @Override
         public void start(Promise<Void> startPromise) {
           Consumer<NetSocket> certificateChainChecker = socket -> {
@@ -1972,20 +1959,21 @@ public class NetTest {
                   indicatedServerName = socket.indicatedServerName();
                   assertFalse(socket.isSsl());
                   Context ctx = Vertx.currentContext();
-                  Handler<AsyncResult<Void>> handler;
+                  Future<Void> upgrade = socket.upgradeToSsl(buff);
                   if (shouldPass) {
-                    handler = TestUtils.onSuccess(v -> {
-                      assertSame(ctx, Vertx.currentContext());
-                      certificateChainChecker.accept(socket);
-                      assertTrue(socket.isSsl());
-                    });
+                    upgrade
+                      .peek(v -> {
+                        assertSame(ctx, Vertx.currentContext());
+                        certificateChainChecker.accept(socket);
+                        assertTrue(socket.isSsl());
+                      })
+                      .onComplete(pass);
                   } else {
-                    handler = TestUtils.onFailure(err -> {
-                      assertSame(ctx, Vertx.currentContext());
-                      latch.countDown();
-                    });
+                    assertThat(upgrade)
+                      .isFailure()
+                      .peek(err -> assertSame(ctx, Vertx.currentContext()))
+                      .onComplete(pass);
                   }
-                  socket.upgradeToSsl(buff).onComplete(handler);
                 } else {
                   assertTrue(socket.isSsl());
                   socket.write(buff);
@@ -2002,28 +1990,28 @@ public class NetTest {
             .<Void>mapEmpty()
             .onComplete(startPromise);
         }
-      });
-      bind.onComplete(TestUtils.onSuccess(ar -> {
-        NetClientOptions clientOptions = new NetClientOptions();
-        if (!startTLS) {
-          clientOptions.setSsl(true);
-        }
-        if (clientTrustAll) {
-          clientOptions.setTrustAll(true);
-        }
-        clientOptions.setEnabledSecureTransportProtocols(clientVersions);
-        clientOptions.setHostnameVerificationAlgorithm("");
-        clientOptions.setTrustOptions(clientTrust.get());
-        clientOptions.setKeyCertOptions(clientCert.get());
-        for (String suite: enabledCipherSuites) {
-          clientOptions.addEnabledCipherSuite(suite);
-        }
-        client = vertx.createNetClient(clientOptions);
-        Future<NetSocket> socketFuture = client.connect(connectAddress, serverName);
-        String tls1_3 = "TLSv1.3";
-        boolean clientAuthDeferred = clientVersions.contains(tls1_3) && serverVersions.contains(tls1_3);
-        if (shouldPass || startTLS) {
-          Future<Void> f = socketFuture.compose(socket -> {
+      }).await();
+      NetClientOptions clientOptions = new NetClientOptions();
+      if (!startTLS) {
+        clientOptions.setSsl(true);
+      }
+      if (clientTrustAll) {
+        clientOptions.setTrustAll(true);
+      }
+      clientOptions.setEnabledSecureTransportProtocols(clientVersions);
+      clientOptions.setHostnameVerificationAlgorithm("");
+      clientOptions.setTrustOptions(clientTrust.get());
+      clientOptions.setKeyCertOptions(clientCert.get());
+      for (String suite: enabledCipherSuites) {
+        clientOptions.addEnabledCipherSuite(suite);
+      }
+      client = vertx.createNetClient(clientOptions);
+      Future<NetSocket> socketFuture = client.connect(connectAddress, serverName);
+      String tls1_3 = "TLSv1.3";
+      boolean clientAuthDeferred = clientVersions.contains(tls1_3) && serverVersions.contains(tls1_3);
+      if (shouldPass || startTLS) {
+        socketFuture
+          .compose(socket -> {
             Promise<Void> result = Promise.promise();
             final int numChunks = 100;
             final int chunkSize = 100;
@@ -2061,19 +2049,26 @@ public class NetTest {
                   fut = socket.upgradeToSsl();
                 }
                 if (shouldPass) {
-                  fut.onSuccess(v -> {
-                    assertTrue(socket.isSsl());
-                    try {
-                      clientPeerCert = socket.peerCertificates().get(0);
-                    } catch (SSLPeerUnverifiedException ignore) {
-                    }
-                    // Now send the rest
-                    for (int i = 1; i < numChunks; i++) {
-                      socket.write(toSend.get(i));
-                    }
-                  });
+                  fut
+                    .compose(v -> {
+                      assertTrue(socket.isSsl());
+                      try {
+                        clientPeerCert = socket.peerCertificates().get(0);
+                      } catch (SSLPeerUnverifiedException ignore) {
+                      }
+                      // Now send the rest
+                      List<Future<Void>> writes = new ArrayList<>();
+                      for (int i = 1; i < numChunks; i++) {
+                        writes.add(socket.write(toSend.get(i)));
+                      }
+                      return Future.all(writes);
+                    })
+                    .onFailure(result::tryFail);
                 } else {
-                  fut.onFailure(v -> result.complete());
+                  assertThat(fut)
+                    .isFailure()
+                    .<Void>mapEmpty()
+                    .onComplete(result);
                 }
               } else {
                 assertTrue(socket.isSsl());
@@ -2082,38 +2077,41 @@ public class NetTest {
 
             //Now send some data
             int numToSend = startTLS ? 1 : numChunks;
+            List<Future<Void>> writes = new ArrayList<>();
             for (int i = 0; i < numToSend; i++) {
-              socket.write(toSend.get(i));
+              writes.add(socket.write(toSend.get(i)));
             }
 
-            return result.future();
-          });
-
-          f.onComplete(TestUtils.onSuccess(v -> latch.countDown()));
+            return Future
+              .all(writes)
+              .compose(v -> result.future());
+          })
+          .onComplete(pass);
+      } else {
+        if (clientAuthDeferred) {
+          socketFuture
+            .map(socket -> socket.exceptionHandler(err -> latch.countDown()))
+            .onFailure(checkpoint::fail);
         } else {
-          if (clientAuthDeferred) {
-            socketFuture.onComplete(TestUtils.onSuccess(socket -> {
-              socket.exceptionHandler(err -> {
-                latch.countDown();
-              });
-            }));
-          } else {
-            socketFuture.onComplete(TestUtils.onFailure(v -> latch.countDown()));
-          }
+          assertThat(socketFuture)
+            .isFailure()
+            .onComplete(pass);
         }
-      }));
+      }
       checkpoint.awaitSuccess();
     }
   }
 
   @Test
-  public void testDirectTlsUpgrade(Checkpoint checkpoint) throws Exception {
+  public void testDirectTlsUpgrade(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     server.connectHandler(socket -> {
-      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
-        .onComplete(TestUtils.onSuccess(v1 -> {
-        socket.handler(socket::write);
-        socket.endHandler(v2 -> socket.end());
-      }));
+      socket
+        .upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .peek(v1 -> {
+          socket.handler(socket::write);
+          socket.endHandler(v2 -> socket.end());
+        })
+        .onComplete(checkpoint2);
     });
     server.listen(1234, "localhost").await();
     NetSocket socket = client.connect(new ConnectOptions()
@@ -2127,13 +2125,13 @@ public class NetTest {
       assertEquals("test", chunk.toString());
       socket.end();
     });
-    socket.endHandler(v -> checkpoint.succeed());
+    socket.endHandler(v -> checkpoint1.succeed());
     socket.write("test").await();
   }
 
   @WithDnsServer(records = {@DnsRecord(name = "example.com")})
   @Test
-  public void testDirectTlsUpgradeFailureResumeReading(Checkpoint checkpoint) throws Exception {
+  public void testDirectTlsUpgradeFailureResumeReading(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     server = vertx.createNetServer(new NetServerOptions()
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get())
@@ -2141,39 +2139,42 @@ public class NetTest {
       fail();
     });
     server.listen(1234, "localhost").await();
-    Future<NetSocket> future = client.connect(new ConnectOptions()
-      .setPort(1234)
-      .setHost("example.com")
-      .setSslOptions(new ClientSSLOptions()
-        .setHostnameVerificationAlgorithm("HTTPS")
-        .setTrustAll(true)));
-    future.onComplete(TestUtils.onSuccess(socket -> {
-      NetSocketInternal soi = (NetSocketInternal) socket;
-      ChannelPipeline pipeline = soi
-        .channelHandlerContext()
-        .pipeline();
-      Object expectedMsg = new Object();
-      AtomicBoolean closed = new AtomicBoolean();
-      pipeline.addBefore("handler", "test", new ChannelDuplexHandler() {
-        @Override
-        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-          soi
-            .upgradeToSsl()
-            .onComplete(TestUtils.onFailure(err -> {
-              assertFalse(closed.get());
-              ctx.fireChannelRead(expectedMsg);
-            }));
-        }
-      });
-      soi.closeHandler(v -> {
-        closed.set(true);
-      });
-      soi.messageHandler(msg -> {
-        if (msg == expectedMsg) {
-          checkpoint.succeed();
-        }
-      });
-    }));
+    client
+      .connect(new ConnectOptions()
+        .setPort(1234)
+        .setHost("example.com")
+        .setSslOptions(new ClientSSLOptions()
+          .setHostnameVerificationAlgorithm("HTTPS")
+          .setTrustAll(true)))
+      .peek(socket -> {
+        NetSocketInternal soi = (NetSocketInternal) socket;
+        ChannelPipeline pipeline = soi
+          .channelHandlerContext()
+          .pipeline();
+        Object expectedMsg = new Object();
+        AtomicBoolean closed = new AtomicBoolean();
+        pipeline.addBefore("handler", "test", new ChannelDuplexHandler() {
+          @Override
+          public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+            assertThat(soi.upgradeToSsl())
+              .isFailure()
+              .peek(err -> {
+                assertFalse(closed.get());
+                ctx.fireChannelRead(expectedMsg);
+              })
+              .verify(checkpoint2);
+          }
+        });
+        soi.closeHandler(v -> {
+          closed.set(true);
+        });
+        soi.messageHandler(msg -> {
+          if (msg == expectedMsg) {
+            checkpoint1.succeed();
+          }
+        });
+      })
+      .await();
   }
 
   public static class NativeVertxProvider implements VertxProvider {
@@ -2215,23 +2216,24 @@ public class NetTest {
       addresses.add(sockAddress);
     }
     client = vx.createNetClient();
+    List<Future<Void>> futures = new ArrayList<>();
     for (int i = 0;i < len;i++) {
       for (int j = 0;j < len;j++) {
         SocketAddress sockAddress = addresses.get(i);
-        client
+        futures.add(client
           .connect(sockAddress)
-          .onComplete(onSuccess(so -> {
+          .compose(so -> {
             Buffer received = Buffer.buffer();
             so.handler(received::appendBuffer);
             so.endHandler(v -> {
               assertEquals(sockAddress.path(), received.toString());
               latch.countDown();
             });
-            so
-              .write("test");
+            return so.write("test");
           }));
       }
     }
+    Future.all(futures).await();
   }
 
   @Test
@@ -2264,7 +2266,7 @@ public class NetTest {
         .setSslOptions(sslOptions.copy().setApplicationLayerProtocols(List.of(protocol)))
         .setPort(1234)
       ).await();
-      connection.end(Buffer.buffer(protocol));
+      connection.end(Buffer.buffer(protocol)).await();
     }
     checkpoint.awaitSuccess();
   }
@@ -2392,13 +2394,14 @@ public class NetTest {
         assertEquals(bye, data);
         checkpoint2.succeed();
       })
-      .write(hello);
+      .write(hello)
+      .await();
   }
 
   @Test
   // This tests using NetSocket.writeHandlerID (on the server side)
   // Send some data and make sure it is fanned out to all connections
-  public void testFanout() throws Exception {
+  public void testFanout(Checkpoint checkpoint) throws Exception {
     int numConnections = 10;
     Set<String> connections = ConcurrentHashMap.newKeySet();
     server = vertx.createNetServer(new NetServerOptions().setRegisterWriteHandler(true));
@@ -2406,13 +2409,14 @@ public class NetTest {
       connections.add(socket.writeHandlerID());
     });
     startServer();
-    CountDownLatch receivedLatch = new CountDownLatch(numConnections);
+    CountDownLatch receivedLatch = checkpoint.asLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
       NetSocket socket = client.connect(testAddress).await();
       socket.handler(data -> {
         receivedLatch.countDown();
       });
     }
+    assertWaitUntil(() -> connections.size() == numConnections);
     for (String actorID : connections) {
       vertx.eventBus().publish(actorID, Buffer.buffer("some data"));
     }
@@ -2461,8 +2465,9 @@ public class NetTest {
     }).listen(testAddress).await();
     NetSocket socket = client.connect(testAddress).await();
     Buffer buff = Buffer.buffer("foo");
-    socket.write(buff);
-    socket.write(buff);
+    Future
+      .all(socket.write(buff), socket.write(buff))
+      .await();
   }
 
   @Test
@@ -2507,7 +2512,7 @@ public class NetTest {
         checkpoint.succeed();
       }
     });
-    sock.write("foo");
+    sock.write("foo").await();
   }
 
   @Test
@@ -2517,10 +2522,12 @@ public class NetTest {
     String content = randomAlphaString(size);
     File f = setupFile(dir.toString(), "upgraded.dat", content);
     server.connectHandler(socket -> {
-      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
-        .onComplete(onSuccess(v -> socket.handler(ping -> socket
+      socket
+        .upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .map(v -> socket.handler(ping -> socket
           .sendFile(f.getAbsolutePath())
-          .onComplete(sent))));
+          .onComplete(sent)))
+        .onFailure(sent::fail);
     });
     server.listen(1234, "localhost").await();
     NetSocket socket = client.connect(new ConnectOptions()
@@ -2539,7 +2546,7 @@ public class NetTest {
       }
     });
     // The server sends the file when it gets this, so that the handler above is set before any data is written
-    socket.write("ping");
+    socket.write("ping").await();
   }
 
   @Test
@@ -2579,12 +2586,10 @@ public class NetTest {
     });
     startServer(testAddress);
     NetSocket socket = client.connect(testAddress).await();
-    try {
-      socket.sendFile(fDir.getAbsolutePath()).await();
-      fail();
-    } catch (Exception err) {
-      assertEquals(FileNotFoundException.class, err.getClass());
-    }
+    Throwable err = assertThat(socket.sendFile(fDir.getAbsolutePath()))
+      .isFailure()
+      .await();
+    assertEquals(FileNotFoundException.class, err.getClass());
   }
 
   @Test
@@ -2670,7 +2675,7 @@ public class NetTest {
     server.listen(testAddress).await();
     NetSocket socket = client.connect(testAddress).await();
     socket.handler(v -> checkpoint.succeed());
-    socket.write("hello");
+    socket.write("hello").await();
   }
 
   @Test
@@ -2720,10 +2725,10 @@ public class NetTest {
   }
 
   private void testInVerticle(Checkpoint checkpoint, boolean worker) throws Exception {
-    class MyVerticle extends AbstractVerticle {
+    class MyVerticle extends VerticleBase {
       Context ctx;
       @Override
-      public void start() {
+      public Future<?> start() {
         ctx = context;
         if (worker) {
           assertTrue(ctx.isWorkerContext());
@@ -2741,21 +2746,22 @@ public class NetTest {
             assertSame(thr, Thread.currentThread());
           }
         });
-        server.listen(testAddress).onComplete(onSuccess(s -> {
-          assertSame(ctx, context);
-          if (!worker) {
-            assertSame(thr, Thread.currentThread());
-          }
-          client = vertx.createNetClient(new NetClientOptions());
-          client
-            .connect(testAddress)
-            .onComplete(onSuccess(sock -> {
+        return server
+          .listen(testAddress)
+          .compose(s -> {
+            assertSame(ctx, context);
+            if (!worker) {
+              assertSame(thr, Thread.currentThread());
+            }
+            client = vertx.createNetClient(new NetClientOptions());
+            return client.connect(testAddress);
+          })
+          .compose(sock -> {
             assertSame(ctx, context);
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
             Buffer buff = TestUtils.randomBuffer(10000);
-            sock.write(buff);
             Buffer brec = Buffer.buffer();
             sock.handler(rec -> {
               assertSame(ctx, context);
@@ -2767,13 +2773,13 @@ public class NetTest {
                 checkpoint.succeed();
               }
             });
-          }));
-        }));
+            return sock.write(buff);
+          });
       }
     }
     MyVerticle verticle = new MyVerticle();
     ThreadingModel threadingModel = worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP;
-    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(threadingModel));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(threadingModel)).await();
   }
 
   @Test
@@ -2822,73 +2828,75 @@ public class NetTest {
   }
 
   @Test
-  public void testMultipleServerClose(Checkpoint checkpoint) {
+  public void testMultipleServerClose() {
     this.server = vertx.createNetServer();
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
-    server.close().onComplete(ar1 -> {
-//      assertNull(stack.get());
-//      assertTrue(Vertx.currentContext().isEventLoopContext());
-      server.close().onComplete(ar2 -> {
-        server.close().onComplete(ar3 -> {
-          checkpoint.succeed();
-        });
-      });
-    });
+    server
+      .close()
+      .compose(v -> {
+//        assertNull(stack.get());
+//        assertTrue(Vertx.currentContext().isEventLoopContext());
+        return server.close();
+      })
+      .compose(v -> server.close())
+      .await();
   }
 
   @Test
   public void testInWorker(Checkpoint checkpoint1, Checkpoint checkpoint2) {
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
+    ContextInternal context = ((VertxInternal) vertx).createWorkerContext();
+    context.<Void>future(p -> {
+      assertTrue(Vertx.currentContext().isWorkerContext());
+      assertTrue(Context.isOnWorkerThread());
+      assertSame(context, Vertx.currentContext());
+      NetServer server1 = vertx.createNetServer();
+      server1.connectHandler(conn -> {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
-        final Context context = Vertx.currentContext();
-        NetServer server1 = vertx.createNetServer();
-        server1.connectHandler(conn -> {
+        assertSame(context, Vertx.currentContext());
+        conn.handler(buff -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
-          conn.handler(buff -> {
-            assertTrue(Vertx.currentContext().isWorkerContext());
-            assertTrue(Context.isOnWorkerThread());
-            assertSame(context, Vertx.currentContext());
-            conn.write(buff);
-          });
-          conn.closeHandler(v -> {
-            assertTrue(Vertx.currentContext().isWorkerContext());
-            assertTrue(Context.isOnWorkerThread());
-            assertSame(context, Vertx.currentContext());
-            checkpoint1.succeed();
-          });
-          conn.endHandler(v -> {
-            assertTrue(Vertx.currentContext().isWorkerContext());
-            assertTrue(Context.isOnWorkerThread());
-            assertSame(context, Vertx.currentContext());
-            checkpoint2.succeed();
-          });
-        }).listen(testAddress).onComplete(onSuccess(s -> {
+          conn.write(buff);
+        });
+        conn.closeHandler(v -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
-          client.connect(testAddress)
-            .onComplete(onSuccess(res -> {
+          checkpoint1.succeed();
+        });
+        conn.endHandler(v -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          assertSame(context, Vertx.currentContext());
+          checkpoint2.succeed();
+        });
+      });
+      server1
+        .listen(testAddress)
+        .compose(s -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          assertSame(context, Vertx.currentContext());
+          return client.connect(testAddress);
+        })
+        .compose(res -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          assertSame(context, Vertx.currentContext());
+          res.handler(buff -> {
             assertTrue(Vertx.currentContext().isWorkerContext());
             assertTrue(Context.isOnWorkerThread());
             assertSame(context, Vertx.currentContext());
-            res.write("foo");
-            res.handler(buff -> {
-              assertTrue(Vertx.currentContext().isWorkerContext());
-              assertTrue(Context.isOnWorkerThread());
-              assertSame(context, Vertx.currentContext());
-              res.close();
-            });
-          }));
-        }));
-      }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+            res.close();
+          });
+          return res.write("foo");
+        })
+        .onComplete(p);
+    }).await();
   }
 
   @Test
@@ -2926,7 +2934,7 @@ public class NetTest {
             checkpoint.succeed();
           }
         });
-        so.write(TestUtils.randomBuffer(256));
+        so.write(TestUtils.randomBuffer(256)).await();
       }
       checkpoint.awaitSuccess();
     } finally {
@@ -3026,7 +3034,7 @@ public class NetTest {
   }
 
   @Test
-  public void testHostVerificationHttpsNotMatching(Checkpoint checkpoint) {
+  public void testHostVerificationHttpsNotMatching() {
     NetServerOptions options = new NetServerOptions()
             .setPort(1234)
             .setHost("localhost")
@@ -3042,14 +3050,11 @@ public class NetTest {
     server.connectHandler(sock -> {
 
     });
-    server
-      .listen()
-      .compose(v -> client.connect(1234, "localhost"))
-      .onComplete(TestUtils.onFailure(err -> {
-      //Should not be able to connect
-      checkpoint.succeed();
-    }));
-    checkpoint.awaitSuccess();
+    server.listen().await();
+    //Should not be able to connect
+    assertThat(client.connect(1234, "localhost"))
+      .isFailure()
+      .await();
   }
 
   // this test sets HostnameVerification but also trustAll, it fails if hostname is
@@ -3110,16 +3115,14 @@ public class NetTest {
     server.connectHandler(sock -> {
     });
     server.listen().await();
-    try {
-      consumer.apply(client).await();
-      fail();
-    } catch (Exception err) {
-      assertTrue(err.getMessage().contains("Missing hostname verification algorithm"));
-    }
+    Throwable err = assertThat(consumer.apply(client))
+      .isFailure()
+      .await();
+    assertTrue(err.getMessage().contains("Missing hostname verification algorithm"));
   }
 
   @Test
-  public void testMissingClientSSLOptions(Checkpoint checkpoint) throws Exception {
+  public void testMissingClientSSLOptions() throws Exception {
     server = vertx.createNetServer(new NetServerOptions()
         .setSsl(true)
         .setKeyCertOptions(Cert.SERVER_JKS.get()))
@@ -3127,10 +3130,10 @@ public class NetTest {
         fail();
       });
     startServer(testAddress);
-    client.connect(new ConnectOptions().setPort(8443).setHost("localhost").setSsl(true)).onComplete(TestUtils.onFailure(err -> {
-      assertTrue(err.getMessage().contains("ClientSSLOptions"));
-      checkpoint.succeed();
-    }));
+    Throwable err = assertThat(client.connect(new ConnectOptions().setPort(8443).setHost("localhost").setSsl(true)))
+      .isFailure()
+      .await();
+    assertTrue(err.getMessage().contains("ClientSSLOptions"));
   }
 
   @Test
@@ -3420,14 +3423,10 @@ public class NetTest {
       .connectHandler(so -> fail())
       .listen()
       .await();
-    try {
-      client
-        .connect(DEFAULT_HTTPS_PORT, "127.0.0.1")
-        .compose(NetSocket::upgradeToSsl)
-        .await();
-      fail();
-    } catch (Exception expected) {
-    }
+    NetSocket so = client.connect(DEFAULT_HTTPS_PORT, "127.0.0.1").await();
+    assertThat(so.upgradeToSsl())
+      .isFailure()
+      .await();
   }
 
   /**
@@ -3458,11 +3457,11 @@ public class NetTest {
       .connectHandler(ns -> {})
       .listen()
       .await();
-    try {
-      connect.get().compose(ns -> ns.upgradeToSsl()).await();
-    } catch (Exception err) {
-      assertTrue(err.getMessage().contains("Missing SSL options"));
-    }
+    NetSocket ns = connect.get().await();
+    Throwable err = assertThat(ns.upgradeToSsl())
+      .isFailure()
+      .await();
+    assertTrue(err.getMessage().contains("Missing SSL options"));
   }
 
   @Test
@@ -3475,14 +3474,10 @@ public class NetTest {
     server.connectHandler(ns -> {
       latch.countDown();
     }).listen().await();
-    try {
-      client
-        .connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST)
-        .compose(NetSocket::upgradeToSsl)
-        .await();
-      fail();
-    } catch (Exception expected) {
-    }
+    NetSocket socket = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).await();
+    assertThat(socket.upgradeToSsl())
+      .isFailure()
+      .await();
     ClientSSLOptions sslOptions = new ClientSSLOptions().setHostnameVerificationAlgorithm("").setTrustOptions(Trust.SERVER_JKS.get());
     client
       .connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST)
@@ -3515,12 +3510,11 @@ public class NetTest {
       so.close();
     });
     startServer();
-    vertx.deployVerticle(new AbstractVerticle() {
-      NetClient client;
-      @Override
-      public void start() {
-        client = vertx.createNetClient();
-        client.connect(testAddress).onComplete(onSuccess(so ->{
+    ContextInternal context = ((VertxInternal) vertx).createWorkerContext();
+    context
+      .<NetSocket>future(p -> client
+        .connect(testAddress)
+        .peek(so -> {
           assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();
           so.handler(buff -> {
@@ -3536,10 +3530,9 @@ public class NetTest {
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }
-        }));
-
-      }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+        })
+        .onComplete(p))
+      .await();
   }
 
   @Test
@@ -3571,8 +3564,8 @@ public class NetTest {
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).await();
     NetSocket so = client.connect(testAddress).await();
-    so.write(expected);
-    so.close();
+    so.write(expected).await();
+    so.close().await();
   }
 
   @Test
@@ -3627,18 +3620,18 @@ public class NetTest {
   }
 
   @Test
-  public void testNetClientInternal(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
-    testNetClientInternal_(checkpoint1, checkpoint2, new HttpServerOptions().setHost("localhost").setPort(1234), false);
+  public void testNetClientInternal(Checkpoint checkpoint) throws Exception {
+    testNetClientInternal_(checkpoint, new HttpServerOptions().setHost("localhost").setPort(1234), false);
   }
 
   @Test
-  public void testNetClientInternalTLS(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testNetClientInternalTLS(Checkpoint checkpoint) throws Exception {
     client = vertx.createNetClient(new NetClientOptions()
       .setSsl(true)
       .setHostnameVerificationAlgorithm("")
       .setTrustOptions(Trust.SERVER_JKS.get())
     );
-    testNetClientInternal_(checkpoint1, checkpoint2, new HttpServerOptions()
+    testNetClientInternal_(checkpoint, new HttpServerOptions()
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
@@ -3649,7 +3642,7 @@ public class NetTest {
   // configuration options.
   // This is currently done by casing to NetClientImpl and calling setSuppliedSSLContext().
   @Test
-  public void testNetClientInternalTLSWithSuppliedSSLContext(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testNetClientInternalTLSWithSuppliedSSLContext(Checkpoint checkpoint) throws Exception {
     Buffer trust = vertx.fileSystem().readFileBlocking(Trust.SERVER_JKS.get().getPath());
 
     TrustManagerFactory tmFactory;
@@ -3683,21 +3676,21 @@ public class NetTest {
         }
       }));
 
-    testNetClientInternal_(checkpoint1, checkpoint2, new HttpServerOptions()
+    testNetClientInternal_(checkpoint, new HttpServerOptions()
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()), true);
   }
 
-  private void testNetClientInternal_(Checkpoint checkpoint1, Checkpoint checkpoint2, HttpServerOptions options, boolean expectSSL) throws Exception {
+  private void testNetClientInternal_(Checkpoint checkpoint, HttpServerOptions options, boolean expectSSL) throws Exception {
     HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
       req.response().end("Hello World"); });
     server.listen().await();
     client
       .connect(1234, "localhost")
-      .onComplete(onSuccess(so -> {
+      .compose(so -> {
         NetSocketInternal soInt = (NetSocketInternal) so;
         assertEquals(expectSSL, soInt.isSsl());
         ChannelHandlerContext chctx = soInt.channelHandlerContext();
@@ -3720,16 +3713,15 @@ public class NetTest {
               String val = content.toString(StandardCharsets.UTF_8);
               assertTrue(content.release());
               assertEquals("Hello World", val);
-              checkpoint1.succeed();
+              checkpoint.succeed();
               break;
             default:
               fail();
           }
         });
-        soInt
-          .writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"))
-          .onComplete(checkpoint2);
-      }));
+        return soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"));
+      })
+      .await();
   }
 
   @Test
@@ -3769,7 +3761,7 @@ public class NetTest {
         assertEquals(1, byteBuf.refCnt());
         soi
           .writeMessage(msg)
-          .andThen(ar -> assertEquals(0, byteBuf.refCnt()))
+          .peek(v -> assertEquals(0, byteBuf.refCnt()))
           .onComplete(checkpoint1);
       });
     });
@@ -3784,7 +3776,7 @@ public class NetTest {
       assertEquals(0, byteBuf.refCnt());
       checkpoint2.succeed();
     });
-    soi.write(Buffer.buffer("Hello World"));
+    soi.write(Buffer.buffer("Hello World")).await();
     // soi.messageHandler(msg -> fail("Unexpected"));
   }
 
@@ -3800,9 +3792,10 @@ public class NetTest {
     ChannelHandlerContext ctx = soi.channelHandlerContext();
     ChannelPipeline pipeline = ctx.pipeline();
     pipeline.remove(VertxHandler.class);
-    vertx.eventBus().request(id, "test").onComplete(TestUtils.onFailure(what -> {
-      ctx.close();
-    }));
+    assertThat(vertx.eventBus().request(id, "test"))
+      .isFailure()
+      .await();
+    ctx.close();
   }
 
   // We only do it for server, as client uses the same NetSocket implementation
@@ -3858,7 +3851,8 @@ public class NetTest {
     startServer();
     client
       .connect(testAddress)
-      .onComplete(onSuccess(so -> so.closeHandler(v -> checkpoint.succeed())));
+      .map(so -> so.closeHandler(v -> checkpoint.succeed()))
+      .await();
   }
 
   @Test
@@ -3892,13 +3886,10 @@ public class NetTest {
           super.write(ctx, msg, promise);
         }
       });
-      so
-        .sendFile(file.getAbsolutePath())
-        .onComplete(ar -> {
-          assertTrue(ar.failed());
-          assertTrue(sent.get() > 0);
-          checkpoint.succeed();
-        });
+      assertThat(so.sendFile(file.getAbsolutePath()))
+        .isFailure()
+        .peek(err -> assertTrue(sent.get() > 0))
+        .verify(checkpoint);
     };
     Consumer<NetSocket> receiver = so -> {
       now.set(System.currentTimeMillis());
@@ -3911,8 +3902,12 @@ public class NetTest {
       .connectHandler((idleOnServer ? sender : receiver)::accept);
     startServer();
     client = vertx.createNetClient(new NetClientOptions().setIdleTimeout(200).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
-    NetSocket so = client.connect(testAddress).await();
-    (idleOnServer ? receiver : sender).accept(so);
+    client
+      .connect(testAddress)
+      .peek(so -> {
+        (idleOnServer ? receiver : sender).accept(so);
+      })
+      .await();
   }
 
   @Test
@@ -3938,7 +3933,7 @@ public class NetTest {
     startServer();
     client
       .connect(testAddress, "localhost")
-      .onComplete(onSuccess(so -> {
+      .peek(so -> {
         so.pause();
         AtomicBoolean closed = new AtomicBoolean();
         AtomicBoolean ended = new AtomicBoolean();
@@ -3956,7 +3951,8 @@ public class NetTest {
           ended.set(true);
           checkpoint.succeed();
         });
-      }));
+      })
+      .await();
   }
 
   @Test
@@ -3999,12 +3995,14 @@ public class NetTest {
     });
     startServer();
 
-    client.connect(testAddress).onComplete(ar -> {
-      if (onClient) {
-        assertTrue(ar.failed());
-        checker.accept(ar.cause());
-      }
-    });
+    Future<NetSocket> connect = client.connect(testAddress);
+    if (onClient) {
+      checker.accept(assertThat(connect)
+        .isFailure()
+        .await());
+    } else {
+      connect.await();
+    }
   }
 
   @Test
@@ -4047,17 +4045,13 @@ public class NetTest {
     server.connectHandler(s -> {
     });
     startServer(testAddress);
-    try {
-      client.connect(testAddress)
-        .compose(so -> {
-          assertFalse(so.isSsl());
-          return so.upgradeToSsl();
-        }).await();
-      fail();
-    } catch (Exception err) {
-      assertTrue(err instanceof SSLException);
-      assertEquals("handshake timed out after 200ms", err.getMessage());
-    }
+    NetSocket so = client.connect(testAddress).await();
+    assertFalse(so.isSsl());
+    SSLException err = assertThat(so.upgradeToSsl())
+      .isFailure()
+      .asInstanceOf(SSLException.class)
+      .await();
+    assertEquals("handshake timed out after 200ms", err.getMessage());
   }
 
   protected void startServer(SocketAddress remoteAddress) throws Exception {
@@ -4073,9 +4067,9 @@ public class NetTest {
   }
 
   protected void startServer(SocketAddress remoteAddress, Context context, NetServer server) throws Exception {
-    Promise<Object> promise = Promise.promise();
-    context.runOnContext(v -> server.listen(remoteAddress).onComplete(promise));
-    promise.future().await();
+    ((ContextInternal) context)
+      .<NetServer>future(p -> server.listen(remoteAddress).onComplete(p))
+      .await();
   }
 
   @Test
@@ -4162,9 +4156,8 @@ public class NetTest {
       .connectHandler(u -> fail("Should not be called"));
     startServer();
     client.connect(proxy.getPort(), proxy.getHost())
-      .onComplete(onSuccess(so -> {
-        so.closeHandler(event -> checkpoint.succeed());
-      }));
+      .map(so -> so.closeHandler(event -> checkpoint.succeed()))
+      .await();
     try {
       checkpoint.awaitSuccess();
     } finally {
@@ -4416,13 +4409,12 @@ public class NetTest {
   }
 
   @Test
-  public void testConnectTimeout(Checkpoint checkpoint) {
+  public void testConnectTimeout() {
     client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1));
-    client.connect(1234, TestUtils.NON_ROUTABLE_HOST)
-      .onComplete(TestUtils.onFailure(err -> {
-        assertTrue(err instanceof ConnectTimeoutException);
-        checkpoint.succeed();
-      }));
+    assertThat(client.connect(1234, TestUtils.NON_ROUTABLE_HOST))
+      .isFailure()
+      .asInstanceOf(ConnectTimeoutException.class)
+      .await();
   }
 
   @Test
@@ -4441,16 +4433,15 @@ public class NetTest {
   }
 
   @Test
-  public void testConnectTimeoutOverride(Checkpoint checkpoint) {
+  public void testConnectTimeoutOverride() {
     client = vertx.createNetClient();
-    client.connect(new ConnectOptions()
+    assertThat(client.connect(new ConnectOptions()
         .setPort(1234)
         .setHost(TestUtils.NON_ROUTABLE_HOST)
-        .setTimeout(1))
-      .onComplete(TestUtils.onFailure(err -> {
-        assertTrue(err instanceof ConnectTimeoutException);
-        checkpoint.succeed();
-      }));
+        .setTimeout(1)))
+      .isFailure()
+      .asInstanceOf(ConnectTimeoutException.class)
+      .await();
   }
 
   @Test
@@ -4577,7 +4568,7 @@ public class NetTest {
     so.handler(buff -> {
       latch.countDown();
     });
-    so.write("hello");
+    so.write("hello").await();
     TestUtils.awaitLatch(latch);
     Future<Void> fut = server.shutdown(20, TimeUnit.SECONDS);
     assertWaitUntil(shutdown::get);
@@ -4599,7 +4590,7 @@ public class NetTest {
     AtomicBoolean closed = new AtomicBoolean();
     so.closeHandler(v -> closed.set(true));
     // Verify the socket still works
-    so.write("ping");
+    so.write("ping").await();
     assertWaitUntil(closed::get);
     fut.await();
   }
@@ -4654,7 +4645,7 @@ public class NetTest {
   }
 
   @Test
-  public void testCloseConnectionAndClient(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3, Checkpoint checkpoint4) {
+  public void testCloseConnectionAndClient(Checkpoint checkpoint1, Checkpoint checkpoint2) {
     server.connectHandler(so -> {
       so.closeHandler(v -> {
         checkpoint1.succeed();
@@ -4669,9 +4660,11 @@ public class NetTest {
         .compose(v -> so.close())
         .onComplete(checkpoint2);
     });
-    so.close().onComplete(checkpoint3);
-    client.close().onComplete(checkpoint4);
+    Future<Void> socketClose = so.close();
+    Future<Void> clientClose = client.close();
     trigger.complete();
+    socketClose.await();
+    clientClose.await();
   }
 
   @Test
@@ -4803,15 +4796,15 @@ public class NetTest {
     });
     startServer();
     Buffer received = Buffer.buffer();
-    CompletableFuture<String> result = new CompletableFuture<>();
+    Promise<String> result = Promise.promise();
     NetSocket socket = client.connect(testAddress).await();
     socket.handler(received::appendBuffer);
-    socket.closeHandler(v -> result.complete(received.toString()));
-    socket.exceptionHandler(result::completeExceptionally);
+    socket.closeHandler(v -> result.tryComplete(received.toString()));
+    socket.exceptionHandler(result::tryFail);
     socket.write("ping").await();
     // With the fix the pending response is flushed before the connection closes; without it the
     // client only sees the close (Netty discards the unflushed entry).
-    assertEquals("pending-response", result.get(20, TimeUnit.SECONDS));
+    assertEquals("pending-response", result.future().await(20, TimeUnit.SECONDS));
   }
 
   @Ignore("Times out in CI")
@@ -4867,17 +4860,15 @@ public class NetTest {
         .setTrustOptions(Trust.SERVER_JKS.get())
         .setHostnameVerificationAlgorithm(""))).await();
 
-    try {
-      client.connect(new ConnectOptions()
+    Throwable e = assertThat(client.connect(new ConnectOptions()
         .setRemoteAddress(address
         ).setSsl(true)
         .setSslOptions(new ClientSSLOptions()
           .setTrustOptions(Trust.SERVER_JKS.get())
-          .setHostnameVerificationAlgorithm("HTTPS"))).await();
-      fail();
-    } catch (Exception e) {
-      assertEquals(SSLHandshakeException.class, e.getClass());
-    }
+          .setHostnameVerificationAlgorithm("HTTPS"))))
+      .isFailure()
+      .await();
+    assertEquals(SSLHandshakeException.class, e.getClass());
   }
 
   @Test

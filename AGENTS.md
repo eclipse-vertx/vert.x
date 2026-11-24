@@ -60,6 +60,7 @@ The range is always `2011-[current year]`.
 
 - All new features must include tests
 - Any bug fix must include regression tests
+- Asynchronous tests follow [vertx-core/src/test/ASYNC_TESTS.md](vertx-core/src/test/ASYNC_TESTS.md)
 
 ## Development Workflow
 
@@ -93,6 +94,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow.
 - General coding rules above are followed
 - Test coverage is present
 - No breaking changes to public interfaces without prior discussion
+- Asynchronous tests follow [vertx-core/src/test/ASYNC_TESTS.md](vertx-core/src/test/ASYNC_TESTS.md)
 
 ### Do Not Comment On
 

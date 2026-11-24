@@ -10,12 +10,12 @@
  */
 package io.vertx.tests.tracing;
 
-import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.VertxProvider;
 import io.vertx.test.faketracer.FakeTracer;
@@ -68,16 +68,18 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
       req.response().end();
     });
     startServer();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ctx.<HttpClientResponse>future(p -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET,"/1")
-        .compose(HttpClientRequest::send).onComplete(TestUtils.onSuccess(resp -> {
-          assertEquals(rootSpan, tracer.activeSpan());
-          assertEquals(200, resp.statusCode());
-        }));
-    });
+      client
+        .request(HttpMethod.GET, "/1")
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .peek(resp -> assertEquals(rootSpan, tracer.activeSpan())))
+        .onComplete(p);
+    }).await();
     TestUtils.waitUntil(() -> tracer.getFinishedSpans().size() == 2);
     assertSingleTrace(tracer.getFinishedSpans());
   }
@@ -88,19 +90,19 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
       assertNotNull(tracer.activeSpan());
       switch (req.path()) {
         case "/1": {
-          vertx.setTimer(10, id1 -> {
-            client
-              .request(HttpMethod.GET,"/2")
-              .compose(HttpClientRequest::send)
-              .onComplete(TestUtils.onSuccess(resp1 -> {
-                vertx.setTimer(10, id2 -> {
-                  client
-                    .request(HttpMethod.GET,"/2")
-                    .compose(HttpClientRequest::send)
-                    .onComplete(TestUtils.onSuccess(resp2 -> req.response().end()));
-                });
-              }));
-          });
+          vertx
+            .timer(10)
+            .compose(id1 -> client
+              .request(HttpMethod.GET, "/2")
+              .compose(HttpClientRequest::send))
+            .compose(resp1 -> vertx.timer(10))
+            .compose(id2 -> client
+              .request(HttpMethod.GET, "/2")
+              .compose(HttpClientRequest::send))
+            .transform(ar -> req
+              .response()
+              .setStatusCode(ar.succeeded() ? 200 : 500)
+              .end());
           break;
         }
         case "/2": {
@@ -113,20 +115,19 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
       }
     });
     startServer();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ctx.<Void>future(p -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
       client
-        .request(HttpMethod.GET,"/1")
+        .request(HttpMethod.GET, "/1")
         .compose(req -> req
           .send()
           .expecting(HttpResponseExpectation.SC_OK)
           .compose(HttpClientResponse::end))
-        .onComplete(TestUtils.onSuccess(v2 -> {
-          assertEquals(rootSpan, tracer.activeSpan());
-        }));
-    });
+        .peek(v2 -> assertEquals(rootSpan, tracer.activeSpan()))
+        .onComplete(p);
+    }).await();
     // client request to /1, server request /1, client request /2, server request /2
     TestUtils.waitUntil(() -> tracer.getFinishedSpans().size() == 6);
     assertSingleTrace(tracer.getFinishedSpans());
@@ -142,13 +143,15 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
       assertNotNull(tracer.activeSpan());
       switch (serverReq.path()) {
         case "/1": {
-          vertx.setTimer(10, id -> {
-            client.request(HttpMethod.GET,"/2?q=true")
-              .compose(HttpClientRequest::send)
-              .onComplete(TestUtils.onSuccess(resp -> {
-                serverReq.response().end();
-              }));
-          });
+          vertx
+            .timer(10)
+            .compose(id -> client
+              .request(HttpMethod.GET, "/2?q=true")
+              .compose(HttpClientRequest::send))
+            .transform(ar -> serverReq
+              .response()
+              .setStatusCode(ar.succeeded() ? 200 : 500)
+              .end());
           break;
         }
         case "/2": {
@@ -162,17 +165,18 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
     });
     startServer();
 
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ctx.<HttpClientResponse>future(p -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET,"/1")
-        .compose(HttpClientRequest::send)
-        .onComplete(TestUtils.onSuccess(resp -> {
-          assertEquals(rootSpan, tracer.activeSpan());
-          assertEquals(200, resp.statusCode());
-        }));
-    });
+      client
+        .request(HttpMethod.GET, "/1")
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .peek(resp -> assertEquals(rootSpan, tracer.activeSpan())))
+        .onComplete(p);
+    }).await();
 
 
     TestUtils.waitUntil(() -> tracer.getFinishedSpans().size() == 4);
