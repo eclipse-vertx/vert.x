@@ -264,6 +264,27 @@ public class SslContextManagerTest extends VertxTestBase {
     assertNotSame(f1, f3);
   }
 
+  @Test
+  public void testTrustAllWithOpenSslAndVerifyHostCreatesClientContext() throws Exception {
+    org.junit.Assume.assumeTrue(OpenSsl.isAvailable());
+    ClientSslContextManager helper = new ClientSslContextManager(new OpenSSLEngineOptions());
+    ClientSSLOptions options = new ClientSSLOptions()
+      .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("HTTPS");
+    ClientSslContextProvider provider = (ClientSslContextProvider) helper.resolveSslContextProvider(options, (ContextInternal) vertx.getOrCreateContext()).await();
+    provider.createClientContext(null);
+  }
+
+  @Test
+  public void testTrustAllWithJdkSslAndVerifyHostCreatesClientContext() throws Exception {
+    ClientSslContextManager helper = new ClientSslContextManager(new JdkSSLEngineOptions());
+    ClientSSLOptions options = new ClientSSLOptions()
+      .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("HTTPS");
+    ClientSslContextProvider provider = (ClientSslContextProvider) helper.resolveSslContextProvider(options, (ContextInternal) vertx.getOrCreateContext()).await();
+    provider.createClientContext(null);
+  }
+
   private void assertNotSame(SslContextProvider a, SslContextProvider b) {
     Assert.assertNotSame(a, b);
     Assert.assertNotEquals(a.hashCode(), b.hashCode());

@@ -57,8 +57,8 @@ class TrustAllOptions implements TrustOptions {
   private static TrustAllOptions INSTANCE_NO_VERIFY = new TrustAllOptions(TRUST_ALL_MANAGER_NO_VERIFY);
   private static TrustAllOptions INSTANCE_VERIFY = new TrustAllOptions(TRUST_ALL_MANAGER_VERIFY);
 
-  static TrustOptions instance(boolean verifyHost) {
-    return verifyHost ? INSTANCE_VERIFY : INSTANCE_NO_VERIFY;
+  static TrustOptions instance(boolean verifyHost, boolean openSsl) {
+    return (!verifyHost || openSsl) ? INSTANCE_NO_VERIFY : INSTANCE_VERIFY;
   }
 
   private final TrustManager tm;
