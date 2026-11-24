@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.assertj.core.api.Fail.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assume.assumeTrue;
@@ -134,7 +133,7 @@ public class MultipartFormUploadTest extends HttpTestBase2 {
           context.runOnContext(v3 -> upload.resume());
         }
       } catch (Exception e) {
-        fail(e);
+        checkpoint.fail(e);
       }
     });
   }
