@@ -39,6 +39,10 @@ class Eventually<T, U> extends Operation<T> implements Completable<T> {
       completeInternal(null, failure);
       return;
     }
-    future.addListener((ignore, err1) -> completeInternal(result, failure));
+    if (future instanceof SucceededFuture || future instanceof FailedFuture) {
+      completeInternal(result, failure);
+    } else {
+      future.addListener((ignore, err1) -> completeInternal(result, failure));
+    }
   }
 }

@@ -45,6 +45,12 @@ class Composition<T, U> extends Operation<U> implements Completable<T> {
       completeInternal(null, e);
       return;
     }
-    future.addListener(this::completeInternal);
+    if (future instanceof SucceededFuture) {
+      completeInternal(future.result(), null);
+    } else if (future instanceof FailedFuture) {
+      completeInternal(null, future.cause());
+    } else {
+      future.addListener(this::completeInternal);
+    }
   }
 }
