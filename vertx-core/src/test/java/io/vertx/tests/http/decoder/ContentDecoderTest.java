@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.ContentDecoder;
@@ -169,9 +170,12 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
     if (fail) {
       request.write(expected).await(timeout);
       checkpoint2.awaitSuccess();
-      request.connection().close();
+      request.connection().close().await(timeout);
     } else {
-      request.send(expected).await(timeout).end().await(timeout);
+      request
+        .send(expected)
+        .compose(HttpClientResponse::end)
+        .await(timeout);
     }
     checkpoint1.awaitSuccess();
     assertTrue(setAfterStart.get() instanceof IllegalStateException);
@@ -256,6 +260,7 @@ public abstract class ContentDecoderTest extends SimpleHttpTest2 {
       .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
       .compose(request -> request
         .send(BODY)
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .await(Duration.ofSeconds(20));
   }
