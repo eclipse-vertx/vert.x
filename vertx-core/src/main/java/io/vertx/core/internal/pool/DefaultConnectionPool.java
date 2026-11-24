@@ -113,8 +113,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
     private final DefaultConnectionPool<C> pool;
     private final ContextInternal context;
-    private final Promise<C> result;
-    private PoolWaiter<C> initiator;
+    private Promise<C> result;
     private C connection;    // The actual connection, might be null
     private int index;       // The index in the pool slots array
     private int usage;    // The number of times this connection is acquired
@@ -187,9 +186,21 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   private int size;                 // The number of non null slots
   private int capacity;             // The pool capacity
 
-  // The waiters
+  // The submitted waiters, not yet acknowledged
+  private final Waiters<C> submitted;
+
+  // The waiters acknowledged in the wait queue
   private final Waiters<C> waiters;
+
+  // Scratch structures of the progress, allocated once and reused between runs: the executor
+  // guarantees a single progress at a time
+  private final TaskList tasks;
+  private final List<PoolWaiter<C>> admitted;
+
   private int requests;
+
+  // The recorded connect failure
+  private Throwable failureCause;
 
   public static <C> DefaultConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {
     return new DefaultConnectionPool<>(connector, maxSizes);
@@ -260,7 +271,10 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     this.selector = (BiFunction) SAME_EVENT_LOOP_SELECTOR;
     this.fallbackSelector = (BiFunction) FIRST_AVAILABLE_SELECTOR;
     this.contextProvider = EVENT_LOOP_CONTEXT_PROVIDER;
+    this.submitted = new Waiters<>();
     this.waiters = new Waiters<>();
+    this.tasks = new TaskList();
+    this.admitted = new ArrayList<>();
   }
 
   @Override
@@ -279,18 +293,213 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     sync.submit(action);
   }
 
+  private void removeSlot(Slot<C> slot) {
+    int w = slot.capacity;
+    slot.usage = 0;
+    slot.concurrency = 0;
+    slot.connection = null;
+    slot.capacity = 0;
+    if (size > 1) {
+      Slot<C> tmp = slots[size - 1];
+      tmp.index = slot.index;
+      slots[slot.index] = tmp;
+      slots[size - 1] = null;
+    } else {
+      slots[0] = null;
+    }
+    size--;
+    capacity -= w;
+  }
+
+  private boolean isWaitersQueueFull() {
+    return maxWaiters != -1 && waiters.size() >= maxWaiters;
+  }
+
+  private Task progress() {
+    progress(tasks);
+    Task head = tasks.first();
+    tasks.clear();
+    return head;
+  }
+
+  private void progress(TaskList tasks) {
+
+    // Connect failure policy: fail one pending acquisition per recorded failure, alternative
+    // policies (bounded retry, fail-fast, ...) plug in here.
+    // Under persistent failures this signals every waiter: each failure fails the head while the
+    // loop below connects for the next one, until the wait queue is empty. To reconsider if the
+    // pool gets time based eviction of waiters, guaranteeing the signalling instead
+    if (failureCause != null) {
+      Throwable cause = failureCause;
+      failureCause = null;
+      PoolWaiter<C> waiter = waiters.poll();
+      if (waiter != null) {
+        waiter.disposed = true;
+        Task task = new Task() {
+          @Override
+          public void run() {
+            waiter.handler.fail(cause);
+          }
+        };
+        tasks.append(task);
+      }
+    }
+
+
+    // Satisfy the demand: peek from the wait queue, when it is exhausted peek from the submitted
+    // acquisitions, stop at the first demand that cannot be satisfied; the first requests waiters
+    // are covered by in-flight connects: they can be granted but no connection is created for them
+    int pos = 0;
+    PoolWaiter<C> next = waiters.peek();
+    while (true) {
+      boolean submission;
+      PoolWaiter<C> waiter;
+      if (next != null) {
+        submission = false;
+        waiter = next;
+        next = waiters.next(next);
+      } else if ((waiter = submitted.poll()) != null) {
+        // Admit a submission in the wait queue, the bound is enforced only when it remains waiting:
+        // a submission served by a grant or a connect is exempted, like the existing pool
+        submission = true;
+        waiters.addLast(waiter);
+        admitted.add(waiter);
+      } else {
+        break;
+      }
+      Task task = null;
+      Slot<C> slot1;
+      Slot<C> slot3;
+      // 1. Try reuse a existing connection with the same context
+      if ((slot1 = (Slot<C>) selector.apply(waiter, list)) != null) {
+        waiters.remove(waiter);
+        waiter.disposed = true;
+        slot1.usage++;
+        LeaseImpl<C> lease = new LeaseImpl<>(slot1, waiter.handler);
+        task = new Task() {
+          @Override
+          public void run() {
+            lease.emit();
+          }
+        };
+      } else if (pos >= requests && capacity < maxCapacity) {
+        // 2. Try create connection, the waiter joins the covered prefix of the wait queue
+        capacity += waiter.capacity;
+        ContextInternal connectionContext = contextProvider.apply(waiter.context);
+        Slot<C> slot2 = new Slot<>(this, connectionContext, size, waiter.capacity);
+        slots[size++] = slot2;
+        requests++;
+        pos++;
+        task = new Task() {
+          @Override
+          public void run() {
+            if (waiter.listener != null) {
+              waiter.listener.onConnect(waiter);
+            }
+            connect(slot2);
+          }
+        };
+      } else if ((slot3 = (Slot<C>) fallbackSelector.apply(waiter, list)) != null) {
+        // 3. Try use another context
+        waiters.remove(waiter);
+        waiter.disposed = true;
+        slot3.usage++;
+        LeaseImpl<C> lease = new LeaseImpl<>(slot3, waiter.handler);
+        task = new Task() {
+          @Override
+          public void run() {
+            lease.emit();
+          }
+        };
+      } else if (pos < requests) {
+        // 4. Covered by an in-flight connect, wait for it
+        pos++;
+      } else if (submission) {
+        // 5. The submission remains waiting, reject it when the wait queue exceeds the bound
+        if (maxWaiters != -1 && waiters.size() > maxWaiters) {
+          waiters.remove(waiter);
+          task = new Task() {
+            @Override
+            public void run() {
+              Future<Lease<C>> fut = waiter.context.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaiters));
+              fut.onComplete(waiter.handler);
+            }
+          };
+        } else {
+          pos++;
+        }
+      } else {
+        // 6. No satisfaction is possible anymore
+        break;
+      }
+      if (task != null) {
+        tasks.append(task);
+      }
+    }
+
+
+    // Move the remaining submissions to the wait queue, reject them when it is full
+    for (PoolWaiter<C> extra = submitted.poll();extra != null;extra = submitted.poll()) {
+      if (!isWaitersQueueFull()) {
+        waiters.addLast(extra);
+        admitted.add(extra);
+      } else {
+        PoolWaiter<C> rejected = extra;
+        Task task = new Task() {
+          @Override
+          public void run() {
+            Future<Lease<C>> fut = rejected.context.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaiters));
+            fut.onComplete(rejected.handler);
+          }
+        };
+        tasks.append(task);
+      }
+    }
+
+
+    // Notify the admitted submissions still waiting
+    for (PoolWaiter<C> waiter : admitted) {
+      if (waiter.next != null && waiter.listener != null) {
+        Task task = new Task() {
+          @Override
+          public void run() {
+            waiter.listener.onEnqueue(waiter);
+          }
+        };
+        tasks.append(task);
+      }
+    }
+    admitted.clear();
+
+
+    // Signal the connect results
+    for (int i = 0;i < size;i++) {
+      Slot<C> slot = slots[i];
+      if (slot.result != null && slot.connection != null) {
+        Promise<C> result = slot.result;
+        C connection = slot.connection;
+        slot.result = null;
+        Task task = new Task() {
+          @Override
+          public void run() {
+            result.complete(connection);
+          }
+        };
+        tasks.append(task);
+      }
+    }
+  }
+
   public int size() {
       return size;
   }
 
-  public void connect(Slot<C> slot, PoolWaiter<C> waiter) {
-    slot.initiator = waiter;
+  private void connect(Slot<C> slot) {
     connector.connect(slot.context, slot).onComplete(ar -> {
-      slot.initiator = null;
       if (ar.succeeded()) {
-        execute(new ConnectSuccess<>(slot, ar.result(), waiter));
+        execute(new ConnectSuccess<>(slot, ar.result()));
       } else {
-        execute(new ConnectFailed<>(slot, ar.cause(), waiter));
+        execute(new ConnectFailed<>(slot, ar.cause()));
       }
     });
   }
@@ -299,12 +508,10 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
     private final Slot<C> slot;
     private final ConnectResult<C> result;
-    private PoolWaiter<C> waiter;
 
-    private ConnectSuccess(Slot<C> slot, ConnectResult<C> result, PoolWaiter<C> waiter) {
+    private ConnectSuccess(Slot<C> slot, ConnectResult<C> result) {
       this.slot = slot;
       this.result = result;
-      this.waiter = waiter;
     }
 
     @Override
@@ -320,69 +527,14 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       pool.requests--;
       pool.capacity += (capacity - initialCapacity);
       if (pool.closed) {
-        if (waiter.disposed) {
-          waiter = null;
-        } else {
-          waiter.disposed = true;
-        }
         return new Task() {
           @Override
           public void run() {
-            if (waiter != null) {
-              Future<Lease<C>> fut = slot.context.failedFuture("Pool closed");
-              fut.onComplete(waiter.handler);
-            }
-            slot.result.complete(slot.connection);
-          }
-        };
-      } else {
-        long acquisitions = slot.concurrency;
-        if (acquisitions == 0) {
-          if (!waiter.disposed) {
-            pool.waiters.addFirst(waiter);
-          }
-          return null;
-        }
-        LeaseImpl<C> lease;
-        int c;
-        if (waiter.disposed) {
-          lease = null;
-          c = 0;
-        } else {
-          lease = new LeaseImpl<>(slot, waiter.handler);
-          c = 1;
-          waiter.disposed = true;
-          acquisitions--;
-        }
-        LeaseImpl<C>[] leases;
-        int m = (int)Math.min(acquisitions, pool.waiters.size());
-        if (m > 0) {
-          c += m;
-          leases = new LeaseImpl[m];
-          for (int i = 0;i < m;i++) {
-            PoolWaiter<C> w = pool.waiters.poll();
-            w.disposed = true;
-            leases[i] = new LeaseImpl<>(slot, w.handler);
-          }
-        } else {
-          leases = null;
-        }
-        slot.usage = c;
-        return new Task() {
-          @Override
-          public void run() {
-            if (lease != null) {
-              lease.emit();
-            }
-            if (leases != null) {
-              for (LeaseImpl<C> lease : leases) {
-                lease.emit();
-              }
-            }
             slot.result.complete(slot.connection);
           }
         };
       }
+      return pool.progress();
     }
   }
 
@@ -390,44 +542,32 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
     private final Slot<C> removed;
     private final Throwable cause;
-    private PoolWaiter<C> waiter;
 
-    public ConnectFailed(Slot<C> removed, Throwable cause, PoolWaiter<C> waiter) {
+    public ConnectFailed(Slot<C> removed, Throwable cause) {
       this.removed = removed;
       this.cause = cause;
-      this.waiter = waiter;
     }
 
     public Task execute(DefaultConnectionPool<C> pool) {
       pool.requests--;
-      if (waiter.disposed) {
-        waiter = null;
-      } else {
-        waiter.disposed = true;
-      }
       Task task = new Task() {
         @Override
         public void run() {
-          if (waiter != null) {
-            Throwable waiterFailure;
-            if (pool.closed) {
-              waiterFailure = POOL_CLOSED_EXCEPTION;
-            } else {
-              waiterFailure = cause;
-            }
-            waiter.handler.fail(waiterFailure);
-          }
           removed.result.fail(cause);
         }
       };
-      if (!pool.closed) {
-        Task removeTask = new Remove<>(removed).execute(pool);
-        if (removeTask != null) {
-          removeTask.next(task);
-          task = removeTask;
-        }
+      if (pool.closed) {
+        return task;
       }
-      return task;
+      pool.removeSlot(removed);
+      pool.failureCause = cause;
+      Task head = pool.progress();
+      if (head == null) {
+        head = task;
+      } else {
+        head.last().next(task);
+      }
+      return head;
     }
   }
 
@@ -444,42 +584,8 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       if (pool.closed || pool.slots[removed.index] != removed) {
         return null;
       }
-      int w = removed.capacity;
-      removed.usage = 0;
-      removed.concurrency = 0;
-      removed.connection = null;
-      removed.capacity = 0;
-      PoolWaiter<C> waiter = pool.waiters.poll();
-      if (waiter != null) {
-        ContextInternal connectionContext = pool.contextProvider.apply(waiter.context);
-        Slot<C> slot = new Slot<>(pool, connectionContext, removed.index, waiter.capacity);
-        pool.capacity -= w;
-        pool.capacity += waiter.capacity;
-        pool.slots[removed.index] = slot;
-        pool.requests++;
-        return new Task() {
-          @Override
-          public void run() {
-            if (waiter.listener != null) {
-              waiter.listener.onConnect(waiter);
-            }
-            pool.connect(slot, waiter);
-          }
-        };
-      } else if (pool.size > 1) {
-        Slot<C> tmp = pool.slots[pool.size - 1];
-        tmp.index = removed.index;
-        pool.slots[removed.index] = tmp;
-        pool.slots[pool.size - 1] = null;
-        pool.size--;
-        pool.capacity -= w;
-        return null;
-      } else {
-        pool.slots[0] = null;
-        pool.size--;
-        pool.capacity -= w;
-        return null;
-      }
+      pool.removeSlot(removed);
+      return pool.progress();
     }
   }
 
@@ -496,36 +602,10 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public Task execute(DefaultConnectionPool<C> pool) {
       if (slot.connection != null) {
-        long diff = concurrency - slot.concurrency;
-        slot.concurrency += diff;
-        if (diff > 0) {
-          LeaseImpl<C>[] extra;
-          int m = (int)Math.min(slot.concurrency - slot.usage, pool.waiters.size());
-          if (m > 0) {
-            extra = new LeaseImpl[m];
-            for (int i = 0;i < m;i++) {
-              PoolWaiter<C> w = pool.waiters.poll();
-              w.disposed = true;
-              extra[i] = new LeaseImpl<>(slot, w.handler);
-            }
-            slot.usage += m;
-            return new Task() {
-              @Override
-              public void run() {
-                for (LeaseImpl<C> lease : extra) {
-                  lease.emit();
-                }
-              }
-            };
-          } else {
-            return null;
-          }
-        } else {
-          return null;
-        }
-      } else {
-        return null;
+        slot.concurrency = concurrency;
+        return pool.progress();
       }
+      return null;
     }
   }
 
@@ -558,12 +638,11 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
         };
       }
       List<C> res = new ArrayList<>();
-      List<Slot<C>> removed = new ArrayList<>();
       for (int i = pool.size - 1;i >= 0;i--) {
         Slot<C> slot = pool.slots[i];
         if (slot.connection != null && slot.usage == 0 && predicate.test(slot.connection)) {
-          removed.add(slot);
           res.add(slot.connection);
+          pool.removeSlot(slot);
         }
       }
       TaskList tasks = new TaskList();
@@ -573,11 +652,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
           handler.succeed(res);
         }
       });
-      for (Slot<C> slot : removed) {
-        Task next = new Remove<>(slot).execute(pool);
-        if (next != null) {
-          tasks.append(next);
-        }
+      Task next = pool.progress();
+      if (next != null) {
+        tasks.append(next);
       }
       return tasks.first();
     }
@@ -605,73 +682,10 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
           }
         };
       }
-
-      // 1. Try reuse a existing connection with the same context
-      Slot<C> slot1 = (Slot<C>) pool.selector.apply(this, pool.list);
-      if (slot1 != null) {
-        slot1.usage++;
-        LeaseImpl<C> lease = new LeaseImpl<>(slot1, handler);
-        return new Task() {
-          @Override
-          public void run() {
-            lease.emit();
-          }
-        };
-      }
-
-      // 2. Try create connection
-      if (pool.capacity < pool.maxCapacity) {
-        pool.capacity += capacity;
-        ContextInternal connectionContext = pool.contextProvider.apply(context);
-        Slot<C> slot2 = new Slot<>(pool, connectionContext, pool.size, capacity);
-        pool.slots[pool.size++] = slot2;
-        pool.requests++;
-        return new Task() {
-          @Override
-          public void run() {
-            if (listener != null) {
-              listener.onConnect(Acquire.this);
-            }
-            pool.connect(slot2, Acquire.this);
-          }
-        };
-      }
-
-      // 3. Try use another context
-      Slot<C> slot3 = (Slot<C>) pool.fallbackSelector.apply(this, pool.list);
-      if (slot3 != null) {
-        slot3.usage++;
-        LeaseImpl<C> lease = new LeaseImpl<>(slot3, handler);
-        return new Task() {
-          @Override
-          public void run() {
-            lease.emit();
-          }
-        };
-      }
-
-      // 4. Fall in waiters list
-      if (pool.maxWaiters == -1 || (pool.waiters.size() + pool.requests) < pool.maxWaiters) {
-        pool.waiters.addLast(this);
-        if (listener != null) {
-          return new Task() {
-            @Override
-            public void run() {
-              listener.onEnqueue(Acquire.this);
-            }
-          };
-        } else {
-          return null;
-        }
-      } else {
-        return new Task() {
-          @Override
-          public void run() {
-            Future<Lease<C>> fut = context.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + pool.maxWaiters));
-            fut.onComplete(handler);
-          }
-        };
-      }
+      pool.submitted.addLast(this);
+      Task head = pool.progress();
+      assert pool.submitted.size() == 0;
+      return head;
     }
   }
 
@@ -711,15 +725,8 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
           }
         };
       }
-      if (pool.waiters.remove(waiter)) {
-        cancelled = true;
-        waiter.disposed = true;
-      } else if (!waiter.disposed) {
-        waiter.disposed = true;
-        cancelled = true;
-      } else {
-        cancelled = false;
-      }
+      cancelled = pool.waiters.remove(waiter) || !waiter.disposed;
+      waiter.disposed = true;
       return this;
     }
 
@@ -769,19 +776,8 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public Task execute(DefaultConnectionPool<C> pool) {
       if (!pool.closed && slot.connection != null) {
-        PoolWaiter<C> waiter;
-        if (slot.usage <= slot.concurrency && (waiter = pool.waiters.poll()) != null) {
-          waiter.disposed = true;
-          LeaseImpl<C> lease = new LeaseImpl<>(slot, waiter.handler);
-          return new Task() {
-            @Override
-            public void run() {
-              lease.emit();
-            }
-          };
-        } else {
-          slot.usage--;
-        }
+        slot.usage--;
+        return pool.progress();
       }
       return null;
     }
@@ -796,7 +792,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   }
 
   public int waiters() {
-    return waiters.size();
+    return Math.max(0, waiters.size() - requests);
   }
 
   public int capacity() {
@@ -832,14 +828,12 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       for (int i = 0;i < pool.size;i++) {
         Slot<C> slot = pool.slots[i];
         pool.slots[i] = null;
-        PoolWaiter<C> waiter = slot.initiator;
-        if (waiter != null) {
-          waiters.add(slot.initiator);
-          slot.initiator.disposed = true;
-          slot.initiator = null;
-        }
         pool.capacity -= slot.capacity;
-        list.add(slot.result.future());
+        if (slot.result != null) {
+          list.add(slot.result.future());
+        } else {
+          list.add(slot.context.succeededFuture(slot.connection));
+        }
       }
       pool.size = 0;
       return new Task() {
@@ -869,6 +863,18 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       head.next = head.prev = head;
     }
 
+    PoolWaiter<C> peek() {
+      return head.next == head ? null : head.next;
+    }
+
+    PoolWaiter<C> next(PoolWaiter<C> node) {
+      return node.next == head ? null : node.next;
+    }
+
+    PoolWaiter<C> peekLast() {
+      return head.prev == head ? null : head.prev;
+    }
+
     PoolWaiter<C> poll() {
       if (head.next == head) {
         return null;
@@ -879,10 +885,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     }
 
     void addLast(PoolWaiter<C> node) {
-      if (node.queued) {
+      if (node.next != null) {
         throw new IllegalStateException();
       }
-      node.queued = true;
       node.prev = head.prev;
       node.next = head;
       head.prev.next = node;
@@ -891,10 +896,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     }
 
     void addFirst(PoolWaiter<C> node) {
-      if (node.queued) {
+      if (node.next != null) {
         throw new IllegalStateException();
       }
-      node.queued = true;
       node.prev = head;
       node.next = head.next;
       head.next.prev = node;
@@ -903,13 +907,12 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     }
 
     boolean remove(PoolWaiter<C> node) {
-      if (!node.queued) {
+      if (node.next == null) {
         return false;
       }
       node.next.prev = node.prev;
       node.prev.next = node.next;
       node.next = node.prev = null;
-      node.queued = false;
       size--;
       return true;
     }
@@ -917,6 +920,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     List<PoolWaiter<C>> clear() {
       List<PoolWaiter<C>> lst = new ArrayList<>(size);
       this.forEach(lst::add);
+      for (PoolWaiter<C> node : lst) {
+        node.next = node.prev = null;
+      }
       size = 0;
       head.next = head.prev = head;
       return lst;
@@ -976,6 +982,11 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
     Task first() {
       return head;
+    }
+
+    void clear() {
+      head = null;
+      tail = null;
     }
   }
 }

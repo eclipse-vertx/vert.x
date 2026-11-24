@@ -1247,6 +1247,24 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testMaxWaitersDoesNotBoundConnectionCreation() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = pool(mgr, new int[] { 1 }, 0);
+    Connection expected = new Connection();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      Assert.assertSame(expected, lease.get());
+      // The pool is full and waiting is not permitted
+      pool.acquire(context, 0, TestUtils.onFailure2(err -> {
+        Assert.assertTrue(err instanceof ConnectionPoolTooBusyException);
+        testComplete();
+      }));
+    }));
+    mgr.assertRequest().connect(expected, 0);
+    await();
+  }
+
   class ConnectionManager implements PoolConnector<Connection> {
 
     private final Queue<ConnectionRequest> requests = new ArrayBlockingQueue<>(100);
