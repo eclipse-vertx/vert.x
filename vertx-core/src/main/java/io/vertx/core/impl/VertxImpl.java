@@ -104,8 +104,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   static final Object[] EMPTY_CONTEXT_LOCALS = new Object[0];
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
-  private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
-  private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
   private static final VarHandle LOCALS_UPDATER = MethodHandles.arrayElementVarHandle(EventLoop[].class);
 
   static {
@@ -198,7 +196,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
     eventLoopThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxEventLoopExecTime, maxEventLoopExecTimeUnit, "vert.x-eventloop-thread-", false);
-    eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, numberOfEventLoops, eventLoopThreadFactory, NETTY_IO_RATIO);
+    eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, numberOfEventLoops, eventLoopThreadFactory, 100);
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
