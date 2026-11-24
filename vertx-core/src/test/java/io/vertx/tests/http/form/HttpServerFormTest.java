@@ -15,13 +15,14 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URLEncoder;
@@ -31,9 +32,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.FutureAssert.assertThat;
 import static io.vertx.test.core.TestUtils.assertWaitUntil;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class HttpServerFormTest extends SimpleHttpTest2 {
@@ -76,24 +79,20 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
 
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
-      req.endHandler(v -> {
-        MultiMap formAttributes = req.formAttributes();
-        assertEquals(value, formAttributes.get("param"));
-      });
-      req.response().end();
+      req.endHandler(v -> req.response().end(String.valueOf(req.formAttributes().get("param"))));
     });
     Buffer body = Buffer.buffer("param=" + URLEncoder.encode(value,"UTF-8"));
     startServer(testAddress);
-    client
+    Buffer received = client
       .request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
       .compose(req -> req
         .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length()))
         .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
-        .send(body).compose(resp -> {
-          assertEquals(200, resp.statusCode());
-          return resp.end();
-        }))
+        .send(body)
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
       .await();
+    assertEquals(value, received.toString());
   }
 
   @Test
@@ -115,7 +114,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     server.requestHandler(req -> {
       try {
         req.setExpectMultipart(true);
-        Assert.fail();
+        req.response().setStatusCode(500).end();
       } catch (IllegalStateException ignore) {
         req.response().end();
       }
@@ -134,10 +133,8 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
         handler.handle(req);
         return req
           .send()
-          .compose(resp -> {
-            assertEquals(200, resp.statusCode());
-            return resp.end();
-          });
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end);
       })
       .await();
   }
@@ -153,21 +150,25 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
     return events;
   }
 
-  private int sendForm(String contentType, Buffer body, int chunkSize) throws Exception {
-    return client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
+  private void sendForm(String contentType, Buffer body, int chunkSize, int expectedStatus) throws Exception {
+    client
+      .request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST))
       .compose(req -> {
         req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+        Future<HttpClientResponse> response;
         if (chunkSize > 0) {
           req.setChunked(true);
           for (int i = 0;i < body.length();i += chunkSize) {
             req.write(body.slice(i, Math.min(body.length(), i + chunkSize)));
           }
-          return req.end().compose(v -> req.response());
+          response = req.end().compose(v -> req.response());
         } else {
-          return req.send(body);
+          response = req.send(body);
         }
+        return response
+          .expecting(HttpResponseExpectation.status(expectedStatus))
+          .compose(HttpClientResponse::end);
       })
-      .compose(resp -> resp.end().map(v -> resp.statusCode()))
       .await(10, TimeUnit.SECONDS);
   }
 
@@ -183,7 +184,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(MALFORMED_URL_ENCODED_FORM), 0));
+    sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(MALFORMED_URL_ENCODED_FORM), 0, 400);
     assertWaitUntil(() -> events.stream().anyMatch(e -> e.startsWith("end:")));
     assertEquals(1, Collections.frequency(events, "request-exception"));
     assertEquals(1, Collections.frequency(events, "response-exception"));
@@ -202,7 +203,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer("a=%zz&b=%zz&c=%zz"), 0));
+    sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer("a=%zz&b=%zz&c=%zz"), 0, 400);
     assertWaitUntil(() -> events.contains("end"));
     assertEquals(1, Collections.frequency(events, "request-exception"));
     assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
@@ -227,7 +228,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), body, 64));
+    sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), body, 64, 400);
     assertWaitUntil(() -> events.contains("end"));
     assertEquals(1, Collections.frequency(events, "request-exception"));
     assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
@@ -245,11 +246,10 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       end.get().onComplete(ar -> req.response().setStatusCode(ar.succeeded() ? 200 : 400).end());
     });
     startServer(testAddress);
-    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(MALFORMED_URL_ENCODED_FORM), 0));
-    assertWaitUntil(() -> body.get().isComplete());
-    assertTrue(body.get().failed());
-    assertTrue(end.get().failed());
-    assertEquals(end.get().cause(), body.get().cause());
+    sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(MALFORMED_URL_ENCODED_FORM), 0, 400);
+    Throwable bodyFailure = assertThat(body.get()).isFailure().await();
+    Throwable endFailure = assertThat(end.get()).isFailure().await();
+    assertEquals(endFailure, bodyFailure);
   }
 
   @Test
@@ -271,9 +271,9 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       req.endHandler(v -> req.response().setStatusCode(400).end());
     });
     startServer(testAddress);
-    assertEquals(400, sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(sb.toString()), 64));
-    assertWaitUntil(() -> end.get() != null && end.get().isComplete());
-    assertTrue("end() requested after a form error should fail", end.get().failed());
+    sendForm(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString(), Buffer.buffer(sb.toString()), 64, 400);
+    assertNotNull(end.get());
+    assertThat(end.get()).isFailure().await();
   }
 
   @Test
@@ -299,7 +299,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(200, sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0));
+    sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0, 200);
     assertWaitUntil(() -> events.contains("end"));
     assertEquals(List.of("upload-exception", "request-exception", "end"), events);
   }
@@ -318,7 +318,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       req.response().end();
     });
     startServer(testAddress);
-    assertEquals(200, sendForm("multipart/form-data; boundary=XYZ; charset=@@@", Buffer.buffer("--XYZ--\r\n"), 0));
+    sendForm("multipart/form-data; boundary=XYZ; charset=@@@", Buffer.buffer("--XYZ--\r\n"), 0, 200);
     assertWaitUntil(() -> expectMultipart.get() != null);
     assertTrue("Expected an IllegalStateException, got " + thrown.get(), thrown.get() instanceof IllegalStateException);
     assertFalse(expectMultipart.get());
@@ -347,7 +347,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(400, sendForm("multipart/form-data; boundary=" + boundary, body, 0));
+    sendForm("multipart/form-data; boundary=" + boundary, body, 0, 400);
     assertWaitUntil(() -> events.contains("end"));
     assertEquals(1, Collections.frequency(events, "request-exception"));
     assertTrue(events.indexOf("request-exception") < events.indexOf("end"));
@@ -377,7 +377,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(400, sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0));
+    sendForm("multipart/form-data; boundary=" + boundary, Buffer.buffer(body), 0, 400);
     assertTrue("Expected no attributes, got " + attributes.get(), attributes.get().isEmpty());
   }
 
@@ -409,7 +409,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       });
     });
     startServer(testAddress);
-    assertEquals(200, sendForm("Multipart/Form-Data; boundary=" + boundary, Buffer.buffer(body), 0));
+    sendForm("Multipart/Form-Data; boundary=" + boundary, Buffer.buffer(body), 0, 200);
     assertEquals("Expected the name attribute, got " + attributes.get(), "Julien", attributes.get().get("name"));
     assertEquals(1, attributes.get().size());
     assertWaitUntil(() -> !uploads.isEmpty());
@@ -430,7 +430,7 @@ public abstract class HttpServerFormTest extends SimpleHttpTest2 {
       req.response().end();
     });
     startServer(testAddress);
-    assertEquals(200, sendForm("multipart/form-data; charset=UTF-8", Buffer.buffer("--XYZ--\r\n"), 0));
+    sendForm("multipart/form-data; charset=UTF-8", Buffer.buffer("--XYZ--\r\n"), 0, 200);
     assertWaitUntil(() -> expectMultipart.get() != null);
     assertTrue("Expected an IllegalStateException, got " + thrown.get(), thrown.get() instanceof IllegalStateException);
     assertFalse(expectMultipart.get());
