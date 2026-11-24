@@ -17,6 +17,8 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.FutureInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.streams.FailedWrite;
 import io.vertx.test.core.Repeat;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -572,6 +574,86 @@ public class FutureTest extends FutureTestBase {
     checker.assertNotCompleted();
     op.accept(p);
     checker.assertFailed(expected);
+  }
+
+  @Test
+  public void testComposeToCompletedFuture() {
+    Throwable cause = new Throwable();
+    Promise<String> p = Promise.promise();
+    Promise<String> q = Promise.promise();
+    Checker<Integer> succeeded = new Checker<>(p.future().compose(s -> Future.succeededFuture(s.length())));
+    Checker<Integer> failed = new Checker<>(p.future().compose(s -> Future.failedFuture(cause)));
+    Checker<Void> failedWrite = new Checker<>(p.future().compose(s -> new FailedWrite(null, cause)));
+    Checker<Integer> recovered = new Checker<>(q.future().compose(s -> Future.succeededFuture(s.length()), err -> Future.succeededFuture(0)));
+    p.complete("abcdef");
+    q.fail("it-failed");
+    succeeded.assertSucceeded(6);
+    failed.assertFailed(cause);
+    failedWrite.assertFailed(cause);
+    recovered.assertSucceeded(0);
+  }
+
+  @Test
+  public void testTransformToCompletedFuture() {
+    Throwable cause = new Throwable();
+    Promise<String> p = Promise.promise();
+    Promise<String> q = Promise.promise();
+    Checker<Integer> successToSuccess = new Checker<>(p.future().transform(ar -> Future.succeededFuture(ar.result().length())));
+    Checker<Integer> successToFailure = new Checker<>(p.future().transform(ar -> Future.failedFuture(cause)));
+    Checker<Integer> failureToSuccess = new Checker<>(q.future().transform(ar -> Future.succeededFuture(0)));
+    Checker<Integer> failureToFailure = new Checker<>(q.future().transform(ar -> Future.failedFuture(cause)));
+    p.complete("abcdef");
+    q.fail("it-failed");
+    successToSuccess.assertSucceeded(6);
+    successToFailure.assertFailed(cause);
+    failureToSuccess.assertSucceeded(0);
+    failureToFailure.assertFailed(cause);
+  }
+
+  @Test
+  public void testEventuallyToCompletedFuture() {
+    Throwable cause = new Throwable();
+    Promise<String> p = Promise.promise();
+    Promise<String> q = Promise.promise();
+    Checker<String> successToSuccess = new Checker<>(p.future().eventually(() -> Future.succeededFuture(6)));
+    Checker<String> successToFailure = new Checker<>(p.future().eventually(() -> Future.failedFuture("it-failed")));
+    Checker<String> failureToSuccess = new Checker<>(q.future().eventually(() -> Future.succeededFuture(6)));
+    Checker<String> failureToFailure = new Checker<>(q.future().eventually(() -> Future.failedFuture("it-failed")));
+    p.complete("abcdef");
+    q.fail(cause);
+    successToSuccess.assertSucceeded("abcdef");
+    successToFailure.assertSucceeded("abcdef");
+    failureToSuccess.assertFailed(cause);
+    failureToFailure.assertFailed(cause);
+  }
+
+  private static final List<BiFunction<Future<String>, ContextInternal, Future<?>>> COMPLETED_FUTURE_OPERATORS = Arrays.asList(
+    (f, ctx) -> f.compose(s -> ctx.succeededFuture(s.length())),
+    (f, ctx) -> f.transform(ar -> ctx.succeededFuture(ar.result().length())),
+    (f, ctx) -> f.eventually(() -> ctx.succeededFuture())
+  );
+
+  @Test
+  public void testCompletedFutureOfOtherContextCompletesOnOperatorContext() {
+    ContextInternal ctx1 = ((VertxInternal) vertx).createEventLoopContext();
+    ContextInternal ctx2 = ((VertxInternal) vertx).createEventLoopContext();
+    for (BiFunction<Future<String>, ContextInternal, Future<?>> operator : COMPLETED_FUTURE_OPERATORS) {
+      PromiseInternal<String> p = ctx1.promise();
+      Future<Context> fut = operator
+        .apply(p.future(), ctx2)
+        .map(v -> Vertx.currentContext());
+      p.complete("abcdef");
+      assertSame(ctx1, fut.await());
+    }
+  }
+
+  @Test
+  public void testCompletedFutureOfOtherContextCompletesOperatorWithoutContext() {
+    ContextInternal ctx = ((VertxInternal) vertx).createEventLoopContext();
+    for (BiFunction<Future<String>, ContextInternal, Future<?>> operator : COMPLETED_FUTURE_OPERATORS) {
+      Future<?> fut = operator.apply(Future.succeededFuture("abcdef"), ctx);
+      assertTrue(fut.succeeded());
+    }
   }
 
   @Test
