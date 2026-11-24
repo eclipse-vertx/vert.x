@@ -174,6 +174,11 @@ public interface NetServer extends Measured {
    *
    * <p>The boolean succeeded future result indicates whether the update occurred.
    *
+   * <p>Only the SSL context configuration (key/certificate, trust, CRLs, cipher suites, TLS protocol versions,
+   * client authentication) is recomputed when this method is called. Other properties such as the SSL engine,
+   * key exchange groups, PQC enforcement policy, SNI, SSL handshake timeout, and ALPN are determined at startup
+   * and are not affected by this method.
+   *
    * @param options the new SSL options
    * @param force force the update when options are equals
    * @return a future signaling the update success

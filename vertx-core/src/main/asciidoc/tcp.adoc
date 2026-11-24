@@ -505,6 +505,11 @@ implement certificate rotation).
 
 When the update succeeds the new SSL configuration is used, otherwise the previous configuration is preserved.
 
+NOTE: Only the SSL context configuration (key/certificate, trust, CRLs, cipher suites, TLS protocol versions,
+client authentication) is recomputed when `updateSSLOptions` is called. Other properties such as the SSL engine,
+key exchange groups, PQC enforcement policy, SNI, SSL handshake timeout, and ALPN are determined at startup and
+are not affected by this method.
+
 NOTE: The options object is compared (using `equals`) against the existing options to prevent an update when the objects
 are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
 the update.
