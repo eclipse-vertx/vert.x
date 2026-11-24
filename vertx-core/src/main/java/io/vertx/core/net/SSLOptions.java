@@ -280,6 +280,8 @@ public class SSLOptions {
    *   <li>{@link PqcEnforcementPolicy#CLIENT_NEGOTIATED}: prepends {@code X25519MLKEM768} if not already present</li>
    *   <li>{@link PqcEnforcementPolicy#STRICT}: replaces the list with only {@code X25519MLKEM768}</li>
    * </ul>
+   * <p>
+   * This property is resolved at startup and cannot be changed at runtime via {@code updateSSLOptions}.
    *
    * @param keyExchangeGroups the key exchange group names
    * @return a reference to this, so the API can be used fluently
@@ -316,6 +318,8 @@ public class SSLOptions {
    * <p>
    * When set to {@link PqcEnforcementPolicy#STRICT} or {@link PqcEnforcementPolicy#CLIENT_NEGOTIATED},
    * the SSL engine will be automatically switched to OpenSSL if not already configured.
+   * <p>
+   * This property is resolved at startup and cannot be changed at runtime via {@code updateSSLOptions}.
    *
    * @param pqcEnforcementPolicy the enforcement policy
    * @return a reference to this, so the API can be used fluently
