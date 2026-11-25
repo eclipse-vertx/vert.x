@@ -1206,6 +1206,8 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   static class Connection {
+    boolean valid = true;
+    boolean closed;
     public Connection() {
     }
   }
@@ -1278,7 +1280,12 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     @Override
     public boolean isValid(Connection connection) {
-      return true;
+      return connection.valid;
+    }
+
+    @Override
+    public void close(Connection connection) {
+      connection.closed = true;
     }
 
     ConnectionRequest assertRequest() {

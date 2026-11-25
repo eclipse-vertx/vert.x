@@ -202,6 +202,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   // The recorded connect failure
   private Throwable failureCause;
 
+  // Whether the next progress is the first of the execution round
+  private boolean first = true;
+
   public static <C> DefaultConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {
     return new DefaultConnectionPool<>(connector, maxSizes);
   }
@@ -267,7 +270,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     this.maxWaiters = maxWaiters;
     this.capacity = 0;
     this.maxCapacity = maxCapacity;
-    this.sync = new CombinerExecutor<>(this);
+    this.sync = new CombinerExecutor<>(this, this::finalAction);
     this.selector = (BiFunction) SAME_EVENT_LOOP_SELECTOR;
     this.fallbackSelector = (BiFunction) FIRST_AVAILABLE_SELECTOR;
     this.contextProvider = EVENT_LOOP_CONTEXT_PROVIDER;
@@ -291,6 +294,19 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
   private void execute(Executor.Action<DefaultConnectionPool<C>> action) {
     sync.submit(action);
+  }
+
+  private Executor.Action<DefaultConnectionPool<C>> finalAction() {
+    return first ? null : new Cleanup<>();
+  }
+
+  private static class Cleanup<C> implements Executor.Action<DefaultConnectionPool<C>> {
+
+    @Override
+    public Task execute(DefaultConnectionPool<C> pool) {
+      pool.first = true;
+      return null;
+    }
   }
 
   private void removeSlot(Slot<C> slot) {
@@ -323,6 +339,26 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   }
 
   private void progress(TaskList tasks) {
+
+    // On the first progress of the execution round, evict the stale connections before any
+    // demand is served: a connection that is not valid is expired
+    if (first) {
+      first = false;
+      for (int i = size - 1;i >= 0;i--) {
+        Slot<C> slot = slots[i];
+        if (slot.connection != null && slot.usage == 0 && !connector.isValid(slot.connection)) {
+          C connection = slot.connection;
+          removeSlot(slot);
+          Task task = new Task() {
+            @Override
+            public void run() {
+              connector.close(connection);
+            }
+          };
+          tasks.append(task);
+        }
+      }
+    }
 
     // Connect failure policy: fail one pending acquisition per recorded failure, alternative
     // policies (bounded retry, fail-fast, ...) plug in here.
@@ -691,6 +727,18 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
   @Override
   public void refresh() {
+    sync.trySubmit(new Refresh<>());
+  }
+
+  private static class Refresh<C> implements Executor.Action<DefaultConnectionPool<C>> {
+
+    @Override
+    public Task execute(DefaultConnectionPool<C> pool) {
+      if (pool.closed) {
+        return null;
+      }
+      return pool.progress();
+    }
   }
 
   @Override

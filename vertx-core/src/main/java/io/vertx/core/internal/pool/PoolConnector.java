@@ -32,13 +32,22 @@ public interface PoolConnector<C> {
   /**
    * Checks whether the connection is still valid.
    *
-   * <p> The pool calls this method when it checks the validity of a connection. Any connection
-   * will be evicted from the pool.
+   * <p> A connection that is not valid is expired: the pool evicts it when it cleans up and
+   * closes it with {@link #close}. The notion of expiration belongs to the connector, e.g. a
+   * maximum lifetime or a broken connection.
    *
    * @param connection the connection to check
    * @return whether the connection is valid or not
    */
   boolean isValid(C connection);
+
+  /**
+   * Close a connection evicted by the pool.
+   *
+   * @param connection the connection to close
+   */
+  default void close(C connection) {
+  }
 
   /**
    * The contract by which the back-end can signal the pool of connection events.
