@@ -1293,5 +1293,13 @@ public class ConnectionPoolTest extends VertxTestBase {
       Assert.assertNotNull(request);
       return request;
     }
+
+    void assertNoRequest() {
+      Assert.assertNull(requests.peek());
+    }
+
+    boolean hasRequest() {
+      return requests.peek() != null;
+    }
   }
 }

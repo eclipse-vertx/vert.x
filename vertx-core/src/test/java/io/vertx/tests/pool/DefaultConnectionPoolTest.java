@@ -69,6 +69,75 @@ public class DefaultConnectionPoolTest extends ConnectionPoolTest {
   }
 
   @Test
+  public void testConnectRetryDelay() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    DefaultConnectionPool<Connection> pool = DefaultConnectionPool.builder(mgr)
+      .withMaxSizes(new int[] { 1 })
+      .withMaxWaiters(10)
+      .withConnectRetryDelay(Duration.ofMillis(20))
+      .build();
+    pool.acquire(context, 0, (res, err) -> {
+      // Fails with the connect failure
+    });
+    AtomicBoolean served = new AtomicBoolean();
+    Connection expected = new Connection();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      Assert.assertSame(expected, lease.get());
+      served.set(true);
+    }));
+    mgr.assertRequest().fail(new Exception("not yet"));
+    // The connect attempts are suspended
+    pool.refresh();
+    mgr.assertNoRequest();
+    // Until the delay has passed
+    assertWaitUntil(() -> {
+      pool.refresh();
+      return mgr.hasRequest();
+    });
+    mgr.assertRequest().connect(expected, 0);
+    assertWaitUntil(served::get);
+  }
+
+  @Test
+  public void testConnectSuccessClearsRetryDelay() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    DefaultConnectionPool<Connection> pool = DefaultConnectionPool.builder(mgr)
+      .withMaxSizes(new int[] { 2 })
+      .withMaxWaiters(10)
+      .withConnectRetryDelay(Duration.ofSeconds(10))
+      .build();
+    pool.acquire(context, 0, (res, err) -> {
+      // Fails with the connect failure
+    });
+    Connection conn1 = new Connection();
+    AtomicBoolean served = new AtomicBoolean();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      Assert.assertSame(conn1, lease.get());
+      served.set(true);
+    }));
+    ConnectionRequest request1 = mgr.assertRequest();
+    ConnectionRequest request2 = mgr.assertRequest();
+    // The failure triggers the delay
+    request1.fail(new Exception("failure"));
+    mgr.assertNoRequest();
+    // A third acquisition falls in the wait queue, the delay suspends the connect
+    Connection conn2 = new Connection();
+    AtomicBoolean served2 = new AtomicBoolean();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      Assert.assertSame(conn2, lease.get());
+      served2.set(true);
+    }));
+    mgr.assertNoRequest();
+    // The success clears the delay: it serves the covered waiter and connects for the waiting one
+    request2.connect(conn1, 0);
+    assertWaitUntil(served::get);
+    mgr.assertRequest().connect(conn2, 0);
+    assertWaitUntil(served2::get);
+  }
+
+  @Test
   public void testAcquireTimeout() throws Exception {
     ContextInternal context = vertx.createEventLoopContext();
     ConnectionManager mgr = new ConnectionManager();

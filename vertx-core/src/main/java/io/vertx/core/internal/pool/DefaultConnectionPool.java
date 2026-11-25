@@ -203,6 +203,19 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   // The recorded connect failure
   private Throwable failureCause;
 
+  // The number of connect successes since the pool creation
+  private long connectCount;
+
+  // The reconnection strategy: no connect attempt before the suspension deadline, cleared at the
+  // round boundary when it expired or when a connect succeeded since it was armed
+  private final long retryDelayNanos;
+  private long suspendedUntilNanos;
+  private long suspendedConnectCount;
+
+  // The time of the execution round, captured by its first progress: the round reasons
+  // against a single timestamp, assuming tasks execute quickly
+  private long roundNanos;
+
   // Whether the next progress is the first of the execution round
   private boolean first = true;
 
@@ -211,7 +224,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   }
 
   public static <C> DefaultConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters) {
-    return new DefaultConnectionPool<>(connector, maxSizes, maxWaiters);
+    return new DefaultConnectionPool<>(connector, maxSizes, maxWaiters, null);
   }
 
   public static <C> Builder<C> builder(PoolConnector<C> connector) {
@@ -223,6 +236,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     private final PoolConnector<C> connector;
     private int[] maxSizes;
     private int maxWaiters = -1;
+    private Duration connectRetryDelay;
 
     Builder(PoolConnector<C> connector) {
       this.connector = Objects.requireNonNull(connector);
@@ -238,16 +252,21 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       return this;
     }
 
+    public Builder<C> withConnectRetryDelay(Duration connectRetryDelay) {
+      this.connectRetryDelay = connectRetryDelay;
+      return this;
+    }
+
     public DefaultConnectionPool<C> build() {
-      return new DefaultConnectionPool<>(connector, Objects.requireNonNull(maxSizes), maxWaiters);
+      return new DefaultConnectionPool<>(connector, Objects.requireNonNull(maxSizes), maxWaiters, connectRetryDelay);
     }
   }
 
   DefaultConnectionPool(PoolConnector<C> connector, int[] maxSizes) {
-    this(connector, maxSizes, -1);
+    this(connector, maxSizes, -1, null);
   }
 
-  DefaultConnectionPool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters) {
+  DefaultConnectionPool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters, Duration connectRetryDelay) {
 
     int[] capacities = new int[maxSizes.length];
     int maxCapacity = 1;
@@ -279,6 +298,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     this.waiters = new Waiters<>();
     this.tasks = new TaskList();
     this.admitted = new ArrayList<>();
+    this.retryDelayNanos = connectRetryDelay == null ? 0L : connectRetryDelay.toNanos();
   }
 
   @Override
@@ -345,12 +365,16 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     // connections before any demand is served: a connection that is not valid is expired
     if (first) {
       first = false;
-      long now = System.nanoTime();
+      roundNanos = System.nanoTime();
+      if (suspendedUntilNanos != 0 && (roundNanos - suspendedUntilNanos >= 0 || connectCount > suspendedConnectCount)) {
+        // The suspension of the reconnection strategy is over or a connect succeeded since it was armed
+        suspendedUntilNanos = 0;
+      }
       PoolWaiter<C> current = waiters.peek();
       while (current != null) {
         PoolWaiter<C> waiter = current;
         current = waiters.next(current);
-        if (waiter.deadlineNanos != 0 && now - waiter.deadlineNanos >= 0) {
+        if (waiter.deadlineNanos != 0 && roundNanos - waiter.deadlineNanos >= 0) {
           waiters.remove(waiter);
           Task task = new Task() {
             @Override
@@ -385,6 +409,10 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     if (failureCause != null) {
       Throwable cause = failureCause;
       failureCause = null;
+      if (retryDelayNanos > 0) {
+        suspendedUntilNanos = roundNanos + retryDelayNanos;
+        suspendedConnectCount = connectCount;
+      }
       PoolWaiter<C> waiter = waiters.poll();
       if (waiter != null) {
         waiter.disposed = true;
@@ -401,7 +429,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
     // Satisfy the demand: peek from the wait queue, when it is exhausted peek from the submitted
     // acquisitions, stop at the first demand that cannot be satisfied; the first requests waiters
-    // are covered by in-flight connects: they can be granted but no connection is created for them
+    // are covered by in-flight connects: they can be granted but no connection is created for them.
+    // The reconnection strategy suspends connect attempts after a failure
+    boolean suspended = suspendedUntilNanos != 0;
     int pos = 0;
     PoolWaiter<C> next = waiters.peek();
     while (true) {
@@ -435,7 +465,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
             lease.emit();
           }
         };
-      } else if (pos >= requests && capacity < maxCapacity) {
+      } else if (pos >= requests && capacity < maxCapacity && !suspended) {
         // 2. Try create connection, the waiter joins the covered prefix of the wait queue
         capacity += waiter.capacity;
         ContextInternal connectionContext = contextProvider.apply(waiter.context);
@@ -579,6 +609,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       slot.usage = 0;
       pool.requests--;
       pool.capacity += (capacity - initialCapacity);
+      pool.connectCount++;
       if (pool.closed) {
         return new Task() {
           @Override
