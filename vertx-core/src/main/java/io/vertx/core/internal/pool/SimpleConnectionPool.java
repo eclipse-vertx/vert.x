@@ -75,7 +75,6 @@ import java.util.function.Predicate;
  */
 public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
-  private static final Future POOL_CLOSED = Future.failedFuture("Pool closed");
   private static final VertxException POOL_CLOSED_EXCEPTION = new VertxException("Pool closed", true);
 
   /**
@@ -921,81 +920,6 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public int size() {
       return size;
-    }
-  }
-
-  static class LazyFuture<T> extends io.vertx.core.impl.future.FutureBase<T> implements Promise<T> {
-
-    private final List<Completable<? super T>> handlers = new ArrayList<>();
-    private Future<T> fut = null;
-
-    @Override
-    public boolean tryComplete(T result) {
-      handle(Future.succeededFuture(result));
-      return true;
-    }
-
-    @Override
-    public boolean tryFail(Throwable cause) {
-      handle(Future.failedFuture(cause));
-      return true;
-    }
-
-    @Override
-    public Future<T> future() {
-      return this;
-    }
-
-    @Override
-    public void handle(AsyncResult<T> event) {
-      Future<T> f = (Future<T>) event;
-      List<Completable<? super T>> h;
-      synchronized (this) {
-        fut = f;
-        h = handlers;
-      }
-      for (Completable<? super T> t : h) {
-        t.complete(event.result(), event.cause());
-      }
-    }
-
-    @Override
-    public synchronized boolean isComplete() {
-      return fut != null && fut.isComplete();
-    }
-    @Override
-    public synchronized T result() {
-      return fut != null ? fut.result() : null;
-    }
-    @Override
-    public Throwable cause() {
-      return fut != null ? fut.cause() : null;
-    }
-    @Override
-    public boolean succeeded() {
-      return fut != null && fut.succeeded();
-    }
-    @Override
-    public boolean failed() {
-      return fut != null && fut.failed();
-    }
-    @Override
-    public void addListener(Completable<? super T> listener) {
-      Future<T> f;
-      synchronized (this) {
-        f = fut;
-        if (f == null) {
-          handlers.add(listener);
-          return;
-        }
-      }
-      listener.complete(f.result(), f.cause());
-    }
-    @Override
-    public void removeListener(Completable<? super T> listener) {
-      synchronized (this) {
-        handlers.remove(listener);
-      }
     }
   }
 }
