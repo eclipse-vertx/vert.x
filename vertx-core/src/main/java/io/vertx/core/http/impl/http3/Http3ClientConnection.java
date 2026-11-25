@@ -66,6 +66,7 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
     this.creationTimestamp = System.currentTimeMillis();
     this.concurrency = concurrency;
+    refresh();
   }
 
   public void init() {

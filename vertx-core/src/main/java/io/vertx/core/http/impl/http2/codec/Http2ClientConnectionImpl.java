@@ -71,6 +71,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     this.authority = authority;
     this.creationTimestamp = System.currentTimeMillis();
     this.handler = connHandler;
+    recycle();
   }
 
   @Override
