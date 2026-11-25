@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -93,6 +94,23 @@ public interface ConnectionPool<C> {
    * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    */
   void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Completable<Lease<C>> handler);
+
+  /**
+   * Like {@link #acquire(ContextInternal, int, Completable)} with a timeout: when the acquisition
+   * remains pending after the timeout, the pool removes the waiter from the wait queue and signals
+   * {@link PoolWaiter.Listener#onTimeout}, nothing else. The timeout is checked when the pool
+   * executes, deadlines might be passed. The default implementation ignores the timeout.
+   */
+  default void acquire(ContextInternal context, int kind, Duration timeout, Completable<Lease<C>> handler) {
+    acquire(context, kind, handler);
+  }
+
+  /**
+   * Like {@link #acquire(ContextInternal, PoolWaiter.Listener, int, Completable)} with a timeout.
+   */
+  default void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Duration timeout, Completable<Lease<C>> handler) {
+    acquire(context, listener, kind, handler);
+  }
 
   /**
    * Cancel a waiter.

@@ -14,6 +14,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.internal.ContextInternal;
 
+import java.time.Duration;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -340,10 +341,26 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
   private void progress(TaskList tasks) {
 
-    // On the first progress of the execution round, evict the stale connections before any
-    // demand is served: a connection that is not valid is expired
+    // On the first progress of the execution round, evict the timed out waiters and the stale
+    // connections before any demand is served: a connection that is not valid is expired
     if (first) {
       first = false;
+      long now = System.nanoTime();
+      PoolWaiter<C> current = waiters.peek();
+      while (current != null) {
+        PoolWaiter<C> waiter = current;
+        current = waiters.next(current);
+        if (waiter.deadlineNanos != 0 && now - waiter.deadlineNanos >= 0) {
+          waiters.remove(waiter);
+          Task task = new Task() {
+            @Override
+            public void run() {
+              waiter.listener.onTimeout(waiter);
+            }
+          };
+          tasks.append(task);
+        }
+      }
       for (int i = size - 1;i >= 0;i--) {
         Slot<C> slot = slots[i];
         if (slot.connection != null && slot.usage == 0 && !connector.isValid(slot.connection)) {
@@ -703,8 +720,11 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
   private static class Acquire<C> extends PoolWaiter<C> implements Executor.Action<DefaultConnectionPool<C>> {
 
-    public Acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int capacity, Completable<Lease<C>> handler) {
+    public Acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int capacity, Duration timeout, Completable<Lease<C>> handler) {
       super(listener, context, capacity, handler);
+      if (timeout != null) {
+        deadlineNanos = System.nanoTime() + timeout.toNanos();
+      }
     }
 
     @Override
@@ -743,12 +763,22 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
   @Override
   public void acquire(ContextInternal context, int kind, Completable<Lease<C>> handler) {
-    execute(new Acquire<>(context, PoolWaiter.NULL_LISTENER, capacityFactors[kind], handler));
+    acquire(context, PoolWaiter.NULL_LISTENER, kind, null, handler);
   }
 
   @Override
   public void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Completable<Lease<C>> handler) {
-    execute(new Acquire<>(context, listener, capacityFactors[kind], handler));
+    acquire(context, listener, kind, null, handler);
+  }
+
+  @Override
+  public void acquire(ContextInternal context, int kind, Duration timeout, Completable<Lease<C>> handler) {
+    acquire(context, PoolWaiter.NULL_LISTENER, kind, timeout, handler);
+  }
+
+  @Override
+  public void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Duration timeout, Completable<Lease<C>> handler) {
+    execute(new Acquire<>(context, listener, capacityFactors[kind], timeout, handler));
   }
 
   @Override

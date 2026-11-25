@@ -13,12 +13,15 @@ package io.vertx.tests.pool;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.pool.ConnectionPool;
 import io.vertx.core.internal.pool.PoolConnector;
+import io.vertx.core.internal.pool.PoolWaiter;
 import io.vertx.core.internal.pool.DefaultConnectionPool;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultConnectionPoolTest extends ConnectionPoolTest {
 
@@ -65,6 +68,63 @@ public class DefaultConnectionPoolTest extends ConnectionPoolTest {
     await();
   }
 
+  @Test
+  public void testAcquireTimeout() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = pool(mgr, new int[] { 1 });
+    Connection conn1 = new Connection();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      // The connection is held, the next acquisition waits
+    }));
+    mgr.assertRequest().connect(conn1, 0);
+    AtomicBoolean timedOut = new AtomicBoolean();
+    pool.acquire(context, new PoolWaiter.Listener<>() {
+      @Override
+      public void onTimeout(PoolWaiter<Connection> waiter) {
+        timedOut.set(true);
+      }
+    }, 0, Duration.ofMillis(20), (res, err) -> Assert.fail());
+    assertWaitUntil(() -> pool.waiters() == 1);
+    assertWaitUntil(() -> {
+      pool.refresh();
+      return timedOut.get();
+    });
+    Assert.assertEquals(0, pool.waiters());
+  }
+
+
+  @Test
+  public void testConnectFailureRetainsWaiterTimeout() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = pool(mgr, new int[] { 1 });
+    // A first acquisition connects
+    AtomicBoolean failed = new AtomicBoolean();
+    pool.acquire(context, 0, (res, err) -> {
+      if (err != null) {
+        failed.set(true);
+      }
+    });
+    ConnectionRequest request = mgr.assertRequest();
+    // A second acquisition waits with a deadline, a third one waits
+    AtomicBoolean timedOut = new AtomicBoolean();
+    pool.acquire(context, new PoolWaiter.Listener<>() {
+      @Override
+      public void onTimeout(PoolWaiter<Connection> waiter) {
+        timedOut.set(true);
+      }
+    }, 0, Duration.ofMillis(10), (res, err) -> {
+    });
+    pool.acquire(context, 0, (res, err) -> {
+    });
+    Thread.sleep(20);
+    // The connect failure opens the round: the timed out waiter eviction and the connect failure
+    // policy are both signalled
+    request.fail(new Exception("failure"));
+    assertWaitUntil(failed::get);
+    Assert.assertTrue(timedOut.get());
+  }
 
   @Override
   protected <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {
