@@ -25,6 +25,19 @@ public class SemaphoreExecutor<S> implements Executor<S> {
   @Override
   public void submit(Action<S> action) {
     lock.lock();
+    execute(action);
+  }
+
+  @Override
+  public boolean trySubmit(Action<S> action) {
+    if (!lock.tryLock()) {
+      return false;
+    }
+    execute(action);
+    return true;
+  }
+
+  private void execute(Action<S> action) {
     Task post = null;
     try {
       post = action.execute(state);

@@ -38,4 +38,13 @@ public interface Executor<S> {
    */
   void submit(Action<S> action);
 
+  /**
+   * Submit an action to execute only when the ownership of the execution can be acquired,
+   * otherwise do nothing.
+   *
+   * @param action the action
+   * @return whether the action was executed
+   */
+  boolean trySubmit(Action<S> action);
+
 }
