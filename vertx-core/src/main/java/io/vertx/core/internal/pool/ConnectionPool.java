@@ -71,6 +71,13 @@ public interface ConnectionPool<C> {
   ConnectionPool<C> contextProvider(Function<ContextInternal, ContextInternal> contextProvider);
 
   /**
+   * Refresh the pool: check and perform the maintenance tasks to do, this method
+   * should be called periodically. Depending on the granularity of the period,
+   * deadlines might be passed, which is acceptable.
+   */
+  void refresh();
+
+  /**
    * Acquire a connection from the pool.
    *
    * @param context the context

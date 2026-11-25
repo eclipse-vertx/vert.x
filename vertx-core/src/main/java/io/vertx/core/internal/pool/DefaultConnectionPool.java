@@ -690,6 +690,10 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   }
 
   @Override
+  public void refresh() {
+  }
+
+  @Override
   public void acquire(ContextInternal context, int kind, Completable<Lease<C>> handler) {
     execute(new Acquire<>(context, PoolWaiter.NULL_LISTENER, capacityFactors[kind], handler));
   }
