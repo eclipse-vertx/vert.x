@@ -1381,6 +1381,12 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPipeliningPause(Checkpoint checkpoint) throws Exception {
+    // Netty's WebSocketServerExtensionHandler, installed when WebSocket compression is enabled, closes the
+    // connection when more than 128 pipelined requests await a response: disable WebSocket compression to
+    // pipeline beyond this depth
+    HttpServerOptions options = new HttpServerOptions();
+    options.getWebSocketConfig().setUsePerMessageCompression(false).setUsePerFrameCompression(false);
+    server = createHttpServer(options);
     Promise<Void> signal = Promise.promise();
     server.requestHandler(req -> {
       Future<Void> f = signal.future();
@@ -1420,6 +1426,7 @@ public class Http1xTest extends HttpTest {
     };
     task[0].accept(0);
     checkpoint.awaitSuccess();
+    client.close().await();
   }
 
   @Test
