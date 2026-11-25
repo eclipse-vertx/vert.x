@@ -614,6 +614,32 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testCapacityOvershoot() throws Exception {
+    // This tests an expected outlier of the capacity bound: concurrent acquisitions bet on a
+    // kind, the actual kind is known on connect success only
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = pool(mgr, new int[] { 5, 1 });
+    ContextInternal ctx = vertx.createEventLoopContext();
+    CountDownLatch latch = new CountDownLatch(5);
+    for (int i = 0;i < 5;i++) {
+      pool.acquire(ctx, 0, TestUtils.onSuccess2(lease -> latch.countDown()));
+    }
+    // The back-end establishes connections of the heavier kind: the pool temporarily exceeds
+    // its maximum capacity, this is accepted
+    for (int i = 0;i < 5;i++) {
+      mgr.assertRequest().connect(new Connection(), 1);
+    }
+    TestUtils.awaitLatch(latch);
+    Assert.assertEquals(5, pool.size());
+    Assert.assertEquals(25, pool.capacity());
+    // Nothing is created while the pool is over capacity: the next acquisition waits
+    pool.acquire(ctx, 0, TestUtils.onSuccess2(lease -> {
+    }));
+    Assert.assertEquals(1, pool.waiters());
+    Assert.assertEquals(0, pool.requests());
+  }
+
+  @Test
   public void testClose() throws Exception {
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = pool(mgr, new int[] { 2 }, 2);
