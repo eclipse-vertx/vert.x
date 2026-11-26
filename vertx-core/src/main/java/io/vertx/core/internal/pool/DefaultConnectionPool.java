@@ -566,21 +566,20 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
           res.add(slot.connection);
         }
       }
-      Task head = new Task() {
+      TaskList tasks = new TaskList();
+      tasks.append(new Task() {
         @Override
         public void run() {
           handler.succeed(res);
         }
-      };
-      Task tail = head;
+      });
       for (Slot<C> slot : removed) {
         Task next = new Remove<>(slot).execute(pool);
         if (next != null) {
-          tail.next(next);
-          tail = next;
+          tasks.append(next);
         }
       }
-      return head;
+      return tasks.first();
     }
   }
 
@@ -958,6 +957,25 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public int size() {
       return size;
+    }
+  }
+
+  private static class TaskList {
+
+    private Task head;
+    private Task tail;
+
+    void append(Task task) {
+      if (head == null) {
+        head = task;
+      } else {
+        tail.next(task);
+      }
+      tail = task;
+    }
+
+    Task first() {
+      return head;
     }
   }
 }
