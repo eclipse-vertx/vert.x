@@ -33,9 +33,9 @@ public class DatagramSocketOptions extends NetworkOptions {
   public static final boolean DEFAULT_BROADCAST = false;
 
   /**
-   * The default value of loopback disabled = true
+   * The default value of loopback disabled = false
    */
-  public static final boolean DEFAULT_LOOPBACK_MODE_DISABLED = true;
+  public static final boolean DEFAULT_LOOPBACK_MODE_DISABLED = false;
 
   /**
    * The default value of multicast disabled = -1
