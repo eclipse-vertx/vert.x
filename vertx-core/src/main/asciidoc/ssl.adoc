@@ -109,3 +109,6 @@ Using OpenSsl >= 3.5 requires the following dependencies:
 | false | true / false            | app starts and ssl handshake succeeds
 | false | required                | app starts but **ssl handshake fails**
 |===
+
+NOTE: PQC-related properties (`sslEngine`, `keyExchangeGroups`, `pqcEnforcementPolicy`) are resolved at startup and
+cannot be changed at runtime via `updateSSLOptions`. To modify these properties, the server or client must be restarted.
