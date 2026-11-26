@@ -104,11 +104,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
     return stream.metric();
   }
 
-  @Override
-  public String absoluteURI() {
-    return (ssl ? "https://" : "http://") + authority() + uri;
-  }
-
   public String query() {
     if (query == null) {
       query = HttpUtils.parseQuery(uri);

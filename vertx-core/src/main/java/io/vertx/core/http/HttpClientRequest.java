@@ -167,7 +167,14 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * @return the absolute URI corresponding to the HTTP request
    */
-  String absoluteURI();
+  default String absoluteURI() {
+    String uri = getURI();
+    if (uri.startsWith("http://") || uri.startsWith("https://")) {
+      return uri;
+    } else {
+      return (connection().isSsl() ? "https://" : "http://") + authority() + uri;
+    }
+  }
 
   /**
    * @return The URI of the request.
