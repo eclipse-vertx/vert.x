@@ -85,6 +85,15 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testConnectionValidAfterConnect() throws Exception {
+    server.requestHandler(req -> req.response().end());
+    startServer(testAddress);
+    HttpClientConnection conn = client.connect(new HttpConnectOptions().setServer(testAddress)).await();
+    // A fresh connection must be valid: its keep-alive expiration starts at creation
+    assertTrue(((io.vertx.core.http.impl.UnpooledHttpClientConnection) conn).unwrap().isValid());
+  }
+
+  @Test
   public void testCloseMulti() throws Exception {
     int num = 4;
     HttpServer[] servers = new HttpServer[num];

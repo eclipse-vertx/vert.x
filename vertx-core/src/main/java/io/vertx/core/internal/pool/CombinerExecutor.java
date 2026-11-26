@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * Lock free executor.
@@ -30,6 +31,7 @@ public class CombinerExecutor<S> implements Executor<S> {
   private final Queue<Action<S>> q = PlatformDependent.newMpscQueue();
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
+  private final Supplier<Action<S>> finalAction;
 
   protected static final class InProgressTail<S> {
 
@@ -46,7 +48,12 @@ public class CombinerExecutor<S> implements Executor<S> {
   private static final FastThreadLocal<InProgressTail<?>> current = new FastThreadLocal<>();
 
   public CombinerExecutor(S state) {
+    this(state, null);
+  }
+
+  public CombinerExecutor(S state, Supplier<Action<S>> finalAction) {
     this.state = state;
+    this.finalAction = finalAction;
   }
 
   @Override
@@ -55,6 +62,20 @@ public class CombinerExecutor<S> implements Executor<S> {
     if (s.get() != 0 || !s.compareAndSet(0, 1)) {
       return;
     }
+    drain();
+  }
+
+  @Override
+  public boolean trySubmit(Action<S> action) {
+    if (s.get() != 0 || !s.compareAndSet(0, 1)) {
+      return false;
+    }
+    q.add(action);
+    drain();
+    return true;
+  }
+
+  private void drain() {
     Task head = null;
     Task tail = null;
     do {
@@ -74,6 +95,23 @@ public class CombinerExecutor<S> implements Executor<S> {
             } else {
               tail.next(task);
               tail = last;
+            }
+          }
+        }
+        if (finalAction != null) {
+          Action<S> a = finalAction.get();
+          if (a != null) {
+            final Task task = a.execute(state);
+            if (task != null) {
+              Task last = task.last();
+              if (head == null) {
+                assert tail == null;
+                tail = last;
+                head = task;
+              } else {
+                tail.next(task);
+                tail = last;
+              }
             }
           }
         }

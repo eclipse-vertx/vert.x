@@ -70,6 +70,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     this.evicted = false;
     this.decompressionSupported = decompressionSupported;
     this.creationTimestamp = System.currentTimeMillis();
+    refresh();
   }
 
   @Override

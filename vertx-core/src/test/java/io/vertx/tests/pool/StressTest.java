@@ -28,12 +28,16 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class StressTest extends VertxTestBase {
 
+  protected <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters) {
+    return ConnectionPool.pool(connector, maxSizes, maxWaiters);
+  }
+
   class FakeConnectionPool implements PoolConnector<FakeConnection> {
 
     private ConnectionPool<FakeConnection> pool;
 
     FakeConnectionPool(int queueMaxSize, int poolMaxSize) {
-      this.pool = ConnectionPool.pool(this, new int[]{ poolMaxSize }, queueMaxSize);
+      this.pool = pool(this, new int[]{ poolMaxSize }, queueMaxSize);
     }
 
     void getConnection(FakeWaiter waiter) {

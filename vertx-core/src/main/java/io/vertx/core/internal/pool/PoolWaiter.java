@@ -41,6 +41,14 @@ public class PoolWaiter<C> {
      */
     default void onConnect(PoolWaiter<C> waiter) {
     }
+
+    /**
+     * The waiter timed out: the pool removed it from the wait queue, nothing else.
+     *
+     * @param waiter the waiter
+     */
+    default void onTimeout(PoolWaiter<C> waiter) {
+    }
   }
 
   final PoolWaiter.Listener<C> listener;
@@ -51,6 +59,7 @@ public class PoolWaiter<C> {
   PoolWaiter<C> next;
   boolean disposed;
   boolean queued;
+  long deadlineNanos;
 
   PoolWaiter(PoolWaiter.Listener<C> listener, ContextInternal context, final int capacity, Completable<Lease<C>> handler) {
     this.listener = listener;

@@ -234,4 +234,82 @@ public class SynchronizationTest extends AsyncTestBase {
     }
     assertEquals(expected, io.netty.util.internal.InternalThreadLocalMap.lastVariableIndex());
   }
+
+  @Test
+  public void testTrySubmit() {
+    AtomicInteger state = new AtomicInteger();
+    Executor<AtomicInteger> sync = new CombinerExecutor<>(state);
+    boolean executed = sync.trySubmit(s -> {
+      s.incrementAndGet();
+      return null;
+    });
+    assertTrue(executed);
+    assertEquals(1, state.get());
+  }
+
+  @Test
+  public void testTrySubmitWhileExecuting() {
+    AtomicInteger state = new AtomicInteger();
+    Executor<AtomicInteger> sync = new CombinerExecutor<>(state);
+    AtomicBoolean executed = new AtomicBoolean(true);
+    sync.submit(s1 -> {
+      executed.set(sync.trySubmit(s2 -> {
+        s2.incrementAndGet();
+        return null;
+      }));
+      return null;
+    });
+    assertFalse(executed.get());
+    assertEquals(0, state.get());
+  }
+
+  @Test
+  public void testFinalAction() {
+    List<String> log = new LinkedList<>();
+    AtomicInteger state = new AtomicInteger();
+    CombinerExecutor<AtomicInteger> sync = new CombinerExecutor<>(state, () -> s -> {
+      log.add("last:" + s.get());
+      return new Task() {
+        @Override
+        public void run() {
+          log.add("last-task");
+        }
+      };
+    });
+    sync.submit(s1 -> {
+      sync.submit(s2 -> {
+        s2.set(2);
+        log.add("action2");
+        return null;
+      });
+      s1.set(1);
+      log.add("action1");
+      return new Task() {
+        @Override
+        public void run() {
+          log.add("task1");
+        }
+      };
+    });
+    // The final action executes once per round, after the submitted actions, seeing the settled state,
+    // its tasks run after the other tasks
+    assertEquals(Arrays.asList("action1", "action2", "last:2", "task1", "last-task"), log);
+  }
+
+  @Test
+  public void testTrySubmitFinalAction() {
+    List<String> log = new LinkedList<>();
+    AtomicInteger state = new AtomicInteger();
+    CombinerExecutor<AtomicInteger> sync = new CombinerExecutor<>(state, () -> s -> {
+      log.add("last:" + s.get());
+      return null;
+    });
+    boolean executed = sync.trySubmit(s -> {
+      s.set(1);
+      log.add("action");
+      return null;
+    });
+    assertTrue(executed);
+    assertEquals(Arrays.asList("action", "last:1"), log);
+  }
 }
