@@ -274,6 +274,14 @@ public class VertxConnection extends ConnectionBase {
       timeout.cancel(false);
     }
     outboundMessageQueue.close();
+    Deque<Object> messages = pending;
+    if (messages != null) {
+      pending = null;
+      Object msg;
+      while ((msg = messages.poll()) != null) {
+        ReferenceCountUtil.release(msg);
+      }
+    }
     super.handleClosed();
   }
 

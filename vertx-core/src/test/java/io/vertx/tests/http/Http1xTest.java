@@ -5803,4 +5803,62 @@ public class Http1xTest extends HttpTest {
       assertNull(responseFailure.get());
     }
   }
+
+  @Test
+  public void testServerByteBufLeakPausedConnectionClose() throws Exception {
+    testServerByteBufLeakPausedConnectionClose(ThreadingModel.EVENT_LOOP);
+  }
+
+  @Test
+  public void testServerByteBufLeakPausedConnectionCloseWorker() throws Exception {
+    testServerByteBufLeakPausedConnectionClose(ThreadingModel.WORKER);
+  }
+
+  private void testServerByteBufLeakPausedConnectionClose(ThreadingModel threadingModel) throws Exception {
+    PooledByteBufChecker content = new PooledByteBufChecker();
+    AtomicReference<HttpConnection> conn = new AtomicReference<>();
+    HttpClientRequest request = testServerByteBufLeak(threadingModel, content, req -> {
+      conn.set(req.connection());
+      req.pause();
+    });
+    Channel channel = ((HttpServerConnection) conn.get()).channelHandlerContext().channel();
+    // Fill the paused request queue until the connection suspends reading
+    while (channel.config().isAutoRead()) {
+      request.write(TestUtils.randomBuffer(512)).await();
+    }
+    // The paused request holds the chunks, with reading suspended the server cannot notice a client close
+    assertFalse(content.onlyPinned());
+    conn.get().close().await();
+    content.awaitOnlyPinnedAndUnpin();
+  }
+
+  /**
+   * Start a server handling its request with {@code app} and tracking the request content in {@code content}, then
+   * return a chunked request whose head was sent once the tracking is in place.
+   */
+  private HttpClientRequest testServerByteBufLeak(ThreadingModel threadingModel, PooledByteBufChecker content, Handler<HttpServerRequest> requestHandler) throws Exception {
+    Promise<Void> tracking = Promise.promise();
+    server.requestHandler(req -> {
+      requestHandler.handle(req);
+      ChannelHandlerContext chctx = ((HttpServerConnection) req.connection()).channelHandlerContext();
+      chctx.executor().execute(() -> {
+        chctx.pipeline().addBefore(chctx.name(), "tracker", new ChannelDuplexHandler() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            // The empty last content is a shared unreleasable buffer
+            if (msg instanceof HttpContent && ((HttpContent) msg).content().isReadable()) {
+              content.pin(((HttpContent) msg).content());
+            }
+            super.channelRead(ctx, msg);
+          }
+        });
+        tracking.complete();
+      });
+    });
+    startServer(testAddress, ((VertxInternal) vertx).createContext(threadingModel));
+    HttpClientRequest request = client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).await();
+    request.setChunked(true).writeHead().await();
+    tracking.future().await();
+    return request;
+  }
 }
