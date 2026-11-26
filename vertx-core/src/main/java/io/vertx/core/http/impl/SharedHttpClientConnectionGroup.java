@@ -138,7 +138,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     }
 
     void acquire() {
-      pool.acquire(context,this, promise);
+      pool.acquire(context, this, this);
     }
   }
 
@@ -276,8 +276,8 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
         });
     }
 
-    void acquire(ContextInternal context, PoolWaiter.Listener<HttpClientConnection> listener, Promise<Lease<HttpClientConnection>> promise) {
-      pool.acquire(context, listener, poolKind, promise);
+    void acquire(ContextInternal context, PoolWaiter.Listener<HttpClientConnection> listener, Completable<Lease<HttpClientConnection>> handler) {
+      pool.acquire(context, listener, poolKind, handler);
     }
 
     void close() {
