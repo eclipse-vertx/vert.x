@@ -498,9 +498,9 @@ public class DatagramTest extends VertxTestBase {
     assertEquals(options, options.setBroadcast(true));
     assertTrue(options.isBroadcast());
 
-    assertTrue(options.isLoopbackModeDisabled());
-    assertEquals(options, options.setLoopbackModeDisabled(false));
     assertFalse(options.isLoopbackModeDisabled());
+    assertEquals(options, options.setLoopbackModeDisabled(true));
+    assertTrue(options.isLoopbackModeDisabled());
 
     assertEquals(-1, options.getMulticastTimeToLive());
     rand = TestUtils.randomPositiveInt();
