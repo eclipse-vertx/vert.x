@@ -87,7 +87,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
 
   @Override
   public String absoluteURI() {
-    return (ssl ? "https://" : "http://") + authority() + uri;
+    if (uri.startsWith("http://") || uri.startsWith("https://")) {
+      return uri;
+    } else {
+      return (ssl ? "https://" : "http://") + authority() + uri;
+    }
   }
 
   public String query() {

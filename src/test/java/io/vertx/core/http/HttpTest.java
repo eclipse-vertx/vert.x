@@ -2917,7 +2917,10 @@ public abstract class HttpTest extends HttpTestBase {
 
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setURI("http://www.w3.org/pub/WWW/TheProject.html"))
-      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .compose(req -> {
+        assertEquals("http://www.w3.org/pub/WWW/TheProject.html", req.absoluteURI());
+        return req.send().compose(HttpClientResponse::end);
+      })
       .onComplete(onSuccess(v -> {
         testComplete();
       }));
