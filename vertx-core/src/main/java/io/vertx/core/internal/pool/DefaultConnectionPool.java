@@ -18,6 +18,8 @@ import java.time.Duration;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -197,7 +199,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   // Scratch structures of the progress, allocated once and reused between runs: the executor
   // guarantees a single progress at a time
   private final TaskList tasks;
-  private final List<PoolWaiter<C>> admitted;
+  private final Deque<PoolWaiter<C>> admitted;
 
   private int connecting;
 
@@ -347,7 +349,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     this.submitted = new Waiters<>();
     this.waiters = new Waiters<>();
     this.tasks = new TaskList();
-    this.admitted = new ArrayList<>();
+    this.admitted = new ArrayDeque<>();
     this.retryDelayNanos = connectRetryDelay == null ? 0L : connectRetryDelay.toNanos();
     this.minCapacity = minCapacity;
     this.defaultKind = defaultKind;
@@ -496,8 +498,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
         waiter = next;
         next = waiters.next(next);
       } else if ((waiter = submitted.poll()) != null) {
-        // Admit a submission in the wait queue, the bound is enforced only when it remains waiting:
-        // a submission served by a grant or a connect is exempted, like the existing pool
+        // Admit a submission in the wait queue, the bound is enforced by the move below only
+        // when it remains waiting: a submission served by a grant or a connect is exempted,
+        // like the existing pool
         submission = true;
         waiters.addLast(waiter);
         admitted.add(waiter);
@@ -552,19 +555,12 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
         // 4. Covered by an in-flight connect, wait for it
         pos++;
       } else if (submission) {
-        // 5. The submission remains waiting, reject it when the wait queue exceeds the bound
-        if (maxWaiters != -1 && waiters.size() > maxWaiters) {
-          waiters.remove(waiter);
-          task = new Task() {
-            @Override
-            public void run() {
-              Future<Lease<C>> fut = waiter.context.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + maxWaiters));
-              fut.onComplete(waiter.handler);
-            }
-          };
-        } else {
-          pos++;
-        }
+        // 5. Nothing is possible for the submission: give it back, the move below admits or
+        // rejects it with the remaining submissions
+        waiters.remove(waiter);
+        admitted.removeLast();
+        submitted.addFirst(waiter);
+        break;
       } else {
         // 6. No satisfaction is possible anymore
         break;
