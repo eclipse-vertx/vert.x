@@ -10,7 +10,6 @@
  */
 package io.vertx.test.core;
 
-import io.netty.buffer.AbstractDerivedByteBuf;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
@@ -28,10 +27,9 @@ import static org.junit.Assert.assertFalse;
  * recycled buffer reporting the reference count of its next use. The component released the buffer when the pins are
  * the only references left.
  *
- * <p>A derived buffer, e.g. a slice, can share the reference count of the buffer it derives from: several pinned
- * buffers sharing a reference count are expected to have as many references as pins.
+ * <p>A derived or wrapped buffer, e.g. a slice or a leak aware wrapper, can share the reference count of the buffer
+ * it unwraps to: several pinned buffers sharing a reference count are expected to have as many references as pins.
  */
-@SuppressWarnings("deprecation")
 public class PooledByteBufChecker {
 
   // null once the pins are released
@@ -108,8 +106,8 @@ public class PooledByteBufChecker {
    * @return the buffer holding the reference count of {@code buffer}
    */
   private static ByteBuf counter(ByteBuf buffer) {
-    while (buffer instanceof AbstractDerivedByteBuf) {
-      buffer = buffer.unwrap();
+    for (ByteBuf unwrapped = buffer.unwrap();unwrapped != null;unwrapped = buffer.unwrap()) {
+      buffer = unwrapped;
     }
     return buffer;
   }
