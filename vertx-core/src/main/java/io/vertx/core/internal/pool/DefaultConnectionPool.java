@@ -23,6 +23,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.Predicate;
 
 /**
@@ -198,7 +199,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   private final TaskList tasks;
   private final List<PoolWaiter<C>> admitted;
 
-  private int requests;
+  private int connecting;
 
   // The recorded connect failure
   private Throwable failureCause;
@@ -216,6 +217,13 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   // against a single timestamp, assuming tasks execute quickly
   private long roundNanos;
 
+  // The minimum capacity, computed from the minimum sizes: missing connections are created at
+  // the end of each execution round with the supplied connection properties, paced by the
+  // reconnection strategy
+  private final int minCapacity;
+  private final int defaultKind;
+  private final Supplier<ContextInternal> contextSupplier;
+
   // Whether the next progress is the first of the execution round
   private boolean first = true;
 
@@ -224,7 +232,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   }
 
   public static <C> DefaultConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters) {
-    return new DefaultConnectionPool<>(connector, maxSizes, maxWaiters, null);
+    return new DefaultConnectionPool<>(connector, maxSizes, maxWaiters, null, null, 0, null);
   }
 
   public static <C> Builder<C> builder(PoolConnector<C> connector) {
@@ -237,6 +245,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     private int[] maxSizes;
     private int maxWaiters = -1;
     private Duration connectRetryDelay;
+    private int[] minSizes;
+    private int defaultKind;
+    private Supplier<ContextInternal> contextSupplier;
 
     Builder(PoolConnector<C> connector) {
       this.connector = Objects.requireNonNull(connector);
@@ -257,16 +268,32 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       return this;
     }
 
+    public Builder<C> withMinSizes(int[] minSizes) {
+      this.minSizes = minSizes;
+      return this;
+    }
+
+    public Builder<C> withDefaultKind(int defaultKind) {
+      this.defaultKind = defaultKind;
+      return this;
+    }
+
+    public Builder<C> withContextSupplier(Supplier<ContextInternal> contextSupplier) {
+      this.contextSupplier = contextSupplier;
+      return this;
+    }
+
     public DefaultConnectionPool<C> build() {
-      return new DefaultConnectionPool<>(connector, Objects.requireNonNull(maxSizes), maxWaiters, connectRetryDelay);
+      return new DefaultConnectionPool<>(connector, Objects.requireNonNull(maxSizes), maxWaiters, connectRetryDelay, minSizes, defaultKind, contextSupplier);
     }
   }
 
   DefaultConnectionPool(PoolConnector<C> connector, int[] maxSizes) {
-    this(connector, maxSizes, -1, null);
+    this(connector, maxSizes, -1, null, null, 0, null);
   }
 
-  DefaultConnectionPool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters, Duration connectRetryDelay) {
+  DefaultConnectionPool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters, Duration connectRetryDelay,
+                        int[] minSizes, int defaultKind, Supplier<ContextInternal> contextSupplier) {
 
     int[] capacities = new int[maxSizes.length];
     int maxCapacity = 1;
@@ -281,6 +308,29 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     }
     for (int i = 0;i < maxSizes.length;i++) {
       capacities[i] = maxCapacity / maxSizes[i];
+    }
+    int minCapacity = 0;
+    if (minSizes != null) {
+      if (minSizes.length != maxSizes.length) {
+        throw new IllegalArgumentException("Minimum sizes must have one size per kind, like the maximum sizes");
+      }
+      for (int i = 0;i < minSizes.length;i++) {
+        if (minSizes[i] < 0 || minSizes[i] > maxSizes[i]) {
+          throw new IllegalArgumentException("Minimum size must be between 0 and the maximum size of its kind");
+        }
+        minCapacity = Math.max(minCapacity, minSizes[i] * capacities[i]);
+      }
+    }
+    if (defaultKind < 0 || defaultKind >= maxSizes.length) {
+      throw new IllegalArgumentException("Default kind must be an index in the maximum sizes");
+    }
+    if (minCapacity > 0) {
+      if (contextSupplier == null) {
+        throw new IllegalArgumentException("A minimum pool size requires a context supplier");
+      }
+      if (connectRetryDelay == null) {
+        throw new IllegalArgumentException("A minimum pool size requires a connect retry delay");
+      }
     }
 
     this.capacityFactors = capacities;
@@ -299,6 +349,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     this.tasks = new TaskList();
     this.admitted = new ArrayList<>();
     this.retryDelayNanos = connectRetryDelay == null ? 0L : connectRetryDelay.toNanos();
+    this.minCapacity = minCapacity;
+    this.defaultKind = defaultKind;
+    this.contextSupplier = contextSupplier;
   }
 
   @Override
@@ -325,8 +378,9 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
     @Override
     public Task execute(DefaultConnectionPool<C> pool) {
+      Task head = pool.last();
       pool.first = true;
-      return null;
+      return head;
     }
   }
 
@@ -428,7 +482,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
 
     // Satisfy the demand: peek from the wait queue, when it is exhausted peek from the submitted
-    // acquisitions, stop at the first demand that cannot be satisfied; the first requests waiters
+    // acquisitions, stop at the first demand that cannot be satisfied; the first connecting waiters
     // are covered by in-flight connects: they can be granted but no connection is created for them.
     // The reconnection strategy suspends connect attempts after a failure
     boolean suspended = suspendedUntilNanos != 0;
@@ -465,13 +519,13 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
             lease.emit();
           }
         };
-      } else if (pos >= requests && capacity < maxCapacity && !suspended) {
+      } else if (pos >= connecting && capacity < maxCapacity && !suspended) {
         // 2. Try create connection, the waiter joins the covered prefix of the wait queue
         capacity += waiter.capacity;
         ContextInternal connectionContext = contextProvider.apply(waiter.context);
         Slot<C> slot2 = new Slot<>(this, connectionContext, size, waiter.capacity);
         slots[size++] = slot2;
-        requests++;
+        connecting++;
         pos++;
         task = new Task() {
           @Override
@@ -494,7 +548,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
             lease.emit();
           }
         };
-      } else if (pos < requests) {
+      } else if (pos < connecting) {
         // 4. Covered by an in-flight connect, wait for it
         pos++;
       } else if (submission) {
@@ -573,6 +627,30 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     }
   }
 
+  private Task last() {
+    // Satisfy the minimum capacity after all demand is served, creating one connection at a
+    // time of the default kind with the supplied context, when no connect is in flight: the
+    // actual weight of a connection is known on connect success only, connecting one at a time
+    // avoids overshooting the capacity. A floor connect counts as connecting, covering
+    // waiters arriving while it is in flight. The reconnection strategy paces the floor retries
+    boolean suspended = suspendedUntilNanos != 0;
+    if (!closed && !suspended && connecting == 0 && capacity < minCapacity) {
+      int floorCapacity = capacityFactors[defaultKind];
+      capacity += floorCapacity;
+      ContextInternal connectionContext = contextProvider.apply(contextSupplier.get());
+      Slot<C> slot = new Slot<>(this, connectionContext, size, floorCapacity);
+      slots[size++] = slot;
+      connecting++;
+      return new Task() {
+        @Override
+        public void run() {
+          connect(slot);
+        }
+      };
+    }
+    return null;
+  }
+
   public int size() {
       return size;
   }
@@ -607,7 +685,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
       slot.concurrency = result.concurrency();
       slot.capacity = capacity;
       slot.usage = 0;
-      pool.requests--;
+      pool.connecting--;
       pool.capacity += (capacity - initialCapacity);
       pool.connectCount++;
       if (pool.closed) {
@@ -633,7 +711,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
     }
 
     public Task execute(DefaultConnectionPool<C> pool) {
-      pool.requests--;
+      pool.connecting--;
       Task task = new Task() {
         @Override
         public void run() {
@@ -905,7 +983,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
   }
 
   public int waiters() {
-    return Math.max(0, waiters.size() - requests);
+    return Math.max(0, waiters.size() - connecting);
   }
 
   public int capacity() {
@@ -914,7 +992,7 @@ public class DefaultConnectionPool<C> implements ConnectionPool<C> {
 
   @Override
   public int requests() {
-    return requests;
+    return connecting;
   }
 
   private static class Close<C> implements Executor.Action<DefaultConnectionPool<C>> {

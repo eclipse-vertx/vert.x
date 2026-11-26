@@ -195,6 +195,148 @@ public class DefaultConnectionPoolTest extends ConnectionPoolTest {
     Assert.assertTrue(timedOut.get());
   }
 
+  @Test
+  public void testMinSizeRequiresConnectRetryDelay() {
+    ConnectionManager mgr = new ConnectionManager();
+    try {
+      DefaultConnectionPool.builder(mgr)
+        .withMaxSizes(new int[] { 5 })
+        .withMinSizes(new int[] { 1 })
+        .withContextSupplier(() -> vertx.createEventLoopContext())
+        .build();
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void testMinSize() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    DefaultConnectionPool<Connection> pool = DefaultConnectionPool.builder(mgr)
+      .withMaxSizes(new int[] { 5 })
+      .withMinSizes(new int[] { 3 })
+      .withContextSupplier(() -> context)
+      .withConnectRetryDelay(Duration.ofSeconds(10))
+      .build();
+    // The floor is satisfied one connection at a time from the first execution round, extra
+    // refreshes do not trigger extra connect requests while one is in flight
+    pool.refresh();
+    pool.refresh();
+    pool.refresh();
+    ConnectionRequest request = mgr.assertRequest();
+    mgr.assertNoRequest();
+    request.connect(new Connection(), 0);
+    mgr.assertRequest().connect(new Connection(), 0);
+    mgr.assertRequest().connect(new Connection(), 0);
+    mgr.assertNoRequest();
+    assertWaitUntil(() -> pool.size() == 3);
+    // An acquisition is served from the pooled connections
+    AtomicBoolean served = new AtomicBoolean();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      served.set(true);
+    }));
+    assertWaitUntil(served::get);
+    mgr.assertNoRequest();
+  }
+
+  @Test
+  public void testMinSizeCoversWaiter() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    DefaultConnectionPool<Connection> pool = DefaultConnectionPool.builder(mgr)
+      .withMaxSizes(new int[] { 5 })
+      .withMinSizes(new int[] { 1 })
+      .withContextSupplier(() -> context)
+      .withConnectRetryDelay(Duration.ofSeconds(10))
+      .build();
+    pool.refresh();
+    ConnectionRequest request = mgr.assertRequest();
+    // A waiter arriving while the floor connect is in flight is covered by it
+    Connection expected = new Connection();
+    AtomicBoolean served = new AtomicBoolean();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      Assert.assertSame(expected, lease.get());
+      served.set(true);
+    }));
+    mgr.assertNoRequest();
+    request.connect(expected, 0);
+    assertWaitUntil(served::get);
+    Assert.assertEquals(1, pool.size());
+  }
+
+  @Test
+  public void testMinSizeConnectRetryDelay() throws Exception {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    DefaultConnectionPool<Connection> pool = DefaultConnectionPool.builder(mgr)
+      .withMaxSizes(new int[] { 5 })
+      .withMinSizes(new int[] { 1 })
+      .withContextSupplier(() -> context)
+      .withConnectRetryDelay(Duration.ofMillis(20))
+      .build();
+    pool.refresh();
+    mgr.assertRequest().fail(new Exception("not yet"));
+    // The failure suspends the floor
+    pool.refresh();
+    mgr.assertNoRequest();
+    // Until the delay has passed
+    assertWaitUntil(() -> {
+      pool.refresh();
+      return mgr.hasRequest();
+    });
+    // The retry fails: the floor is suspended again
+    mgr.assertRequest().fail(new Exception("not yet"));
+    pool.refresh();
+    mgr.assertNoRequest();
+    // The next retry succeeds
+    assertWaitUntil(() -> {
+      pool.refresh();
+      return mgr.hasRequest();
+    });
+    Connection conn = new Connection();
+    mgr.assertRequest().connect(conn, 0);
+    assertWaitUntil(() -> pool.size() == 1);
+  }
+
+  @Test
+  public void testMinCapacity() {
+    // HTTP/1 floor: an HTTP/1 back-end converges to the minimum connections one at a time,
+    // a single HTTP/2 connection satisfies the floor without overshooting
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 3, 0 }, 0, 0, 3, 3);
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 3, 0 }, 0, 1, 1, 5);
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 3, 0 }, 1, 0, 3, 3);
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 3, 0 }, 1, 1, 1, 5);
+    // HTTP/2 floor: an HTTP/1 back-end converges from below to the equivalent capacity, an
+    // HTTP/2 back-end is satisfied by one connection
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 0, 1 }, 0, 0, 5, 5);
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 0, 1 }, 0, 1, 1, 5);
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 0, 1 }, 1, 0, 5, 5);
+    assertMinCapacity(new int[] { 5, 1 }, new int[] { 0, 1 }, 1, 1, 1, 5);
+  }
+
+  private void assertMinCapacity(int[] maxSizes, int[] minSizes, int defaultKind, int connectKind,
+                                 int expectedSize, int expectedCapacity) {
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    DefaultConnectionPool<Connection> pool = DefaultConnectionPool.builder(mgr)
+      .withMaxSizes(maxSizes)
+      .withMinSizes(minSizes)
+      .withDefaultKind(defaultKind)
+      .withContextSupplier(() -> context)
+      .withConnectRetryDelay(Duration.ofSeconds(10))
+      .build();
+    while (true) {
+      pool.refresh();
+      if (!mgr.hasRequest()) {
+        break;
+      }
+      mgr.assertRequest().connect(new Connection(), connectKind);
+    }
+    Assert.assertEquals(expectedSize, pool.size());
+    Assert.assertEquals(expectedCapacity, pool.capacity());
+  }
+
   @Override
   protected <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {
     return DefaultConnectionPool.pool(connector, maxSizes);
