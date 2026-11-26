@@ -12,7 +12,7 @@
 package io.vertx.core.impl.cpu;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -79,29 +79,47 @@ public class CpuCoreSensor {
       return -1;
     }
 
-    try (final FileInputStream stream = new FileInputStream(file);
-        final InputStreamReader inputReader = new InputStreamReader(stream, StandardCharsets.US_ASCII);
-        final BufferedReader reader = new BufferedReader(inputReader)) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (line.startsWith(CPUS_ALLOWED)) {
-          int count = 0;
-          int start = CPUS_ALLOWED.length();
-          for (int i = start; i < line.length(); i++) {
-            char ch = line.charAt(i);
-            if (ch >= '0' && ch <= '9') {
-              count += BITS[ch - '0'];
-            } else if (ch >= 'a' && ch <= 'f') {
-              count += BITS[ch - 'a' + 10];
-            } else if (ch >= 'A' && ch <= 'F') {
-              count += BITS[ch - 'A' + 10];
-            }
-          }
-          return count;
-        }
+    // The file is a few hundred bytes: read it at once rather than through a BufferedReader and an InputStreamReader,
+    // whose 8 KB buffers are allocated for every read.
+    byte[] content = Files.readAllBytes(file.toPath());
+    int length = content.length;
+    int lineStart = 0;
+    while (lineStart < length) {
+      int lineEnd = lineStart;
+      while (lineEnd < length && content[lineEnd] != '\n') {
+        lineEnd++;
       }
+      if (startsWith(content, lineStart, lineEnd, CPUS_ALLOWED)) {
+        int count = 0;
+        for (int i = lineStart + CPUS_ALLOWED.length(); i < lineEnd; i++) {
+          char ch = (char) content[i];
+          if (ch >= '0' && ch <= '9') {
+            count += BITS[ch - '0'];
+          } else if (ch >= 'a' && ch <= 'f') {
+            count += BITS[ch - 'a' + 10];
+          } else if (ch >= 'A' && ch <= 'F') {
+            count += BITS[ch - 'A' + 10];
+          }
+        }
+        return count;
+      }
+      lineStart = lineEnd + 1;
     }
 
     return -1;
   }
+
+  private static boolean startsWith(byte[] content, int start, int end, String prefix) {
+    int length = prefix.length();
+    if (end - start < length) {
+      return false;
+    }
+    for (int i = 0; i < length; i++) {
+      if (content[start + i] != prefix.charAt(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 }
