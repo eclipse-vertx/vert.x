@@ -422,7 +422,6 @@ public class QuicServerTest extends VertxTestBase {
           Assert.assertEquals(4L, (long)code);
           long now = System.nanoTime();
           stream.closeHandler(v -> {
-            // Ending the reset stream closes it, not the connection idle timeout
             Assert.assertTrue(System.nanoTime() - now < TimeUnit.SECONDS.toNanos(1));
             complete();
           });
