@@ -18,7 +18,12 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -46,11 +51,15 @@ public final class HttpChunkContentCompressor extends HttpContentCompressor {
   }
 
   @Override
-  protected Result beginEncode(HttpResponse httpResponse, String acceptEncoding) throws Exception {
-    Result result = super.beginEncode(httpResponse, acceptEncoding);
-    if (result == null && httpResponse.headers().contains(HttpHeaderNames.CONTENT_ENCODING, "identity", true)) {
-      httpResponse.headers().remove(HttpHeaderNames.CONTENT_ENCODING);
+  protected void encode(ChannelHandlerContext ctx, HttpObject msg, List<Object> out) throws Exception {
+    super.encode(ctx, msg, out);
+    if (msg instanceof HttpResponse) {
+      // identity only opts the response out of compression, it is not a content coding to send (RFC 9110 8.4.1).
+      // The encoder passes such a response through as is, whichever branch it took, so remove the header here.
+      HttpHeaders headers = ((HttpResponse) msg).headers();
+      if (headers.contains(HttpHeaderNames.CONTENT_ENCODING, HttpHeaderValues.IDENTITY, true)) {
+        headers.remove(HttpHeaderNames.CONTENT_ENCODING);
+      }
     }
-    return result;
   }
 }
